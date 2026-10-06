@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Front Porch Recovery — Pull Up a Chair</title>
 <meta name="description" content="Front Porch Recovery is a recovery community and resource hub. Honest recovery, real life, second chances, and a place to belong — one honest day at a time.">
+<!-- Installable app (PWA): these files sit next to index.html on GitHub Pages -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F6F5F2">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Front Porch">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
@@ -406,6 +415,18 @@
   .legal-summary{background:var(--white); border:1px solid var(--line); border-left:4px solid var(--sage); border-radius:var(--radius-m); padding:18px 20px; margin-bottom:8px;}
   .legal-summary p:first-child{margin-top:0; color:var(--charcoal);}
   .legal-back{margin-top:36px;}
+  /* ---------- Get the App page ---------- */
+  .app-steps{counter-reset:appstep; list-style:none !important; padding-left:0 !important;}
+  .app-steps li{counter-increment:appstep; position:relative; padding-left:40px; min-height:28px;}
+  .app-steps li::before{
+    content:counter(appstep); position:absolute; left:0; top:0;
+    width:28px; height:28px; border-radius:999px; background:var(--sage); color:var(--charcoal);
+    font-weight:700; font-size:.85rem; display:flex; align-items:center; justify-content:center;
+  }
+  .app-icon-preview{width:84px; height:84px; border-radius:20px; box-shadow:var(--shadow); flex:none;}
+  .app-installed-note{display:none;}
+  .app-installed .app-installed-note{display:block;}
+  .app-installed .app-install-howto{display:none;}
   .crisis-box{
     background:#3a2f26; color:#F6F5F2; border:1px solid rgba(217,166,91,0.4); border-radius:var(--radius-m);
     padding:16px 18px; font-size:.85rem; margin-top:20px; line-height:1.6;
@@ -536,6 +557,7 @@
     <button data-nav="stories">Porch Stories</button>
     <button data-nav="about">My Story</button>
     <button data-nav="contact">Contact</button>
+    <button data-nav="app">Get the App</button>
   </div>
   <div class="foot">
     <button class="btn btn-amber btn-block" data-nav="roughday">I'm having a rough day</button>
@@ -1209,6 +1231,76 @@
   </section>
 </section>
 
+<!-- ================= GET THE APP ================= -->
+<section class="page" id="page-app">
+  <section class="block bg-charcoal tight">
+    <div class="wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;">Get the App</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Keep the porch on your phone.</h1>
+      <p style="color:var(--gray); margin-top:10px; max-width:56ch;">Add Front Porch Recovery to your home screen. It opens full-screen like any other app, with its own icon, and the most important parts keep working even without internet.</p>
+    </div>
+  </section>
+  <section class="block bg-cream">
+    <div class="wrap legal-doc" id="app-page-body">
+      <div style="display:flex; gap:16px; align-items:center;">
+        <img class="app-icon-preview" src="apple-touch-icon.png" alt="Front Porch Recovery app icon">
+        <div>
+          <p style="margin:0; font-weight:700; color:var(--charcoal); font-size:1.1rem;">Front Porch Recovery</p>
+          <p style="margin:2px 0 0; font-size:.9rem;">Free. No account. No app store needed.</p>
+        </div>
+      </div>
+
+      <div class="legal-summary app-installed-note" style="margin-top:22px;">
+        <p><strong>You're using the app.</strong></p>
+        <p>Front Porch Recovery is already on your home screen. Glad you're here.</p>
+      </div>
+
+      <div class="app-install-howto">
+        <div id="app-install-ready" style="display:none; margin-top:22px;">
+          <button type="button" class="btn btn-primary" id="app-install-btn">Install Front Porch Recovery</button>
+          <p style="font-size:.85rem; margin-top:8px;">Your phone will ask you to confirm.</p>
+        </div>
+
+        <h2>iPhone or iPad</h2>
+        <ol class="app-steps">
+          <li>Open this page in <strong>Safari</strong>.</li>
+          <li>Tap the <strong>Share</strong> button (the square with an arrow pointing up).</li>
+          <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+          <li>Tap <strong>Add</strong>. The Front Porch icon will appear on your home screen.</li>
+        </ol>
+
+        <h2>Android</h2>
+        <ol class="app-steps">
+          <li>Open this page in <strong>Chrome</strong>.</li>
+          <li>Tap <strong>Install</strong> if a prompt pops up, or tap the <strong>⋮</strong> menu in the top corner.</li>
+          <li>Tap <strong>Install app</strong> (on some phones it says <strong>Add to Home screen</strong>).</li>
+          <li>Tap <strong>Install</strong> to confirm.</li>
+        </ol>
+        <p style="font-size:.9rem;">On a computer, Chrome and Edge show an install icon at the right end of the address bar.</p>
+      </div>
+
+      <h2>What works without internet</h2>
+      <p>Once you've opened the app one time with a connection, these keep working offline:</p>
+      <ul>
+        <li>The Daily Porch, including today's reflection</li>
+        <li>Rough Day tools: breathing, grounding, and the next-hour plan</li>
+        <li>The Daily Check-In and the Recovery Counter</li>
+        <li>The Recovery Toolbox and Porch topics</li>
+      </ul>
+      <p>Calling <strong>911</strong> or calling or texting <strong>988</strong> uses your phone service, not the internet, so the crisis numbers in the app work whenever your phone can make a call.</p>
+      <p>Things that need a connection: the Contact form, music videos, Facebook, the Etsy shop, books on Amazon, and outside recovery resources.</p>
+
+      <h2>Updates</h2>
+      <p>There's nothing to update by hand. When your phone is online, the app always loads the newest version of Front Porch Recovery.</p>
+
+      <h2>Your privacy</h2>
+      <p>The app keeps a copy of Front Porch Recovery's public pages on your phone so it can open offline. That copy contains no personal information. Everything else works the same as the website. See the <a class="legal-link" href="#privacy" data-nav="privacy">Privacy Policy</a>.</p>
+
+      <div class="legal-back"><button type="button" class="btn btn-outline" data-nav="home">&lsaquo; Back to Home</button></div>
+    </div>
+  </section>
+</section>
+
 <!-- ================= PRIVACY POLICY ================= -->
 <section class="page" id="page-privacy">
   <section class="block bg-charcoal tight">
@@ -1225,16 +1317,17 @@
       <div class="legal-summary">
         <p><strong>The short version</strong></p>
         <ul>
-          <li>There are no accounts, no ads, no analytics, and no tracking pixels on this site. Front Porch Recovery does not set its own cookies.</li>
-          <li>The Daily Check-In and Recovery Counter save a small amount of information <strong>in your own browser</strong>. It is never sent to us, and we can't see it.</li>
-          <li>If you use the Contact form, your message goes to us through a service called Formspree.</li>
+          <li>Front Porch Recovery has no accounts, no ads, no analytics, and no tracking pixels, and it does not set its own cookies.</li>
+          <li>The Daily Check-In and Recovery Counter save a small amount of information <strong>in your own browser</strong>. It is never sent to Front Porch Recovery, and we can't see it.</li>
+          <li>If you use the Contact form, your message is delivered to us through a service called Formspree.</li>
           <li>We don't sell or rent your information, and we don't share it for advertising.</li>
-          <li>A few outside services (our web host, Google Fonts, and YouTube videos) receive basic technical information when the site loads.</li>
+          <li>Our web host and a few outside services receive basic technical information when the site loads.</li>
         </ul>
       </div>
 
       <h2>Who we are</h2>
-      <p>Front Porch Recovery (“Front Porch Recovery,” “we,” “us”) is a peer-support, community, and recovery-education website operated by <span data-legal="owner"></span>. This policy covers this website only.</p>
+      <p>Front Porch Recovery is a peer-support, recovery education, lived-experience, publishing, music, community, and resource website run by <span data-legal="owner"></span>. The website is located at <span data-legal="siteurl"></span>. In this policy, “Front Porch Recovery,” “we,” and “us” mean Justin Whetstone and this website.</p>
+      <p>Front Porch Recovery is not a treatment center, medical provider, therapist, or crisis or emergency service. This policy covers this website only.</p>
 
       <h2>Information saved in your browser (not sent to us)</h2>
       <p>Some tools on this site remember things using your browser's built-in storage (called “local storage”). This information stays on the device and browser you used. It is not sent to Front Porch Recovery or anyone else, and we have no way to see it.</p>
@@ -1248,13 +1341,18 @@
       <p><strong>A note about shared devices.</strong> Anyone who uses the same device and browser could open these tools and see your saved check-in totals, streak, or start date. To remove this information, clear this site's data in your browser settings (sometimes called “site data” or “cookies and site data”), or use a private/incognito window, which doesn't keep it after you close it.</p>
 
       <h2>Information you send us: the Contact form</h2>
-      <p>If you use the Contact form, it sends your <strong>name, email address, the reason you picked, and your message</strong> to us through <a class="legal-link" href="https://formspree.io/" target="_blank" rel="noopener noreferrer">Formspree ↗</a>, a third-party form service. Formspree receives, stores, and delivers the message under its own <a class="legal-link" href="https://formspree.io/legal/privacy-policy/" target="_blank" rel="noopener noreferrer">privacy policy ↗</a>.</p>
+      <p>If you use the Contact form, it collects your <strong>name, email address, the reason you picked, and your message</strong>. The form is processed by <a class="legal-link" href="https://formspree.io/" target="_blank" rel="noopener noreferrer">Formspree ↗</a>, a third-party form service, which receives, stores, and delivers the message to us under its own <a class="legal-link" href="https://formspree.io/legal/privacy-policy/" target="_blank" rel="noopener noreferrer">privacy policy ↗</a>.</p>
       <p>We use what you send only to read and respond to your message. We don't add you to a mailing list because you contacted us, and we don't sell or rent your information.</p>
-      <p>Please don't send medical records, passwords, financial information, or other highly sensitive details through the form. If you mention something personal about your recovery or health, it becomes part of the message stored by Formspree and in our email.</p>
-      <p>The newsletter signup on this site is <strong>not connected yet</strong>. Its button is turned off, and nothing you type there is sent anywhere.</p>
 
-      <h2>Outside services that load with the site</h2>
-      <p>Like almost every website, this one relies on a few outside services. When your browser connects to them, they receive basic technical information such as your IP address and browser type, and they handle it under their own policies:</p>
+      <h2>Please don't send highly sensitive information</h2>
+      <p>Front Porch Recovery does not intentionally ask for medical records, passwords, financial information, or other highly sensitive personal information through this website, and nothing on the site requires it. Please don't send those details through the Contact form or by email. If you choose to share something personal about your recovery or health in a message, it becomes part of that message, which is stored by Formspree and in our email inbox.</p>
+
+      <h2>Newsletter / email signup (not active yet)</h2>
+      <p>The newsletter signup on this site is <strong>not connected yet</strong>. Its button is turned off, and nothing you type there is sent anywhere.</p>
+      <p>If a newsletter is added later, the signup form will collect your <strong>first name and email address</strong> so we can send you Front Porch Recovery updates. That information would be handled by the email service we choose, under its own privacy policy, and every email would include a way to unsubscribe. This policy will be updated to name that service before the signup is turned on.</p>
+
+      <h2>Technical information collected by hosting and outside services</h2>
+      <p>Like almost every website, this one relies on a few outside services. When your browser connects to them, they may receive basic technical information such as your IP address, browser type, device type, and the page requested, and they handle it under their own policies:</p>
       <ul>
         <li><strong>GitHub Pages (hosting).</strong> The site is hosted on GitHub Pages. GitHub logs visitors' IP addresses for security purposes. See the <a class="legal-link" href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub Privacy Statement ↗</a>.</li>
         <li><strong>Google Fonts.</strong> The site's typeface is loaded from Google's servers, so Google receives the request from your browser. See <a class="legal-link" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's Privacy Policy ↗</a>.</li>
@@ -1262,7 +1360,11 @@
       </ul>
 
       <h2>Links to other websites</h2>
-      <p>This site links to outside websites, including Amazon (books), Etsy (our shop), Facebook, YouTube, and recovery resources such as SAMHSA, 988, USARA, AA, NA, SMART Recovery, and others. Those links open in a new tab and are clearly marked. Once you leave this site, the other website's own privacy policy applies. Purchases you make on Amazon or Etsy are handled entirely by those companies; Front Porch Recovery never receives your payment information.</p>
+      <p>This site links to outside websites, including Facebook (our page and the Love Beyond the Chain community group), YouTube, Etsy, Amazon, and recovery-resource organizations such as SAMHSA, 988, USARA, AA, NA, SMART Recovery, and others. Those links open in a new tab and are marked as leaving the site.</p>
+      <p>Outside websites have their own privacy practices and policies, and Front Porch Recovery does not control them. Once you leave this site, their policies apply. Purchases you make on Amazon or Etsy are handled entirely by those companies; Front Porch Recovery never receives your payment information.</p>
+
+      <h2>If you install the app</h2>
+      <p>You can add Front Porch Recovery to your phone's home screen as an app. To let it open without internet, your device keeps a copy of the site's own public files (the page, icons, and font). That copy contains no personal information and is never sent anywhere. The Check-In and Recovery Counter work the same way in the app as on the website. Removing the app from your home screen, or clearing this site's data in your browser settings, deletes the copy.</p>
 
       <h2>Children</h2>
       <p>This site is written for adults and is not directed to children under 13. We don't knowingly collect personal information from children under 13 through the Contact form. If you believe a child has sent us personal information, please contact us and we will delete it.</p>
@@ -1271,14 +1373,14 @@
       <ul>
         <li>You can use the Check-In, Daily Porch, Toolbox, and Recovery Counter without giving us any personal information.</li>
         <li>You can clear anything saved in your browser at any time, as described above.</li>
-        <li>You can ask us to delete a message you sent through the Contact form. We'll delete it from our email, and we'll delete it from Formspree where our account allows it.</li>
+        <li>You can ask us to delete a message you sent through the Contact form by emailing us. We'll delete it from our email, and we'll delete it from Formspree where our account allows it.</li>
       </ul>
 
       <h2>Changes to this policy</h2>
       <p>If the site's features change — for example, if the newsletter is connected or analytics are ever added — this policy will be updated first, and the “Last updated” date above will change.</p>
 
-      <h2>Contact</h2>
-      <p data-legal="contact"></p>
+      <h2>Privacy questions</h2>
+      <div data-legal="contact"></div>
 
       <div class="legal-back"><button type="button" class="btn btn-outline" data-nav="home">&lsaquo; Back to Home</button></div>
     </div>
@@ -1304,47 +1406,56 @@
       </div>
 
       <h2>1. Agreeing to these terms</h2>
-      <p>By using this website, you agree to these Terms of Use. If you don't agree, please don't use the site. These terms work together with our <a class="legal-link" href="#privacy" data-nav="privacy">Privacy Policy</a> and <a class="legal-link" href="#affiliate" data-nav="affiliate">Affiliate Disclosure</a>.</p>
+      <p>These Terms of Use apply to the Front Porch Recovery website at <span data-legal="siteurl"></span>, run by <span data-legal="owner"></span>. In these terms, “Front Porch Recovery,” “we,” and “us” mean Justin Whetstone and this website. By using the site, you agree to these terms. If you don't agree, please don't use the site. These terms work together with our <a class="legal-link" href="#privacy" data-nav="privacy">Privacy Policy</a> and <a class="legal-link" href="#affiliate" data-nav="affiliate">Affiliate Disclosure</a>.</p>
 
       <h2>2. What Front Porch Recovery is — and isn't</h2>
-      <p>Front Porch Recovery offers peer support, community, lived-experience writing, and general recovery education. It is operated by <span data-legal="owner"></span>.</p>
-      <p><strong>This site does not provide medical care, mental health treatment, therapy, counseling, diagnosis, detox or withdrawal management, or emergency services, and it is not a substitute for any of them.</strong> Using the site, sending a message, or joining a related community does not create a doctor–patient, therapist–client, or other professional care relationship. Peer-support credentials mentioned on this site describe lived-experience peer work, not clinical treatment.</p>
+      <p>Front Porch Recovery shares peer support, recovery education, encouragement, lived-experience writing, books, music, community links, and general information.</p>
+      <p><strong>Nothing on this site is medical advice, diagnosis, treatment, therapy, counseling, legal advice, or emergency or crisis care, and it is not a substitute for any of them.</strong> Front Porch Recovery is not a treatment center, medical provider, therapist, or crisis service. Using the site, sending a message, or joining a related community does not create a doctor–patient, therapist–client, attorney–client, or other professional relationship. Peer-support credentials mentioned on this site describe lived-experience peer work, not clinical treatment.</p>
       <p>Always talk with a qualified doctor, mental health professional, or treatment provider about your health, medications, or stopping any substance. Stopping alcohol or certain medications suddenly can be medically dangerous. Don't ignore or delay professional advice because of something you read here.</p>
 
-      <h2>3. Using the recovery content and tools</h2>
+      <h2>3. Emergencies and crisis situations</h2>
+      <p>This website is not monitored for emergencies and can't send help. If you are in an emergency or crisis, use emergency or crisis resources right away: call 911 for emergencies, or call or text 988 for suicide and crisis support in the U.S.</p>
+
+      <h2>4. Using the recovery content and tools</h2>
       <ul>
         <li><strong>Daily Check-In.</strong> Responses come from a fixed set of pre-written messages chosen by your selections. They are encouragement, not an assessment, diagnosis, or professional advice.</li>
         <li><strong>Daily Porch, Toolbox, and Porch topics.</strong> These are general information and reflection. They may not fit your situation, and outside resources or phone numbers can change over time.</li>
         <li><strong>Recovery Counter.</strong> It does simple date math in your browser. It's a personal tool, not an official record.</li>
         <li><strong>Porch Stories.</strong> Stories reflect individual lived experiences. Some community stories use changed names to protect privacy. They aren't recommendations for how anyone else should recover.</li>
       </ul>
-      <p>You are responsible for your own decisions and actions. Recovery looks different for everyone, and there is more than one pathway.</p>
+      <p>You remain responsible for your own decisions and actions. Recovery looks different for everyone, and there is more than one pathway.</p>
 
-      <h2>4. Ownership of the writing, music, and images</h2>
-      <p>Unless noted otherwise, the writing, Daily Porch reflections, Toolbox and Porch content, book text and covers, music, logo, graphics, and images on this site are owned by <span data-legal="owner"></span> and protected by copyright. The Front Porch Recovery name and logo identify this project and may not be used in a way that suggests we endorse or are connected to someone else.</p>
-      <p><strong>What you're welcome to do:</strong> read and use the content for your own personal recovery; share a link to any page; and quote a short excerpt with credit to “Front Porch Recovery” and a link back to the site.</p>
-      <p><strong>What needs written permission first:</strong> copying or republishing full reflections, pages, stories, or images; selling or including our content in paid products, courses, or programs; changing our content and presenting it as your own; or using the logo.</p>
+      <h2>5. No guaranteed outcomes</h2>
+      <p>Front Porch Recovery does not guarantee any recovery outcome or result — from using this site, from our books, downloads, or music, or from any outside service, program, or resource we mention or link to.</p>
+
+      <h2>6. Books, downloads, merchandise, and music</h2>
+      <p>Front Porch Recovery books, downloadable resources, merchandise, and music are sold or hosted through outside platforms such as Amazon, Etsy, and YouTube. Purchases, downloads, payments, shipping, and refunds on those platforms are governed by that platform's own terms. Buying or downloading something gives you a personal-use copy, not ownership of the work or permission to share, resell, or republish it.</p>
+
+      <h2>7. Ownership of our creative work</h2>
+      <p>Unless otherwise stated, the original books, writing, Daily Porch reflections, Toolbox and Porch content, music, the Front Porch Recovery name, logo, and branding, graphics, images, website content, and other creative material on this site belong to Justin Whetstone / Front Porch Recovery and are protected intellectual property. The Front Porch Recovery name and logo may not be used in a way that suggests we endorse or are connected to someone else.</p>
+      <p><strong>You're welcome to:</strong> read and use the content for your own personal recovery; share a link to any page; and quote a short excerpt with credit to “Front Porch Recovery” and a link back to the site.</p>
+      <p><strong>You may not, without written permission:</strong> copy, reproduce, or republish full reflections, pages, stories, songs, or images; scrape or bulk-download content from the site, including by automated means; sell our content or include it in paid products, courses, or programs; change our content and present it as your own; use the logo or branding; or otherwise commercially exploit original Front Porch Recovery material.</p>
       <p>Stories shared by community members belong to the people who shared them and are published with their permission. Please don't copy them anywhere else.</p>
-      <p>To ask for permission, use the <a class="legal-link" href="#contact" data-nav="contact">Contact page</a>.</p>
+      <p>To ask for permission, email us at the address below.</p>
 
-      <h2>5. Links to outside websites and services</h2>
-      <p>This site links to outside websites and services — including Amazon, Etsy, Facebook, YouTube, Formspree, and recovery organizations such as SAMHSA, 988, USARA, AA, NA, and SMART Recovery. These links are provided for convenience and are marked as leaving the site. We don't control those websites and aren't responsible for their content, availability, policies, or practices. Your use of them — including any purchase, account, or community group — is governed by their own terms.</p>
+      <h2>8. Links to outside websites and services</h2>
+      <p>This site links to outside websites and services — including Facebook, YouTube, Etsy, Amazon, Formspree, and recovery-resource organizations such as SAMHSA, 988, USARA, AA, NA, and SMART Recovery. These links are provided for convenience and are marked as leaving the site. Front Porch Recovery does not control those websites and isn't responsible for their content, availability, policies, or practices. Your use of them — including any purchase, account, or community group — is governed by their own terms.</p>
 
-      <h2>6. Contact form and community spaces</h2>
-      <p>Please use the Contact form honestly and respectfully. Don't use it to send spam, threats, harassment, illegal content, or other people's private information. Sending a message doesn't guarantee a response, and messages are not monitored for emergencies — if you are in crisis, call 911 or 988.</p>
-      <p>The Love Beyond the Chain group and our other social pages are hosted on Facebook and other platforms, and those platforms' rules also apply there.</p>
+      <h2>9. Contact form and community spaces</h2>
+      <p>Please use the Contact form honestly and respectfully. Don't use it to send spam, threats, harassment, illegal content, or other people's private information. Sending a message doesn't guarantee a response.</p>
+      <p>The Love Beyond the Chain group and the Front Porch Recovery Facebook page are hosted on Facebook, and Facebook's rules also apply there. If member accounts, discussion threads, or other community features are added to this website in the future, they may come with additional rules, which will be posted before those features open.</p>
 
-      <h2>7. Using the site responsibly</h2>
-      <p>Please don't try to disrupt, overload, copy in bulk, or break into the site or the services it uses, and don't use it for anything unlawful.</p>
+      <h2>10. Using the site responsibly</h2>
+      <p>Please don't misuse the site: don't try to disrupt, overload, hack, or break into the site or the services it uses, don't interfere with other visitors, and don't use it for anything unlawful.</p>
 
-      <h2>8. No guarantees</h2>
-      <p>We work to keep the site accurate and helpful, but it is provided “as is.” We can't promise it will always be available, error-free, or up to date, or that any content will produce a particular result. To the fullest extent allowed by law, Front Porch Recovery is not responsible for losses or harm that result from using or relying on the site or the outside sites it links to.</p>
+      <h2>11. No guarantees about the site</h2>
+      <p>We work to keep the site accurate and helpful, but it is provided “as is.” We can't promise it will always be available, error-free, or up to date. To the fullest extent allowed by law, Front Porch Recovery and Justin Whetstone are not responsible for losses or harm that result from using or relying on the site, its content, or the outside sites and services it links to.</p>
 
-      <h2>9. Changes</h2>
-      <p>We may update these terms as the site grows. When we do, the “Last updated” date above will change. Continuing to use the site after an update means you accept the new terms.</p>
+      <h2>12. Changes to the site and these terms</h2>
+      <p>Front Porch Recovery may update, add to, or remove parts of the website over time, and may update these terms as the site grows. When the terms change, the “Last updated” date above will change. Continuing to use the site after an update means you accept the new terms.</p>
 
-      <h2>10. Contact</h2>
-      <p data-legal="contact"></p>
+      <h2>13. Questions about these terms</h2>
+      <div data-legal="contact"></div>
 
       <div class="legal-back"><button type="button" class="btn btn-outline" data-nav="home">&lsaquo; Back to Home</button></div>
     </div>
@@ -1364,23 +1475,27 @@
     <div class="wrap legal-doc">
       <p class="legal-updated">Last updated: <span data-legal="updated"></span></p>
 
-      <!-- Filled in by renderAffiliateDisclosure() from CONFIG.affiliate -->
-      <div class="legal-summary" id="affiliate-status"></div>
+      <h2 style="margin-top:0;">How affiliate links work here</h2>
+      <p>Some book, product, or resource links on Front Porch Recovery may be affiliate links. If you click an affiliate link and make an eligible purchase, Front Porch Recovery may receive a small commission from that company. <strong>There is no additional cost to you</strong> — the price is the same whether or not you use the link.</p>
+      <p>Where practical, affiliate links will be identified as affiliate links where they appear, and this page will list every affiliate program the site takes part in.</p>
 
-      <h2>My own books and products</h2>
-      <p>Some links go to things I made myself: my books on Amazon and my digital products in the Front Porch Recovery Etsy shop. When you buy one of those, I earn money from the sale (for books, that's an author royalty paid by the publisher or platform). That's income from selling my own work — not an affiliate commission — but I want you to know about it plainly.</p>
+      <!-- Filled in by renderAffiliateDisclosure logic in renderLegalPages() from CONFIG.affiliate -->
+      <div class="legal-summary" id="affiliate-status" style="margin-top:18px;"></div>
 
-      <h2>Recovery resources</h2>
-      <p>Recovery resources listed in the Toolbox — such as SAMHSA, 988, USARA, AA, NA, SMART Recovery, and Al-Anon — are shared because they're useful. No one pays to be listed, and those links do not earn anything.</p>
+      <h2>Not every outside link is an affiliate link</h2>
+      <p>Most outside links on this site earn nothing. Recovery resources listed in the Toolbox — such as SAMHSA, 988, USARA, AA, NA, SMART Recovery, and Al-Anon — are shared because they're useful. No one pays to be listed, and those links are not affiliate links.</p>
+
+      <h2>Front Porch Recovery's own books and products</h2>
+      <p>Links to Front Porch Recovery's own books, Etsy products, music, and other products are not automatically affiliate links. When you buy one of those, the money comes from the sale of Justin Whetstone's own work (for books, that's an author royalty paid by the publishing platform) — not from an affiliate commission. We just want you to know plainly that those links support Front Porch Recovery.</p>
 
       <h2>Sponsored content</h2>
       <p>Nothing on this site is currently sponsored or paid for by another company. If that ever changes, the sponsored content will be clearly labeled where it appears.</p>
 
-      <h2>My promise</h2>
-      <p>I only recommend things I believe could actually help someone in recovery. Whether or not a link earns anything will never decide what gets recommended here.</p>
+      <h2>Our message stays the same</h2>
+      <p>Affiliate relationships don't change the purpose or message of Front Porch Recovery. Things are recommended here because we believe they could genuinely help someone in recovery — never because a link might earn a commission.</p>
 
-      <h2>Questions</h2>
-      <p data-legal="contact"></p>
+      <h2>Questions about affiliate links</h2>
+      <div data-legal="contact"></div>
 
       <div class="legal-back"><button type="button" class="btn btn-outline" data-nav="home">&lsaquo; Back to Home</button></div>
     </div>
@@ -1425,6 +1540,7 @@
           <li id="footer-pinterest"></li>
           <li><a href="https://frontporchrecovery.etsy.com" target="_blank" rel="noopener noreferrer">Etsy</a></li>
           <li><a href="#" data-nav="contact">Contact</a></li>
+          <li><a href="#app" data-nav="app">Get the App</a></li>
         </ul>
       </div>
     </div>
@@ -1515,9 +1631,10 @@ const CONFIG = {
      (otherwise the pages point visitors to the Contact form). Change
      lastUpdated whenever any of those pages' wording changes. */
   legal: {
-    lastUpdated: 'September 28, 2026',
-    ownerName: '',        // e.g. 'Justin Whetstone' or 'Front Porch Recovery LLC'
-    contactEmail: ''      // e.g. 'hello@example.com' — optional
+    lastUpdated: 'October 6, 2026',
+    ownerName: 'Justin Whetstone',
+    contactEmail: 'frontporchrecovery@gmail.com',
+    siteUrl: 'https://fpr26.github.io/front-porch-recovery/'
   },
   /* Affiliate Disclosure switch. While hasAffiliateLinks is false, the page
      says plainly that no links on the site earn a commission. When you join
@@ -6162,38 +6279,60 @@ function renderFooterLinks(){
    textContent is used for owner-supplied values. */
 function renderLegalPages(){
   const L = CONFIG.legal || {};
+  const owner = L.ownerName || 'Front Porch Recovery';
   document.querySelectorAll('[data-legal="updated"]').forEach(el => { el.textContent = L.lastUpdated || ''; });
-  document.querySelectorAll('[data-legal="owner"]').forEach(el => { el.textContent = L.ownerName || 'the creator of Front Porch Recovery'; });
-  document.querySelectorAll('[data-legal="contact"]').forEach(el => {
-    el.textContent = 'Questions about this page? ';
-    if(L.contactEmail){
-      el.appendChild(document.createTextNode('Email '));
+  document.querySelectorAll('[data-legal="owner"]').forEach(el => { el.textContent = owner; });
+  document.querySelectorAll('[data-legal="siteurl"]').forEach(el => {
+    el.innerHTML = '';
+    if(L.siteUrl){
       const a = document.createElement('a');
-      a.className = 'legal-link'; a.href = 'mailto:' + L.contactEmail; a.textContent = L.contactEmail;
+      a.className = 'legal-link'; a.href = L.siteUrl; a.textContent = L.siteUrl.replace(/^https?:\/\//,'').replace(/\/$/,'');
       el.appendChild(a);
-      el.appendChild(document.createTextNode(' or use the '));
     } else {
-      el.appendChild(document.createTextNode('Reach us through the '));
+      el.textContent = 'this address';
     }
+  });
+  // Public contact block: name, brand, email (if set) + the Contact page
+  document.querySelectorAll('[data-legal="contact"]').forEach(el => {
+    el.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'legal-summary';
+    const intro = document.createElement('p');
+    intro.textContent = 'Questions can be sent to:';
+    box.appendChild(intro);
+    const addr = document.createElement('p');
+    addr.style.lineHeight = '1.7';
+    const b1 = document.createElement('strong'); b1.textContent = owner; addr.appendChild(b1);
+    addr.appendChild(document.createElement('br'));
+    addr.appendChild(document.createTextNode('Front Porch Recovery'));
+    if(L.contactEmail){
+      addr.appendChild(document.createElement('br'));
+      const m = document.createElement('a');
+      m.className = 'legal-link'; m.href = 'mailto:' + L.contactEmail; m.textContent = L.contactEmail;
+      addr.appendChild(m);
+    }
+    box.appendChild(addr);
+    const alt = document.createElement('p');
+    alt.appendChild(document.createTextNode('You can also reach us through the '));
     const c = document.createElement('a');
     c.className = 'legal-link'; c.href = '#contact'; c.dataset.nav = 'contact'; c.textContent = 'Contact page';
-    el.appendChild(c);
-    el.appendChild(document.createTextNode('.'));
+    alt.appendChild(c); alt.appendChild(document.createTextNode('.'));
+    box.appendChild(alt);
+    el.appendChild(box);
   });
-  const box = document.getElementById('affiliate-status');
-  if(box){
+  const status = document.getElementById('affiliate-status');
+  if(status){
     const A = CONFIG.affiliate || {};
     const programs = (A.programs || []).filter(p => p && p.name);
-    box.innerHTML = '';
+    status.innerHTML = '';
     const head = document.createElement('p');
     const strong = document.createElement('strong');
     strong.textContent = 'Where things stand right now';
     head.appendChild(strong);
-    box.appendChild(head);
-    const add = (text) => { const p = document.createElement('p'); p.textContent = text; box.appendChild(p); };
+    status.appendChild(head);
+    const add = (text) => { const p = document.createElement('p'); p.textContent = text; status.appendChild(p); };
     if(A.hasAffiliateLinks && programs.length){
-      add('Some links on this site are affiliate links. If you click one and make a qualifying purchase, I may earn a small commission at no extra cost to you. The price you pay is the same either way.');
-      add('Affiliate programs this site currently takes part in:');
+      add('Front Porch Recovery currently takes part in the following affiliate program(s):');
       const ul = document.createElement('ul');
       programs.forEach(p => {
         const li = document.createElement('li');
@@ -6201,10 +6340,10 @@ function renderLegalPages(){
         if(p.statement){ li.appendChild(document.createTextNode(' — ' + p.statement)); }
         ul.appendChild(li);
       });
-      box.appendChild(ul);
+      status.appendChild(ul);
     } else {
-      add('This site does not currently use any affiliate links. No link on Front Porch Recovery pays a commission for clicks or purchases.');
-      add('If that changes, this page will be updated before any affiliate link is added, and it will name each program involved.');
+      add('Front Porch Recovery is not currently part of any affiliate program, and no link on the site earns a commission right now.');
+      add('When an affiliate program is added, it will be listed here before its links go on the site.');
     }
   }
 }
@@ -6891,6 +7030,52 @@ window.addEventListener('hashchange', () => {
     }
   });
 })();
+/* ---------- Installable app ----------
+   Registers sw.js (offline support) when the site runs from its real web
+   address, captures Android/desktop Chrome's install prompt for the
+   "Install Front Porch Recovery" button, and shows a "you're using the app"
+   note when the site is opened from the home screen. */
+(function(){
+  try {
+    const framed = window.self !== window.top;
+    if('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !framed){
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  } catch(err){}
+
+  const body = document.getElementById('app-page-body');
+  const ready = document.getElementById('app-install-ready');
+  const btn = document.getElementById('app-install-btn');
+  function isInstalled(){
+    try {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    } catch(err){ return false; }
+  }
+  if(body && isInstalled()) body.classList.add('app-installed');
+
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();          // show our own button instead of the browser's mini-bar
+    deferredPrompt = e;
+    if(ready) ready.style.display = 'block';
+  });
+  if(btn){
+    btn.addEventListener('click', async () => {
+      if(!deferredPrompt) return;
+      deferredPrompt.prompt();
+      try { await deferredPrompt.userChoice; } catch(err){}
+      deferredPrompt = null;
+      if(ready) ready.style.display = 'none';
+    });
+  }
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    if(ready) ready.style.display = 'none';
+    if(body) body.classList.add('app-installed');
+  });
+})();
 </script>
 
 <!--
@@ -6914,6 +7099,15 @@ correct; those are labeled separately below.
 ============================================================
 
 FULLY WORKING (entirely client-side, nothing external required)
+- Installable app (PWA): manifest.webmanifest, sw.js and the icon PNGs
+  live next to index.html on GitHub Pages. sw.js loads the page
+  network-first (updates show on next online open) and falls back to a
+  saved copy offline; icons/manifest are cached; Google Fonts are cached
+  after first load; Formspree, YouTube and outside links are never
+  intercepted. "Get the App" page (#app) has iPhone/Android steps, an
+  Install button when the browser offers one, and a "you're using the
+  app" note in standalone mode. Home-screen shortcuts: Daily Porch,
+  Check In, Rough Day (Android long-press)
 - Page navigation (all nav items, footer links, home cards, Rough Day FAB)
 - Mobile menu: open/close, Escape to close, focus trap, focus returns to
   the menu button on close, background scroll locked while open

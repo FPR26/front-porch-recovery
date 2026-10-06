@@ -1,0 +1,23 @@
+{
+  "name": "Front Porch Recovery",
+  "short_name": "Front Porch",
+  "description": "Honest recovery, real life, second chances, and a place to belong — one honest day at a time.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F5F2",
+  "theme_color": "#F6F5F2",
+  "lang": "en",
+  "categories": ["health", "lifestyle"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Today's Porch", "short_name": "Daily Porch", "url": "./#daily", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Check In", "short_name": "Check In", "url": "./#checkin", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "I'm having a rough day", "short_name": "Rough Day", "url": "./#roughday", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}
