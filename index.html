@@ -370,6 +370,133 @@
   .milestone-num{background:var(--white); border-radius:var(--radius-m); padding:16px 10px; text-align:center; border:1px solid var(--line);}
   .milestone-num .n{font-size:1.7rem; font-weight:800; color:var(--sage-text);}
   .milestone-num .l{font-size:.75rem; text-transform:none; opacity:.7; margin-top:2px;}
+  /* ---------- Recovery milestones (under each counter) ---------- */
+  .milestone-panel:empty{display:none;}
+  .milestone-panel{margin-top:22px;}
+  .ms-celebrate{
+    background:var(--amber-soft); border-left:5px solid var(--amber); border-radius:var(--radius-m);
+    padding:16px 18px; margin-bottom:14px; color:var(--charcoal);
+  }
+  .ms-celebrate strong{display:block; font-size:1.15rem; margin-bottom:4px;}
+  .ms-celebrate p{font-size:.92rem; opacity:.9;}
+  .ms-summary{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:18px 18px 16px;}
+  .ms-summary-row{display:grid; grid-template-columns:1fr; gap:12px;}
+  @media(min-width:560px){ .ms-summary-row{grid-template-columns:1fr 1fr;} }
+  .ms-summary .ms-k{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--sage-text);}
+  .ms-summary .ms-v{font-size:1.15rem; font-weight:700; color:var(--charcoal); margin-top:2px;}
+  .ms-summary .ms-d{font-size:.84rem; color:var(--charcoal-soft); margin-top:1px;}
+  .ms-bar{height:10px; background:var(--gray); border-radius:999px; overflow:hidden; margin-top:14px;}
+  .ms-bar > span{display:block; height:100%; background:var(--sage-dark); border-radius:999px;}
+  .ms-bar-label{font-size:.8rem; color:var(--charcoal-soft); margin-top:6px;}
+  .ms-chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; list-style:none; padding:0;}
+  .ms-chip{
+    display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border-radius:999px;
+    font-size:.82rem; font-weight:600; color:var(--charcoal); border:1.5px solid rgba(26,26,26,0.22); background:transparent;
+  }
+  .ms-chip svg{width:13px; height:13px; flex:none;}
+  .ms-chip.reached{background:var(--white); border-color:var(--white); color:var(--charcoal);}
+  .ms-chip.reached svg{color:var(--sage-deep);}
+  .ms-chip.next{background:var(--amber-soft); border-color:var(--amber); color:#5c4319;}
+  /* ---------- Milestone badges: counter button + notification setting ---------- */
+  @font-face{font-family:"FPR Cinzel"; src:url(cinzel-700.woff) format("woff"); font-weight:700; font-display:swap;}
+  .ms-badge-btn{margin-top:14px; min-height:42px; padding:10px 18px; font-size:.88rem;}
+  .ms-notify{
+    display:flex; align-items:flex-start; gap:12px; margin-top:14px;
+    background:rgba(255,255,255,0.55); border-radius:var(--radius-m); padding:14px 16px;
+  }
+  .ms-notify-icon{flex:none; width:22px; height:22px; color:var(--sage-deep); margin-top:2px;}
+  .ms-notify-icon svg{width:20px; height:20px;}
+  .ms-notify-text{flex:1; min-width:0;}
+  .ms-notify-label{font-weight:700; font-size:.92rem; color:var(--charcoal); cursor:pointer;}
+  .ms-notify-status{font-size:.82rem; line-height:1.5; color:var(--charcoal); opacity:.85; margin-top:3px;}
+  .ms-switch{
+    -webkit-appearance:none; appearance:none; flex:none; margin-top:2px;
+    width:50px; height:30px; border-radius:999px; background:#c9cfc9; position:relative; cursor:pointer;
+    transition:background .2s ease; border:1px solid rgba(26,26,26,0.15);
+  }
+  .ms-switch::after{
+    content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:999px;
+    background:var(--white); box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .2s ease;
+  }
+  .ms-switch:checked{background:var(--sage-deep);}
+  .ms-switch:checked::after{transform:translateX(20px);}
+  .ms-switch:disabled{opacity:.45; cursor:not-allowed;}
+  @media (prefers-reduced-motion: reduce){ .ms-switch, .ms-switch::after{transition:none;} }
+
+  /* ---------- Milestone badge popup ---------- */
+  html.ms-modal-open, html.ms-modal-open body{overflow:hidden;}
+  .ms-modal{
+    position:fixed; inset:0; z-index:120; background:rgba(26,26,26,0.55);
+    display:flex; align-items:flex-end; justify-content:center;
+    padding:env(safe-area-inset-top,0px) 0 0;
+  }
+  .ms-modal[hidden]{display:none !important;}
+  @media(min-width:640px){ .ms-modal{align-items:center; padding:24px;} }
+  .ms-modal-panel{
+    position:relative; width:100%; max-width:520px; max-height:92vh; overflow-y:auto;
+    background:var(--cream); border-radius:22px 22px 0 0; padding:30px 22px calc(24px + env(safe-area-inset-bottom,0px));
+    box-shadow:0 -10px 40px rgba(0,0,0,.25); text-align:center;
+    animation:msUp .35s ease both;
+  }
+  @media(min-width:640px){ .ms-modal-panel{border-radius:22px; padding:34px 30px 28px;} }
+  @keyframes msUp{from{transform:translateY(24px); opacity:0;} to{transform:none; opacity:1;}}
+  @media (prefers-reduced-motion: reduce){ .ms-modal-panel{animation:none;} }
+  .ms-modal-close{
+    position:absolute; top:10px; right:12px; width:40px; height:40px; border-radius:999px;
+    border:none; background:transparent; font-size:1.7rem; line-height:1; color:var(--charcoal-soft);
+  }
+  .ms-modal-close:hover{background:var(--gray);}
+  .ms-modal-laurel{width:72px; height:46px; margin:0 auto 6px; color:var(--amber);}
+  .ms-modal-laurel svg{width:100%; height:100%;}
+  .ms-modal-kicker{font-size:.75rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--sage-text);}
+  .ms-modal-title{font-size:1.35rem; color:var(--charcoal); margin-top:4px;}
+  .ms-modal-big{font-family:"FPR Cinzel", Georgia, serif; font-weight:700; font-size:2.3rem; color:#22402F; margin-top:10px; line-height:1.1;}
+  .ms-modal-text{font-size:.95rem; color:var(--charcoal-soft); margin-top:10px; line-height:1.55;}
+  .ms-modal-actions{display:flex; flex-direction:column; gap:10px; margin-top:20px;}
+  .ms-modal-link{
+    background:none; border:none; margin-top:14px; font-size:.86rem; color:var(--charcoal-soft);
+    text-decoration:underline; text-underline-offset:3px; padding:8px;
+  }
+  .ms-pick-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; text-align:left;}
+  .ms-pick-option{
+    border:2px solid transparent; background:var(--white); border-radius:14px; padding:6px; display:flex; flex-direction:column; gap:6px;
+    transition:border-color .15s ease, transform .15s ease; box-shadow:0 2px 10px rgba(26,26,26,0.08);
+  }
+  .ms-pick-option:hover{border-color:var(--sage-dark); transform:translateY(-2px);}
+  .ms-pick-option:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+  .ms-pick-option.was-last{border-color:var(--sage);}
+  .ms-pick-frame{position:relative; display:block; aspect-ratio:1/1; border-radius:10px; overflow:hidden; container-type:inline-size;}
+  .ms-pick-frame img{width:100%; height:100%; object-fit:cover; display:block;}
+  .ms-pick-overlay{
+    position:absolute; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center;
+    font-family:"FPR Cinzel", Georgia, serif; font-weight:700; color:#22402F; line-height:1; pointer-events:none;
+  }
+  .ms-pick-overlay .n{font-size:13.5cqw;}
+  .ms-pick-overlay .u{font-size:3.6cqw; letter-spacing:.2em; color:#8A6A2E; text-transform:uppercase; margin-top:2.4cqw; border-top:1px solid #8A6A2E; padding-top:1.6cqw;}
+  .ms-pick-caption{font-size:.8rem; font-weight:600; color:var(--charcoal); padding:0 4px 4px; display:flex; flex-wrap:wrap; align-items:center; gap:6px; text-align:left; line-height:1.3;}
+  .ms-pick-tag{font-size:.66rem; font-weight:700; background:var(--sage); color:var(--charcoal); padding:2px 8px; border-radius:999px;}
+  .ms-pick-milestone{font-family:"FPR Cinzel", Georgia, serif; font-weight:700; font-size:2rem; color:#22402F; text-transform:uppercase; letter-spacing:.04em; margin-top:2px; line-height:1.15;}
+  .ms-pick-change{margin-top:10px; text-align:left;}
+  .ms-pick-change label{display:block; font-size:.82rem; font-weight:600; color:var(--charcoal); margin-bottom:4px;}
+  .ms-pick-change select{width:100%; min-height:44px;}
+  .ms-pick-option.was-last{border-color:var(--sage-deep);}
+  .ms-pick-option.was-last .ms-pick-caption::after{content:"Last used"; font-size:.66rem; font-weight:600; color:var(--sage-text);}
+  .ms-pick-note{font-size:.82rem; color:var(--charcoal-soft); margin-top:14px; line-height:1.5;}
+  .ms-preview-img{width:100%; max-width:440px; margin:16px auto 0; display:block; border-radius:14px; box-shadow:var(--shadow);}
+  .ms-preview-status{font-size:.92rem; color:var(--charcoal-soft); margin-top:14px; min-height:1.4em;}
+  .ms-preview-actions{display:flex; flex-direction:column; gap:10px; margin-top:6px;}
+  .ms-preview-hint{font-size:.82rem; color:var(--charcoal-soft); margin-top:4px;}
+  .ms-preview-privacy{font-size:.78rem; color:var(--sage-text); font-weight:600;}
+  .ms-modal [hidden]{display:none !important;}
+  /* ---------- Notification settings (on-device) ---------- */
+  .ms-notify-more{margin-top:10px; background:rgba(255,255,255,0.55); border-radius:var(--radius-m); padding:12px 16px;}
+  .ms-notify-more[hidden]{display:none !important;}
+  .ms-privacy{border:none; margin:0; padding:0;}
+  .ms-privacy legend{font-weight:700; font-size:.9rem; color:var(--charcoal); margin-bottom:6px; padding:0;}
+  .ms-privacy-opt{display:flex; gap:10px; align-items:flex-start; padding:7px 0; cursor:pointer; font-size:.88rem; color:var(--charcoal);}
+  .ms-privacy-opt input{margin-top:3px; width:18px; height:18px; accent-color:var(--sage-deep); flex:none;}
+  .ms-privacy-ex{display:block; font-size:.8rem; opacity:.85; margin-top:2px;}
+  .pc-rec{font-size:.66rem; font-weight:700; background:var(--sage); color:var(--charcoal); padding:2px 8px; border-radius:999px; margin-left:4px; vertical-align:1px;}
 
   /* ---------- Video embeds ---------- */
   .video-frame{
@@ -415,6 +542,30 @@
   .legal-summary{background:var(--white); border:1px solid var(--line); border-left:4px solid var(--sage); border-radius:var(--radius-m); padding:18px 20px; margin-bottom:8px;}
   .legal-summary p:first-child{margin-top:0; color:var(--charcoal);}
   .legal-back{margin-top:36px;}
+  /* ---------- Privacy notes (Check-In + Recovery Counter) ----------
+     Calm, informational — sage tint, not a warning color. */
+  .privacy-note{
+    display:flex; gap:12px; align-items:flex-start;
+    background:rgba(167,184,168,0.18); border:1px solid rgba(117,131,119,0.28);
+    border-radius:var(--radius-m); padding:16px 18px; margin:4px 0 22px;
+    color:var(--charcoal-soft);
+  }
+  .privacy-note .privacy-icon{
+    flex:none; width:34px; height:34px; border-radius:999px; background:var(--sage);
+    color:var(--sage-deep); display:flex; align-items:center; justify-content:center;
+  }
+  .privacy-note .privacy-icon svg{width:17px; height:17px;}
+  .privacy-note h3{font-size:.98rem; color:var(--charcoal); margin:5px 0 6px;}
+  .privacy-note ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px;}
+  .privacy-note li{font-size:.88rem; line-height:1.5; position:relative; padding-left:16px;}
+  .privacy-note li::before{content:""; position:absolute; left:2px; top:.6em; width:6px; height:6px; border-radius:999px; background:var(--sage-dark);}
+  .privacy-note-short{
+    display:flex; gap:10px; align-items:flex-start;
+    background:rgba(255,255,255,0.55); border-radius:var(--radius-m); padding:12px 14px; margin-top:6px;
+    font-size:.86rem; line-height:1.5; color:var(--charcoal); max-width:420px;
+  }
+  .privacy-note-short .privacy-icon{flex:none; width:22px; height:22px; color:var(--sage-deep); margin-top:1px;}
+  .privacy-note-short .privacy-icon svg{width:18px; height:18px;}
   /* ---------- Get the App page ---------- */
   .app-steps{counter-reset:appstep; list-style:none !important; padding-left:0 !important;}
   .app-steps li{counter-increment:appstep; position:relative; padding-left:40px; min-height:28px;}
@@ -592,6 +743,29 @@
       </div>
     </div>
   </div>
+
+  <!-- Recovery counter (same saved date as the Toolbox counter) -->
+  <section class="block bg-sage" id="home-counter">
+    <div class="wrap grid grid-2" style="align-items:center;">
+      <div class="milestone-box">
+        <h2 style="font-size:1.5rem;">Your recovery counter</h2>
+        <p style="color:var(--charcoal); opacity:.82;">Your progress, right here every time you open the porch. Whatever the number says — today still counts.</p>
+        <div class="field" style="max-width:260px; margin-top:6px;">
+          <label for="home-milestone-date">Recovery start date</label>
+          <input type="date" id="home-milestone-date" aria-describedby="home-milestone-error">
+          <p class="field-error" id="home-milestone-error" role="alert"></p>
+        </div>
+        <p class="privacy-note-short" role="note"><span class="privacy-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg></span><span><strong>Private by design:</strong> Your Recovery Counter information stays on your device and is not sent to Front Porch Recovery.</span></p>
+      </div>
+      <div class="milestone-nums" aria-live="polite">
+        <div class="milestone-num"><div class="n" id="home-ms-days">–</div><div class="l">Total Days</div></div>
+        <div class="milestone-num"><div class="n" id="home-ms-weeks">–</div><div class="l">Full Weeks</div></div>
+        <div class="milestone-num"><div class="n" id="home-ms-months">–</div><div class="l">Full Months</div></div>
+        <div class="milestone-num"><div class="n" id="home-ms-years">–</div><div class="l">Full Years</div></div>
+      </div>
+    </div>
+    <div class="wrap"><div class="milestone-panel" id="home-ms-milestones" aria-live="polite"></div></div>
+  </section>
 
   <!-- Rough day teaser -->
   <section class="block bg-amber-soft" style="background:var(--amber-soft); padding:44px 0;">
@@ -788,6 +962,18 @@
           </div>
         </div>
 
+        <div class="privacy-note" role="note" aria-labelledby="checkin-privacy-title">
+          <span class="privacy-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg></span>
+          <div>
+            <h3 id="checkin-privacy-title">Your Privacy Matters</h3>
+            <ul>
+              <li>Your check-ins and Recovery Counter data stay on your device and are not sent to Front Porch Recovery.</li>
+              <li>Reflection text is not saved.</li>
+              <li>No account or personal information is required to use the app.</li>
+            </ul>
+          </div>
+        </div>
+
         <div class="field">
           <label for="ci-honest">What's one honest thing you can say about today?</label>
           <textarea id="ci-honest"></textarea>
@@ -973,7 +1159,7 @@
           <input type="date" id="milestone-date" aria-describedby="milestone-error">
           <p class="field-error" id="milestone-error" role="alert"></p>
         </div>
-        <p class="hint" style="opacity:.75;">This stays private in your browser — it isn't shared or posted publicly.</p>
+        <p class="privacy-note-short" role="note"><span class="privacy-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg></span><span><strong>Private by design:</strong> Your Recovery Counter information stays on your device and is not sent to Front Porch Recovery.</span></p>
       </div>
       <div class="milestone-nums" id="milestone-nums">
         <div class="milestone-num"><div class="n" id="ms-days">–</div><div class="l">Total Days</div></div>
@@ -982,6 +1168,7 @@
         <div class="milestone-num"><div class="n" id="ms-years">–</div><div class="l">Full Years</div></div>
       </div>
     </div>
+    <div class="wrap"><div class="milestone-panel" id="ms-milestones" aria-live="polite"></div></div>
   </section>
 </section>
 
@@ -1363,6 +1550,15 @@
       <p>This site links to outside websites, including Facebook (our page and the Love Beyond the Chain community group), YouTube, Etsy, Amazon, and recovery-resource organizations such as SAMHSA, 988, USARA, AA, NA, SMART Recovery, and others. Those links open in a new tab and are marked as leaving the site.</p>
       <p>Outside websites have their own privacy practices and policies, and Front Porch Recovery does not control them. Once you leave this site, their policies apply. Purchases you make on Amazon or Etsy are handled entirely by those companies; Front Porch Recovery never receives your payment information.</p>
 
+      <h2>Milestones and badges</h2>
+      <p>Recovery milestones are worked out on your device from the start date you entered in the Recovery Counter. Milestone badges are drawn on your device too — the image is never uploaded to Front Porch Recovery. If you share a badge, it goes only where you choose to send it, and that app's privacy policy applies there.</p>
+      <p>Your badge choices — like which milestones you've already been asked about — are saved only in your browser.</p>
+
+      <h2>Milestone Notifications</h2>
+      <p>Milestone notifications are optional and stay off unless you turn them on. They work entirely on your device: your phone checks for milestone days itself and shows the notification. Front Porch Recovery doesn't use a notification server, and nothing about your notifications is sent anywhere.</p>
+      <p>So your phone can check for milestone days while the app is closed (where your browser supports it), a copy of your start date is kept in your browser's own storage while notifications are on. That copy is removed when you turn notifications off. Turning them off never changes your Recovery Counter or recovery date.</p>
+      <p><strong>What your lock screen shows.</strong> Notifications are private by default: “Front Porch — Something worth celebrating is waiting for you on the porch.” They don't mention recovery, sobriety, or a number of days, months, or years unless you choose “Show milestone in notification” in the counter's settings.</p>
+
       <h2>If you install the app</h2>
       <p>You can add Front Porch Recovery to your phone's home screen as an app. To let it open without internet, your device keeps a copy of the site's own public files (the page, icons, and font). That copy contains no personal information and is never sent anywhere. The Check-In and Recovery Counter work the same way in the app as on the website. Removing the app from your home screen, or clearing this site's data in your browser settings, deletes the copy.</p>
 
@@ -1504,6 +1700,58 @@
 
 </main>
 
+
+<!-- ================= MILESTONE BADGE POPUP =================
+     One dialog with three steps: prompt → choose a background → preview.
+     Controlled by the "Badge UI" script (section 6 of the counter code). -->
+<div id="ms-modal" class="ms-modal" hidden>
+  <div class="ms-modal-panel" role="dialog" aria-modal="true" aria-labelledby="ms-modal-title">
+    <button type="button" class="ms-modal-close" data-ms-action="close" aria-label="Close">&times;</button>
+
+    <div data-view="prompt">
+      <div class="ms-modal-laurel" aria-hidden="true">
+        <svg viewBox="0 0 64 40" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M24 34c-9-3-15-11-15-21"/><path d="M14 25c-4 0-7-2-8-5 3-1 7 0 8 5z"/><path d="M11 17c-3-1-5-4-5-7 3 0 6 2 5 7z"/><path d="M18 31c-3 2-7 2-9 0 2-2 6-3 9 0z"/><path d="M40 34c9-3 15-11 15-21"/><path d="M50 25c4 0 7-2 8-5-3-1-7 0-8 5z"/><path d="M53 17c3-1 5-4 5-7-3 0-6 2-5 7z"/><path d="M46 31c3 2 7 2 9 0-2-2-6-3-9 0z"/><path d="M32 8l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <p class="ms-modal-kicker">Milestone reached</p>
+      <h2 id="ms-modal-title" class="ms-modal-title">You reached a milestone.</h2>
+      <p class="ms-modal-big" data-ms-label></p>
+      <p class="ms-modal-text">Want to create a victory badge?</p>
+      <div class="ms-modal-actions">
+        <button type="button" class="btn btn-primary btn-block" data-ms-action="choose" data-autofocus>Create My Badge</button>
+        <button type="button" class="btn btn-outline btn-block" data-ms-action="later">Maybe Later</button>
+      </div>
+      <button type="button" class="ms-modal-link" data-ms-action="never">Don't ask again for this milestone</button>
+    </div>
+
+    <div data-view="pick" hidden>
+      <p class="ms-modal-kicker" style="margin-top:4px;">Your milestone</p>
+      <p class="ms-pick-milestone" data-ms-label></p>
+      <div class="ms-pick-change" hidden>
+        <label for="ms-pick-select">Make a badge for a different milestone</label>
+        <select id="ms-pick-select"></select>
+      </div>
+      <h2 class="ms-modal-title" style="margin-top:14px;">Choose a background</h2>
+      <p class="ms-modal-text" style="margin-top:4px;">Tap one to see your badge.</p>
+      <div class="ms-pick-grid" role="group" aria-label="Badge backgrounds"></div>
+      <p class="ms-pick-note"></p>
+    </div>
+
+    <div data-view="preview" hidden>
+      <h2 class="ms-modal-title" style="margin-top:4px;">Your <span data-ms-label></span> badge</h2>
+      <img class="ms-preview-img" alt="" hidden>
+      <p class="ms-preview-status" role="status" aria-live="polite"></p>
+      <div class="ms-preview-actions" hidden>
+        <button type="button" class="btn btn-primary btn-block" data-ms-action="share">Share</button>
+        <button type="button" class="btn btn-sage btn-block" data-ms-action="save">Save / Download</button>
+        <button type="button" class="btn btn-outline btn-block" data-ms-action="back">Choose Another Background</button>
+        <p class="ms-preview-hint"></p>
+        <p class="ms-preview-privacy">Made on your device. Nothing is uploaded — it only goes where you choose to send it.</p>
+        <button type="button" class="ms-modal-link" data-ms-action="done">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <footer>
   <div class="wrap">
     <div class="footer-grid">
@@ -1631,7 +1879,7 @@ const CONFIG = {
      (otherwise the pages point visitors to the Contact form). Change
      lastUpdated whenever any of those pages' wording changes. */
   legal: {
-    lastUpdated: 'October 6, 2026',
+    lastUpdated: 'October 12, 2026',
     ownerName: 'Justin Whetstone',
     contactEmail: 'frontporchrecovery@gmail.com',
     siteUrl: 'https://fpr26.github.io/front-porch-recovery/'
@@ -6403,6 +6651,7 @@ function goTo(pageId){
   } catch(err){}
   try { window.scrollTo({top:0, behavior: reduceMotion() ? 'auto' : 'smooth'}); } catch(err){ try{ window.scrollTo(0,0); }catch(e2){} }
   try { if(history.replaceState){ history.replaceState(null,'','#'+pageId); } } catch(err){ /* sandboxed context: ignore */ }
+  try { document.dispatchEvent(new CustomEvent('fpr:pagechange', { detail: { page: pageId } })); } catch(err){}
 }
 document.body.addEventListener('click', (e) => {
   const navBtn = e.target.closest('[data-nav]');
@@ -6735,30 +6984,47 @@ window.addEventListener('hashchange', () => {
   });
 })();
 
-/* ---------- Milestone counter ---------- */
-(function(){
-  const input = document.getElementById('milestone-date');
-  const errorEl = document.getElementById('milestone-error');
-  try {
-    const now = new Date();
-    input.max = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-  } catch(err){}
-  try {
-    const saved = localStorage.getItem('fpr_milestone_date');
-    if(saved) input.value = saved;
-  } catch(err){}
+/* ============================================================
+   RECOVERY COUNTER + MILESTONES + MILESTONE BADGES
+   ------------------------------------------------------------
+   Everything in this section runs on the visitor's own device. The only
+   inputs are the recovery start date they typed (saved in this browser as
+   'fpr_milestone_date') and their badge/notification choices (saved as
+   'fpr_milestone_prefs'). Nothing here is ever sent to a server.
 
-  function fullYearsBetween(s, t){ // s, t are {y,m,d} component objects
-    let years = t.y - s.y;
-    const anniversaryPassed = (t.m > s.m) || (t.m === s.m && t.d >= s.d);
-    if(!anniversaryPassed) years -= 1;
-    return Math.max(0, years);
-  }
-  function fullMonthsBetween(s, t){
-    let months = (t.y - s.y) * 12 + (t.m - s.m);
-    if(t.d < s.d) months -= 1;
-    return Math.max(0, months);
-  }
+   Pieces, top to bottom:
+     1. FPRMilestones – milestone calculation helper (shared by everything)
+     2. Counter       – the two Recovery Counters (home page + Toolbox)
+     3. FPRBadgePrefs – local storage for badge + notification choices
+     4. FPRNotify     – notification helper (permission, show, background)
+     5. FPRBadge      – badge renderer (draws the milestone onto a template)
+     6. Badge UI      – milestone popup, background picker, preview, share
+   ============================================================ */
+
+/* ---------- 1. FPRMilestones: milestone calculation helper ----------
+   Day milestones count days. Month/year milestones use the SAME rules as
+   the Full Months / Full Years tiles, so a badge never disagrees with the
+   numbers on the counter.
+   To add a milestone later, add one line to MILESTONES:
+     label  – what the counter shows
+     unit   – 'day' | 'month' | 'year'
+     n      – how many of that unit
+     badge  – true if reaching it should offer a shareable badge
+   Yearly milestones after 2 Years (3, 4, 5 …) are added automatically. */
+const FPRMilestones = (function(){
+  const MILESTONES = [
+    { label: '24 Hours',  unit: 'day',   n: 1,  badge: false },
+    { label: '1 Week',    unit: 'day',   n: 7,  badge: false },
+    { label: '30 Days',   unit: 'day',   n: 30, badge: true },
+    { label: '60 Days',   unit: 'day',   n: 60, badge: true },
+    { label: '90 Days',   unit: 'day',   n: 90, badge: true },
+    { label: '6 Months',  unit: 'month', n: 6,  badge: true },
+    { label: '9 Months',  unit: 'month', n: 9,  badge: true },
+    { label: '1 Year',    unit: 'year',  n: 1,  badge: true },
+    { label: '18 Months', unit: 'month', n: 18, badge: true },
+    { label: '2 Years',   unit: 'year',  n: 2,  badge: true }
+  ];
+
   function parseYMD(str){
     const parts = String(str).split('-');
     if(parts.length !== 3) return null;
@@ -6776,50 +7042,904 @@ window.addEventListener('hashchange', () => {
     const now = new Date();
     return {y: now.getFullYear(), m: now.getMonth()+1, d: now.getDate()};
   }
-
-  function clearNums(){
-    ['ms-days','ms-weeks','ms-months','ms-years'].forEach(id => document.getElementById(id).textContent = '–');
+  function ymdString(d){ return d.y + '-' + String(d.m).padStart(2,'0') + '-' + String(d.d).padStart(2,'0'); }
+  function utcOf(d){ return Date.UTC(d.y, d.m - 1, d.d); }
+  function daysBetween(a, b){ return Math.round((utcOf(b) - utcOf(a)) / 86400000); }
+  function addDays(d, n){
+    const t = new Date(utcOf(d) + n * 86400000);
+    return {y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate()};
   }
+  function daysInMonth(y, m){ return new Date(Date.UTC(y, m, 0)).getUTCDate(); } // m is 1-12
+  function fullYearsBetween(s, t){ // s, t are {y,m,d} component objects
+    let years = t.y - s.y;
+    const anniversaryPassed = (t.m > s.m) || (t.m === s.m && t.d >= s.d);
+    if(!anniversaryPassed) years -= 1;
+    return Math.max(0, years);
+  }
+  function fullMonthsBetween(s, t){
+    let months = (t.y - s.y) * 12 + (t.m - s.m);
+    if(t.d < s.d) months -= 1;
+    return Math.max(0, months);
+  }
+  // First date on which a milestone counts as reached (matches the tile math).
+  function milestoneDate(start, ms){
+    if(ms.unit === 'day') return addDays(start, ms.n);
+    const months = ms.unit === 'year' ? ms.n * 12 : ms.n;
+    let y = start.y, m = start.m + months;
+    y += Math.floor((m - 1) / 12); m = ((m - 1) % 12) + 1;
+    if(start.d <= daysInMonth(y, m)) return {y, m, d: start.d};
+    m += 1; if(m > 12){ m = 1; y += 1; }   // e.g. Jan 31 + 1 month -> Mar 1
+    return {y, m, d: 1};
+  }
+  function idOf(ms){ return ms.unit + ':' + ms.n; }
+  function fmtDate(d){
+    try { return new Date(utcOf(d)).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', timeZone:'UTC'}); }
+    catch(err){ return d.m + '/' + d.d + '/' + d.y; }
+  }
+  // Every milestone to show for this person: the fixed list plus yearly ones
+  // up to (and including) the next anniversary.
+  function listFor(start, today){
+    const list = MILESTONES.slice();
+    const lastYear = Math.max(2, fullYearsBetween(start, today) + 1);
+    for(let n = 3; n <= lastYear; n++) list.push({ label: n + ' Years', unit: 'year', n, badge: true });
+    return list;
+  }
+  /* compute(start, today) → everything the counter and badges need:
+       all       – every milestone with its date and reached flag, in date order
+       last/next – most recent reached / next upcoming milestone
+       lastBadge – most recent reached milestone that offers a badge */
+  function compute(start, today){
+    const todayUTC = utcOf(today);
+    const all = listFor(start, today).map(ms => {
+      const date = milestoneDate(start, ms);
+      const utc = utcOf(date);
+      return Object.assign({}, ms, { id: idOf(ms), date, utc, reached: utc <= todayUTC });
+    }).sort((a, b) => a.utc - b.utc);
+    const reached = all.filter(m => m.reached);
+    return {
+      all,
+      last: reached[reached.length - 1] || null,
+      next: all.find(m => !m.reached) || null,
+      lastBadge: reached.filter(m => m.badge).pop() || null
+    };
+  }
+  /* Badge wording: the big number and the word under it.
+     30 → "30 / Days", 6 months → "6 / Months", 1 year → "1 / Year",
+     12 years → "12 / Years". */
+  function badgeText(ms){
+    const one = ms.n === 1;
+    const word = ms.unit === 'day' ? (one ? 'Day' : 'Days')
+               : ms.unit === 'month' ? (one ? 'Month' : 'Months')
+               : (one ? 'Year' : 'Years');
+    return { number: String(ms.n), unit: word, label: ms.n + ' ' + word };
+  }
+  // Early recovery = under one year. Seasoned = 1 year and beyond.
+  function stageOf(ms){
+    return (ms.unit === 'year' || (ms.unit === 'month' && ms.n >= 12)) ? 'seasoned' : 'early';
+  }
+  // The saved start date, or null if none / invalid / in the future.
+  function savedStart(){
+    let v = '';
+    try { v = localStorage.getItem('fpr_milestone_date') || ''; } catch(err){ return null; }
+    const s = parseYMD(v);
+    if(!s || compareYMD(s, todayYMD()) > 0) return null;
+    return s;
+  }
+  return { MILESTONES, parseYMD, compareYMD, todayYMD, ymdString, utcOf, daysBetween, addDays,
+           fullYearsBetween, fullMonthsBetween, milestoneDate, idOf, fmtDate, compute,
+           badgeText, stageOf, savedStart };
+})();
 
-  function update(){
-    errorEl.textContent = '';
-    errorEl.classList.remove('show');
-    input.classList.remove('invalid');
-    if(!input.value){ clearNums(); return; }
+/* ---------- 2. Recovery Counter ----------
+   One saved start date (localStorage 'fpr_milestone_date') shown in two
+   places: the home page and the Toolbox page. Changing the date in either
+   one updates both. The date math is unchanged. */
+(function(){
+  const M = FPRMilestones;
+  const COUNTERS = [
+    { input: 'milestone-date',      error: 'milestone-error',      prefix: 'ms-' },
+    { input: 'home-milestone-date', error: 'home-milestone-error', prefix: 'home-ms-' }
+  ].map(c => ({
+    input: document.getElementById(c.input),
+    errorEl: document.getElementById(c.error),
+    prefix: c.prefix
+  })).filter(c => c.input && c.errorEl);
+  if(!COUNTERS.length) return;
 
-    const start = parseYMD(input.value);
-    const today = todayYMD();
+  function setMaxToToday(){
+    try {
+      const max = M.ymdString(M.todayYMD());
+      COUNTERS.forEach(c => { c.input.max = max; });
+    } catch(err){}
+  }
+  setMaxToToday();
+  try {
+    const saved = localStorage.getItem('fpr_milestone_date');
+    if(saved) COUNTERS.forEach(c => { c.input.value = saved; });
+  } catch(err){}
 
+  const CHECK_SVG = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const BELL_SVG = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+
+  function renderMilestones(c, start, today){
+    const panel = document.getElementById(c.prefix + 'milestones');
+    if(!panel) return;
+    const todayUTC = M.utcOf(today);
+    const { all, last, next, lastBadge } = M.compute(start, today);
+
+    let html = '';
+    if(last && last.utc === todayUTC){
+      html += `<div class="ms-celebrate" role="status"><strong>Today you reached ${last.label}.</strong><p>That's real — every one of those days counted. Take a minute to let that land.</p></div>`;
+    }
+    html += `<div class="ms-summary"><div class="ms-summary-row">`;
+    html += `<div><div class="ms-k">Last milestone</div>` + (last
+      ? `<div class="ms-v">${last.label}</div><div class="ms-d">Reached ${M.fmtDate(last.date)}</div>`
+      : `<div class="ms-v">Day one</div><div class="ms-d">You started. That counts.</div>`) + `</div>`;
+    if(next){
+      const toGo = Math.round((next.utc - todayUTC) / 86400000);
+      html += `<div><div class="ms-k">Next milestone</div><div class="ms-v">${next.label}</div><div class="ms-d">${M.fmtDate(next.date)} · ${toGo === 1 ? 'tomorrow' : toGo + ' days to go'}</div></div>`;
+    }
+    html += `</div>`;
+    if(next){
+      const from = last ? last.utc : M.utcOf(start);
+      const pct = Math.max(0, Math.min(100, Math.round((todayUTC - from) / (next.utc - from) * 100)));
+      html += `<div class="ms-bar" role="progressbar" aria-label="Progress to ${next.label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div>`;
+      html += `<p class="ms-bar-label">${pct}% of the way from ${last ? last.label : 'day one'} to ${next.label}</p>`;
+    }
+    if(last){
+      // Manual entry point: opens on the latest milestone; any reached one can be chosen inside.
+      html += `<button type="button" class="btn btn-sage ms-badge-btn" data-badge-ms="${(lastBadge || last).id}">Create a Milestone Badge</button>`;
+    }
+    html += `</div>`;
+
+    // Badges: fold long runs of reached yearly badges into one range chip
+    let chips = all;
+    const yearlyReached = all.filter(m => m.unit === 'year' && m.n >= 3 && m.reached);
+    if(yearlyReached.length > 4){
+      const first = yearlyReached[0], lastY = yearlyReached[yearlyReached.length - 1];
+      chips = all.filter(m => !(m.unit === 'year' && m.n >= 3 && m.reached));
+      const idx = chips.findIndex(m => m.utc > lastY.utc);
+      chips.splice(idx === -1 ? chips.length : idx, 0, { label: `${first.n}–${lastY.n} Years`, reached: true, range: true });
+    }
+    html += `<ul class="ms-chips" aria-label="Recovery milestones">` + chips.map(m => {
+      const cls = m.reached ? 'reached' : (m === next ? 'next' : '');
+      const state = m.reached ? 'reached' : (m === next ? 'next milestone' : 'upcoming');
+      return `<li class="ms-chip ${cls}" aria-label="${m.label}, ${state}">${m.reached ? CHECK_SVG : ''}${m.label}</li>`;
+    }).join('') + `</ul>`;
+
+    // Milestone notifications setting (same setting in both counters)
+    const toggleId = c.prefix + 'notify-toggle';
+    html += `<div class="ms-notify">
+      <span class="ms-notify-icon">${BELL_SVG}</span>
+      <div class="ms-notify-text">
+        <label for="${toggleId}" class="ms-notify-label">Milestone notifications</label>
+        <p class="ms-notify-status" data-ms-notify-status></p>
+      </div>
+      <input type="checkbox" role="switch" class="ms-switch" id="${toggleId}" data-ms-notify>
+    </div>
+    <div class="ms-notify-more" data-ms-notify-more hidden>
+      <fieldset class="ms-privacy">
+        <legend>Notification privacy</legend>
+        <label class="ms-privacy-opt"><input type="radio" name="${c.prefix}privacy" value="private" data-ms-privacy>
+          <span><strong>Private notification</strong> <span class="pc-rec">Recommended</span><span class="ms-privacy-ex">“Something worth celebrating is waiting for you on the porch.”</span></span></label>
+        <label class="ms-privacy-opt"><input type="radio" name="${c.prefix}privacy" value="detailed" data-ms-privacy>
+          <span><strong>Show milestone in notification</strong><span class="ms-privacy-ex">“You reached 1 Year. That matters.”</span></span></label>
+      </fieldset>
+    </div>`;
+    panel.innerHTML = html; // safe: built only from fixed labels and computed dates, never visitor text
+  }
+  function clearMilestones(){
+    COUNTERS.forEach(c => { const p = document.getElementById(c.prefix + 'milestones'); if(p) p.innerHTML = ''; });
+  }
+  function setNums(c, vals){
+    ['days','weeks','months','years'].forEach((k, i) => {
+      const el = document.getElementById(c.prefix + k);
+      if(el) el.textContent = vals ? vals[i] : '–';
+    });
+  }
+  function showError(msg){
+    COUNTERS.forEach(c => {
+      c.errorEl.textContent = msg;
+      c.errorEl.classList.add('show');
+      c.input.classList.add('invalid');
+      setNums(c, null);
+    });
+    clearMilestones();
+  }
+  function announce(start, today){
+    // Lets the badge system (below) react whenever the counter changes.
+    try { document.dispatchEvent(new CustomEvent('fpr:counterupdate', { detail: { start, today } })); } catch(err){}
+  }
+  function update(value){
+    COUNTERS.forEach(c => {
+      if(c.input.value !== value) c.input.value = value;
+      c.errorEl.textContent = '';
+      c.errorEl.classList.remove('show');
+      c.input.classList.remove('invalid');
+    });
+    if(!value){ COUNTERS.forEach(c => setNums(c, null)); clearMilestones(); announce(null, null); return; }
+    const start = M.parseYMD(value);
+    const today = M.todayYMD();
     if(!start){
-      errorEl.textContent = 'That doesn\u2019t look like a valid date.';
-      errorEl.classList.add('show');
-      input.classList.add('invalid');
-      clearNums();
+      showError('That doesn’t look like a valid date.');
+      announce(null, null);
       return;
     }
-    if(compareYMD(start, today) > 0){
-      errorEl.textContent = 'That date hasn\u2019t happened yet — pick today or an earlier date.';
-      errorEl.classList.add('show');
-      input.classList.add('invalid');
-      clearNums();
+    if(M.compareYMD(start, today) > 0){
+      showError('That date hasn’t happened yet — pick today or an earlier date.');
+      announce(null, null);
       return;
     }
-
     /* Date-only UTC arithmetic for the exact day count — using Date.UTC for
        both endpoints means daylight-saving shifts in the visitor's local
        time zone can never introduce an off-by-one day. */
-    const startUTC = Date.UTC(start.y, start.m - 1, start.d);
-    const todayUTC = Date.UTC(today.y, today.m - 1, today.d);
-    const days = Math.round((todayUTC - startUTC) / 86400000);
-
-    document.getElementById('ms-days').textContent = days;
-    document.getElementById('ms-weeks').textContent = Math.floor(days / 7);
-    document.getElementById('ms-months').textContent = fullMonthsBetween(start, today);
-    document.getElementById('ms-years').textContent = fullYearsBetween(start, today);
-    try { localStorage.setItem('fpr_milestone_date', input.value); } catch(err){}
+    const days = M.daysBetween(start, today);
+    const vals = [days, Math.floor(days / 7), M.fullMonthsBetween(start, today), M.fullYearsBetween(start, today)];
+    try { localStorage.setItem('fpr_milestone_date', value); } catch(err){}
+    COUNTERS.forEach(c => { setNums(c, vals); renderMilestones(c, start, today); });
+    announce(start, today);
   }
-  input.addEventListener('change', update);
-  update();
+  COUNTERS.forEach(c => {
+    c.input.addEventListener('change', () => update(c.input.value));
+  });
+  window.FPRCounter = { refresh: () => { setMaxToToday(); update(COUNTERS[0].input.value); } };
+  update(COUNTERS[0].input.value);
+
+  /* If the app stays open past midnight (or is reopened from the
+     background the next day), refresh the count so it's never a day behind. */
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible') window.FPRCounter.refresh();
+  });
+})();
+
+/* ---------- 3. FPRBadgePrefs: local badge + notification choices ----------
+   Saved only in this browser (localStorage 'fpr_milestone_prefs'):
+     notify       – true if "Milestone notifications" is switched on
+     handled      – milestones already taken care of, so we never re-ask:
+                    { '<start date>|<milestone id>': 'created' | 'dismissed' }
+     snooze       – "Maybe later": don't ask again before this date
+     notified     – milestones a device notification was already shown for
+     lastTemplate – the background picked last time
+   Keys include the start date, so if someone changes their date (for any
+   reason) the milestones on the new timeline are treated fresh. */
+const FPRBadgePrefs = (function(){
+  const KEY = 'fpr_milestone_prefs';
+  function read(){
+    let p = {};
+    try { p = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(err){ p = {}; }
+    return Object.assign({ notify: false, handled: {}, snooze: {}, notified: {}, lastTemplate: null }, p);
+  }
+  function write(p){ try { localStorage.setItem(KEY, JSON.stringify(p)); } catch(err){} }
+  function update(fn){ const p = read(); fn(p); write(p); return p; }
+  function keyFor(start, ms){ return FPRMilestones.ymdString(start) + '|' + ms.id; }
+  return { read, write, update, keyFor };
+})();
+
+/* ---------- 4. FPRNotify: milestone notifications (on-device only) ----------
+   Nothing about notifications ever leaves the device. When "Milestone
+   notifications" is switched on, the phone itself checks for milestone days:
+   in the background where the browser supports Periodic Background Sync
+   (Chrome/Edge on Android with the app installed), or at midnight while the
+   app is open. The notification text is private by default:
+     "Front Porch — Something worth celebrating is waiting for you on the porch."
+   It names the milestone only if the person chooses "Show milestone".
+
+   Kept on the phone in IndexedDB ('fpr-local' → 'notify'), which the
+   service worker can read while the app is closed (it can't read localStorage):
+     { enabled, mode: 'local', privacy, start (a copy of the start date, only
+       while notifications are on), notified (milestones already notified) }
+   ============================================================ */
+const FPRLocalDB = (function(){
+  let dbp = null;
+  function open(){
+    if(dbp) return dbp;
+    dbp = new Promise((resolve) => {
+      try {
+        const req = indexedDB.open('fpr-local', 1);
+        req.onupgradeneeded = () => { req.result.createObjectStore('kv'); };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+        req.onblocked = () => resolve(null);
+      } catch(err){ resolve(null); }
+    });
+    return dbp;
+  }
+  async function tx(mode, fn){
+    const db = await open(); if(!db) return null;
+    return new Promise((resolve) => {
+      try {
+        const t = db.transaction('kv', mode); const store = t.objectStore('kv');
+        const r = fn(store);
+        t.oncomplete = () => resolve(r && 'result' in r ? r.result : null);
+        t.onerror = t.onabort = () => resolve(null);
+      } catch(err){ resolve(null); }
+    });
+  }
+  return {
+    get: (k) => tx('readonly', s => s.get(k)),
+    set: (k, v) => tx('readwrite', s => s.put(v, k)),
+    del: (k) => tx('readwrite', s => s.delete(k))
+  };
+})();
+
+const FPRNotify = (function(){
+  const M = FPRMilestones, DB = FPRLocalDB;
+  const DEFAULT_STATE = { enabled: false, mode: null, privacy: 'private', notified: {} };
+  let cached = Object.assign({}, DEFAULT_STATE);
+
+  function supported(){ return typeof window !== 'undefined' && 'Notification' in window; }
+  function permission(){ return supported() ? Notification.permission : 'unsupported'; }
+  async function registration(){
+    try {
+      if(!('serviceWorker' in navigator)) return null;
+      return await Promise.race([navigator.serviceWorker.ready, new Promise(r => setTimeout(() => r(null), 3000))]);
+    } catch(err){ return null; }
+  }
+  async function getState(){
+    const s = await DB.get('notify');
+    cached = Object.assign({}, DEFAULT_STATE, s || {});
+    return cached;
+  }
+  async function saveState(s){ cached = Object.assign({}, DEFAULT_STATE, s); await DB.set('notify', cached); return cached; }
+  async function request(){
+    if(!supported()) return 'unsupported';
+    try { return await Notification.requestPermission(); } catch(err){ return Notification.permission; }
+  }
+  // Periodic Background Sync (Chrome/Edge on Android, installed app).
+  async function periodic(on){
+    try {
+      const reg = await registration();
+      if(!reg || !('periodicSync' in reg)) return;
+      if(on){
+        let st = 'granted';
+        try { st = (await navigator.permissions.query({ name: 'periodic-background-sync' })).state; } catch(err){}
+        if(st === 'granted') await reg.periodicSync.register('fpr-milestone-check', { minInterval: 12 * 60 * 60 * 1000 });
+      } else {
+        await reg.periodicSync.unregister('fpr-milestone-check');
+      }
+    } catch(err){}
+  }
+  async function backgroundSupported(){ const reg = await registration(); return !!(reg && 'periodicSync' in reg); }
+  async function enable(){
+    const start = M.savedStart();
+    const s = await getState();
+    await saveState(Object.assign({}, s, {
+      enabled: true, mode: 'local', privacy: s.privacy === 'detailed' ? 'detailed' : 'private',
+      start: start ? M.ymdString(start) : null, notified: s.notified || {}
+    }));
+    await periodic(true);
+  }
+  // Off: stop notifications and remove the device copy of the start date.
+  // The Recovery Counter and the recovery date itself are never touched.
+  async function disable(){
+    const s = await getState();
+    await periodic(false);
+    await saveState({ enabled: false, mode: null, privacy: s.privacy || 'private', notified: {} });
+  }
+  async function setPrivacy(p){
+    const s = await getState();
+    s.privacy = p === 'detailed' ? 'detailed' : 'private';
+    await saveState(s);
+  }
+  // Keeps the device-only copy of the start date in step with the counter.
+  async function sync(){
+    const s = await getState();
+    if(!s.enabled) return s;
+    if(permission() !== 'granted'){ await disable(); return getState(); } // permission removed in settings
+    const start = M.savedStart();
+    s.start = start ? M.ymdString(start) : null;
+    return saveState(s);
+  }
+  function wording(ms, privacy){
+    if(ms && privacy === 'detailed') return { title: 'Front Porch', body: `You reached ${M.badgeText(ms).label}. That matters.` };
+    return { title: 'Front Porch', body: 'Something worth celebrating is waiting for you on the porch.' };
+  }
+  async function showLocal(ms, key){
+    const s = await getState();
+    if(!s.enabled || permission() !== 'granted') return false;
+    if(key && s.notified && s.notified[key]) return false;
+    const w = wording(ms, s.privacy);
+    const reg = await registration();
+    try {
+      const opts = { body: w.body, icon: 'icon-192.png', badge: 'favicon-32.png', tag: 'fpr-milestone', data: { url: './#home' } };
+      if(reg && reg.showNotification) await reg.showNotification(w.title, opts); else new Notification(w.title, opts);
+      if(key){ s.notified = Object.assign({}, s.notified, { [key]: true }); await saveState(s); }
+      return true;
+    } catch(err){ return false; }
+  }
+  async function consumeTap(){ // true if the app was just opened from a milestone notification
+    const t = await DB.get('notifyTap');
+    if(!t) return false;
+    await DB.del('notifyTap');
+    return Date.now() - t < 10 * 60 * 1000;
+  }
+  // Older builds kept a copy in Cache Storage; remove it.
+  try { if('caches' in window) caches.delete('fpr-prefs'); } catch(err){}
+
+  return { supported, permission, request, enable, disable, sync, setPrivacy, getState,
+           showLocal, wording, backgroundSupported, consumeTap };
+})();
+
+/* ---------- 5. FPRBadge: badge renderer ----------
+   Draws the chosen background at full size (1254 × 1254) on a canvas and
+   writes the milestone ("90 / Days", "1 / Year") inside the template's
+   cream circle. Each template's "box" is the measured text-safe area of
+   its circle, in pixels of the original image.
+   All four are always offered in this fixed order and the person chooses —
+   nothing is assigned by length of recovery. 'stage' and 'tone' only
+   describe each design. To add a template: add an entry here and upload
+   its images (and add them to CORE_FILES in sw.js for offline use). */
+const FPRBadge = (function(){
+  const SIZE = 1254;
+  const TEMPLATES = [
+    { id: 'proud-victory', name: 'Proud of This Victory',     stage: 'early', tone: 'Celebratory',
+      src: 'badge-proud-victory.jpg', thumb: 'badge-proud-victory-thumb.jpg', box: { cx: 676, cy: 398, w: 470, h: 360 } },
+    { id: 'keep-going',    name: 'Keep Going',                stage: 'early', tone: 'Uplifting',
+      src: 'badge-keep-going.jpg',    thumb: 'badge-keep-going-thumb.jpg',    box: { cx: 782, cy: 380, w: 440, h: 340 } },
+    { id: 'built-this-recovery', name: 'Built This Recovery', stage: 'seasoned', tone: 'Grounded',
+      src: 'badge-built-this-recovery.jpg', thumb: 'badge-built-this-recovery-thumb.jpg', box: { cx: 676, cy: 398, w: 470, h: 360 } },
+    { id: 'showing-up',    name: 'You’re Still Showing Up', stage: 'seasoned', tone: 'Steady',
+      src: 'badge-showing-up.jpg',    thumb: 'badge-showing-up-thumb.jpg',    box: { cx: 716, cy: 374, w: 420, h: 330 } }
+  ];
+  const INK = '#22402F';      // deep porch green, matches the ribbons
+  const GOLD = '#8A6A2E';     // warm gold for the rule and the unit word
+  const FONT_FAMILY = '"FPR Cinzel", Georgia, "Times New Roman", serif';
+  let fontReady = null;
+  const images = {};
+
+  function ensureFont(){
+    if(fontReady) return fontReady;
+    fontReady = (async () => {
+      try {
+        const face = new FontFace('FPR Cinzel', 'url(cinzel-700.woff)', { weight: '700' });
+        await face.load(); document.fonts.add(face);
+      } catch(err){ /* falls back to Georgia */ }
+    })();
+    return fontReady;
+  }
+  function loadImage(src){
+    if(!images[src]){
+      images[src] = new Promise((resolve, reject) => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = () => resolve(img);
+        img.onerror = () => { delete images[src]; reject(new Error('Could not load ' + src)); };
+        img.src = src;
+      });
+    }
+    return images[src];
+  }
+  function byId(id){ return TEMPLATES.find(t => t.id === id) || TEMPLATES[0]; }
+  // Suggested order: matching stage first, then the others.
+  function ordered(stage){
+    return TEMPLATES.filter(t => t.stage === stage).concat(TEMPLATES.filter(t => t.stage !== stage));
+  }
+  // Letter-spaced text that works in every browser (canvas letterSpacing isn't universal).
+  function spacedWidth(ctx, text, spacing){
+    let w = 0; for(const ch of text) w += ctx.measureText(ch).width + spacing;
+    return w - spacing;
+  }
+  function drawSpaced(ctx, text, cx, y, spacing){
+    let x = cx - spacedWidth(ctx, text, spacing) / 2;
+    ctx.textAlign = 'left';
+    for(const ch of text){ ctx.fillText(ch, x, y); x += ctx.measureText(ch).width + spacing; }
+  }
+  /* The milestone text block, centered in the template's box:
+         90          ← big number
+       ──◆──         ← thin gold rule
+        DAYS         ← letter-spaced unit word */
+  function drawText(ctx, tpl, ms){
+    const t = FPRMilestones.badgeText(ms);
+    const { cx, cy, w, h } = tpl.box;
+    let numSize = h * 0.58;
+    ctx.font = `700 ${numSize}px ${FONT_FAMILY}`;
+    let nw = ctx.measureText(t.number).width;
+    if(nw > w){ numSize *= w / nw; ctx.font = `700 ${numSize}px ${FONT_FAMILY}`; nw = ctx.measureText(t.number).width; }
+    const nm = ctx.measureText(t.number);
+    const numAsc = nm.actualBoundingBoxAscent || numSize * 0.72;
+
+    let unitSize = h * 0.16;
+    const unitText = t.unit.toUpperCase();
+    ctx.font = `700 ${unitSize}px ${FONT_FAMILY}`;
+    let spacing = unitSize * 0.22;
+    let uw = spacedWidth(ctx, unitText, spacing);
+    if(uw > w){ const k = w / uw; unitSize *= k; spacing *= k; ctx.font = `700 ${unitSize}px ${FONT_FAMILY}`; uw = spacedWidth(ctx, unitText, spacing); }
+    const unitAsc = ctx.measureText(unitText).actualBoundingBoxAscent || unitSize * 0.72;
+
+    const gap1 = h * 0.075, ruleH = h * 0.03, gap2 = h * 0.075;
+    const total = numAsc + gap1 + ruleH + gap2 + unitAsc;
+    let y = cy - total / 2;
+
+    // Number: soft light edge underneath for a pressed-in look
+    ctx.font = `700 ${numSize}px ${FONT_FAMILY}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    const numBase = y + numAsc;
+    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillText(t.number, cx, numBase + 3);
+    ctx.fillStyle = INK; ctx.fillText(t.number, cx, numBase);
+
+    // Rule with a small diamond
+    const ruleY = numBase + gap1 + ruleH / 2;
+    const half = Math.max(uw, nw * 0.7) / 2 + h * 0.06;
+    const dia = h * 0.028;
+    ctx.strokeStyle = GOLD; ctx.lineWidth = Math.max(2, h * 0.009); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cx - half, ruleY); ctx.lineTo(cx - dia * 2.2, ruleY);
+    ctx.moveTo(cx + dia * 2.2, ruleY); ctx.lineTo(cx + half, ruleY); ctx.stroke();
+    ctx.fillStyle = GOLD; ctx.beginPath();
+    ctx.moveTo(cx, ruleY - dia); ctx.lineTo(cx + dia, ruleY); ctx.lineTo(cx, ruleY + dia); ctx.lineTo(cx - dia, ruleY); ctx.closePath(); ctx.fill();
+
+    // Unit word
+    ctx.font = `700 ${unitSize}px ${FONT_FAMILY}`;
+    const unitBase = ruleY + ruleH / 2 + gap2 + unitAsc;
+    ctx.fillStyle = GOLD; drawSpaced(ctx, unitText, cx, unitBase, spacing);
+  }
+  // Returns a canvas with the finished badge.
+  async function render(templateId, ms){
+    const tpl = byId(templateId);
+    await ensureFont();
+    const img = await loadImage(tpl.src);
+    const canvas = document.createElement('canvas');
+    canvas.width = SIZE; canvas.height = SIZE;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, SIZE, SIZE);
+    drawText(ctx, tpl, ms);
+    return canvas;
+  }
+  function toBlob(canvas){
+    return new Promise((resolve, reject) => {
+      try { canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png'); }
+      catch(err){ reject(err); }
+    });
+  }
+  function fileName(ms){
+    return 'front-porch-recovery-' + FPRMilestones.badgeText(ms).label.toLowerCase().replace(/\s+/g, '-') + '.png';
+  }
+  return { TEMPLATES, byId, ordered, render, toBlob, fileName, ensureFont, SIZE };
+})();
+
+/* ---------- 6. Badge UI: popup → background picker → preview → share ----------
+   When the popup appears: the person's most recent badge milestone was
+   reached in the last 14 days, they haven't created a badge for it or said
+   "Don't ask again", and they didn't tap "Maybe later" earlier today.
+   It never pops up on the Rough Day, Check-In, or Contact pages — it waits
+   until they're somewhere else in the app. */
+(function(){
+  const M = FPRMilestones, P = FPRBadgePrefs, N = FPRNotify, B = FPRBadge;
+  const ASK_WINDOW_DAYS = 14;
+  const QUIET_PAGES = ['roughday', 'checkin', 'contact'];
+
+  const modal = document.getElementById('ms-modal');
+  if(!modal) return;
+  const panel = modal.querySelector('.ms-modal-panel');
+  const views = {
+    prompt:  modal.querySelector('[data-view="prompt"]'),
+    pick:    modal.querySelector('[data-view="pick"]'),
+    preview: modal.querySelector('[data-view="preview"]')
+  };
+  let current = null;        // { start, ms, key, fromPrompt }
+  let lastFocus = null;
+  let previewBlob = null, previewUrl = null;
+
+  function activePage(){
+    const a = document.querySelector('.page.active');
+    return a ? a.id.replace('page-', '') : '';
+  }
+  function isOpen(){ return !modal.hidden; }
+  function pending(force){
+    const start = M.savedStart();
+    if(!start) return null;
+    const today = M.todayYMD();
+    const ms = M.compute(start, today).lastBadge;
+    if(!ms) return null;
+    const key = P.keyFor(start, ms);
+    const prefs = P.read();
+    if(prefs.handled[key]) return null;
+    if(M.daysBetween(ms.date, today) > ASK_WINDOW_DAYS) return null;
+    if(!force && prefs.snooze[key] && prefs.snooze[key] > M.ymdString(today)) return null;
+    return { start, ms, key, today };
+  }
+
+  // ---- open / close ----
+  function show(view){
+    Object.entries(views).forEach(([k, el]) => { el.hidden = k !== view; });
+    const focusEl = views[view].querySelector('[data-autofocus]') || views[view].querySelector('button');
+    if(focusEl) setTimeout(() => focusEl.focus(), 30);
+  }
+  function open(view){
+    if(!isOpen()){
+      lastFocus = document.activeElement;
+      modal.hidden = false;
+      document.documentElement.classList.add('ms-modal-open');
+    }
+    show(view);
+  }
+  function close(){
+    modal.hidden = true;
+    document.documentElement.classList.remove('ms-modal-open');
+    if(previewUrl){ URL.revokeObjectURL(previewUrl); previewUrl = null; }
+    previewBlob = null;
+    if(lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch(err){}
+  }
+  function snooze(){
+    if(!current || !current.fromPrompt) return;
+    const tomorrow = M.ymdString(M.addDays(M.todayYMD(), 1));
+    P.update(p => { p.snooze[current.key] = tomorrow; });
+  }
+  function markHandled(state){
+    if(!current) return;
+    P.update(p => { p.handled[current.key] = state; delete p.snooze[current.key]; });
+  }
+
+  // ---- views ----
+  function fillMilestoneText(){
+    const t = M.badgeText(current.ms);
+    modal.querySelectorAll('[data-ms-label]').forEach(el => { el.textContent = t.label; });
+  }
+  function openPrompt(p){
+    current = { start: p.start, ms: p.ms, key: p.key, fromPrompt: true };
+    fillMilestoneText();
+    open('prompt');
+  }
+  function buildPicker(){
+    const grid = views.pick.querySelector('.ms-pick-grid');
+    const t = M.badgeText(current.ms);
+    const last = P.read().lastTemplate;
+    grid.innerHTML = '';
+    B.TEMPLATES.forEach((tpl) => {         // fixed order; the person chooses
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ms-pick-option';
+      btn.dataset.template = tpl.id;
+      btn.setAttribute('aria-label', `${tpl.name} background, ${tpl.tone.toLowerCase()} style, with ${t.label}` + (tpl.id === last ? ', last used' : ''));
+      const frame = document.createElement('span'); frame.className = 'ms-pick-frame';
+      const img = document.createElement('img'); img.src = tpl.thumb; img.alt = ''; img.loading = 'lazy';
+      // live text overlay positioned exactly where the badge text will go
+      const over = document.createElement('span'); over.className = 'ms-pick-overlay';
+      over.style.left = (tpl.box.cx / B.SIZE * 100) + '%';
+      over.style.top = (tpl.box.cy / B.SIZE * 100) + '%';
+      over.innerHTML = '<span class="n"></span><span class="u"></span>';
+      over.querySelector('.n').textContent = t.number;
+      over.querySelector('.u').textContent = t.unit;
+      frame.appendChild(img); frame.appendChild(over);
+      const cap = document.createElement('span'); cap.className = 'ms-pick-caption';
+      cap.textContent = tpl.name;
+      const tag = document.createElement('span'); tag.className = 'ms-pick-tag'; tag.textContent = tpl.tone;
+      cap.appendChild(tag);
+      if(tpl.id === last){ btn.classList.add('was-last'); btn.setAttribute('aria-current', 'true'); }
+      btn.appendChild(frame); btn.appendChild(cap);
+      grid.appendChild(btn);
+    });
+    views.pick.querySelector('.ms-pick-note').textContent =
+      'Any background works for any milestone. The first two feel more celebratory; the last two are calmer and steadier.';
+    // Other milestones already reached (newest first), so an earlier one can be celebrated too.
+    const wrap = views.pick.querySelector('.ms-pick-change');
+    const sel = views.pick.querySelector('#ms-pick-select');
+    const start = current.start || M.savedStart();
+    const reached = start ? M.compute(start, M.todayYMD()).all.filter(m => m.reached).reverse() : [];
+    const seen = new Set(); const options = [];
+    reached.forEach(m => { const lab = M.badgeText(m).label; if(!seen.has(lab)){ seen.add(lab); options.push({ m, lab }); } });
+    sel.innerHTML = '';
+    options.forEach(({ m, lab }) => {
+      const o = document.createElement('option'); o.value = m.id; o.textContent = lab;
+      if(m.id === current.ms.id) o.selected = true;
+      sel.appendChild(o);
+    });
+    wrap.hidden = options.length < 2;
+  }
+  function changeMilestone(id){
+    const start = current.start || M.savedStart(); if(!start) return;
+    const ms = M.compute(start, M.todayYMD()).all.find(m => m.id === id && m.reached);
+    if(!ms) return;
+    current = { start, ms, key: P.keyFor(start, ms), fromPrompt: false };
+    fillMilestoneText();
+    buildPicker();
+  }
+  function openPicker(){
+    B.ensureFont();
+    buildPicker();
+    open('pick');
+  }
+  async function openPreview(templateId){
+    P.update(p => { p.lastTemplate = templateId; });
+    open('preview');
+    const imgEl = views.preview.querySelector('.ms-preview-img');
+    const status = views.preview.querySelector('.ms-preview-status');
+    const actions = views.preview.querySelector('.ms-preview-actions');
+    imgEl.hidden = true; actions.hidden = true;
+    status.textContent = 'Making your badge…';
+    try {
+      const canvas = await B.render(templateId, current.ms);
+      previewBlob = await B.toBlob(canvas);
+      if(previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(previewBlob);
+      imgEl.src = previewUrl;
+      imgEl.alt = `Front Porch Recovery milestone badge: ${M.badgeText(current.ms).label}`;
+      imgEl.hidden = false; actions.hidden = false;
+      views.preview.querySelector('[data-ms-action="save"]').hidden = false;
+      status.textContent = '';
+      const shareBtn = views.preview.querySelector('[data-ms-action="share"]');
+      shareBtn.hidden = !canShareFile();
+      views.preview.querySelector('.ms-preview-hint').textContent = canShareFile()
+        ? 'Tip: tap Share, then “Save Image” to keep it in your photos.'
+        : 'Sharing straight from the app isn’t available on this device. Tap Save / Download, then share the picture from your Photos or Files.';
+    } catch(err){
+      status.textContent = 'Sorry — the badge couldn’t be made right now. Check your connection and try again, or pick a different background.';
+      // keep "Choose a different background" available; hide share/save
+      actions.hidden = false;
+      views.preview.querySelector('[data-ms-action="share"]').hidden = true;
+      views.preview.querySelector('[data-ms-action="save"]').hidden = true;
+      views.preview.querySelector('.ms-preview-hint').textContent = '';
+    }
+  }
+  function badgeFile(){
+    return new File([previewBlob], B.fileName(current.ms), { type: 'image/png' });
+  }
+  function canShareFile(){
+    try {
+      return !!(previewBlob && navigator.canShare && navigator.share && navigator.canShare({ files: [badgeFile()] }));
+    } catch(err){ return false; }
+  }
+  async function shareBadge(){
+    if(!previewBlob) return;
+    try {
+      await navigator.share({ files: [badgeFile()], title: 'My recovery milestone', text: M.badgeText(current.ms).label + ' — one honest day at a time.' });
+      markHandled('created');
+      flash('Shared. Proud of you.');
+    } catch(err){
+      if(err && err.name === 'AbortError') return; // they closed the share sheet
+      saveBadge('Sharing didn’t work here, so your badge was saved instead. You can share it from your Photos or Files.');
+    }
+  }
+  function saveBadge(message){
+    if(!previewBlob) return;
+    const a = document.createElement('a');
+    a.href = previewUrl; a.download = B.fileName(current.ms);
+    document.body.appendChild(a); a.click(); a.remove();
+    markHandled('created');
+    flash(typeof message === 'string' ? message : 'Saved. Proud of you. You can share it from your Photos or Files whenever you like.');
+  }
+  function flash(msg){
+    const s = views.preview.querySelector('.ms-preview-status');
+    s.textContent = msg;
+  }
+
+  // ---- the check that decides whether to show the popup ----
+  // force = opened from a milestone notification: skip "Maybe later" for this check.
+  function check(force){
+    if(isOpen()) return;
+    if(QUIET_PAGES.includes(activePage())) return;
+    const p = pending(force === true);
+    if(!p) return;
+    // App open but in the background (e.g. a milestone day starts at midnight):
+    // use an on-device notification (if switched on); the popup waits for their return.
+    if(document.visibilityState === 'hidden'){
+      N.showLocal(p.ms, p.key);
+      return;
+    }
+    openPrompt(p);
+  }
+  async function checkAfterOpen(){
+    const tapped = await N.consumeTap();
+    check(tapped);
+  }
+  // While the app is open, re-check when a new day begins.
+  function scheduleMidnight(){
+    const now = new Date();
+    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+    setTimeout(() => { if(window.FPRCounter) window.FPRCounter.refresh(); check(); scheduleMidnight(); }, next - now);
+  }
+
+  // ---- notification settings (in each counter's milestone panel; on-device only) ----
+  async function renderNotifyUI(){
+    const s = await N.getState();
+    const perm = N.permission();
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const installed = (() => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch(e){ return false; } })();
+    let msg;
+    if(perm === 'unsupported'){
+      msg = isIOS && !installed
+        ? 'On iPhone, notifications work after you add the app to your Home Screen (see Get the App). Either way, you’ll get a celebration here when you open the app on a milestone day.'
+        : 'This browser doesn’t support notifications. You’ll still get a celebration here when you open the app on a milestone day.';
+    } else if(!s.enabled){
+      msg = 'Off. Turn on to get a notification on milestone days where your device allows it. Nothing leaves your device.';
+    } else if(perm === 'denied'){
+      msg = 'Notifications are blocked for this site in your browser settings. You’ll still see milestone celebrations in the app.';
+    } else if(await N.backgroundSupported()){
+      msg = 'On. Your phone may notify you on milestone days even when the app is closed. Nothing leaves your device.';
+    } else {
+      msg = 'On. You’ll get a notification on milestone days while the app is open in the background, and a celebration whenever you open it. Nothing leaves your device.';
+    }
+    document.querySelectorAll('[data-ms-notify]').forEach(el => {
+      el.checked = !!s.enabled && perm !== 'unsupported';
+      el.disabled = perm === 'unsupported';
+    });
+    document.querySelectorAll('[data-ms-notify-status]').forEach(el => { el.textContent = msg; });
+    document.querySelectorAll('[data-ms-notify-more]').forEach(el => { el.hidden = !s.enabled; });
+    document.querySelectorAll('[data-ms-privacy]').forEach(el => { el.checked = el.value === (s.privacy === 'detailed' ? 'detailed' : 'private'); });
+  }
+  async function onToggle(el){
+    if(!el.checked){
+      await N.disable();
+      renderNotifyUI();
+      return;
+    }
+    if(!N.supported()){ el.checked = false; renderNotifyUI(); return; }
+    let perm = N.permission();
+    if(perm === 'default') perm = await N.request();
+    if(perm === 'granted'){
+      await N.enable();
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        reg.showNotification('Front Porch', { body: 'Milestone notifications are on.', icon: 'icon-192.png', badge: 'favicon-32.png', tag: 'fpr-milestone' });
+      } catch(err){}
+    }
+    renderNotifyUI();
+  }
+
+  // ---- wiring ----
+  modal.addEventListener('click', (e) => {
+    const act = e.target.closest('[data-ms-action]');
+    if(e.target === modal){ snooze(); close(); return; } // tap outside = maybe later
+    if(!act) {
+      const opt = e.target.closest('.ms-pick-option');
+      if(opt) openPreview(opt.dataset.template);
+      return;
+    }
+    const a = act.dataset.msAction;
+    if(a === 'choose')  openPicker();
+    if(a === 'later')   { snooze(); close(); }
+    if(a === 'never')   { markHandled('dismissed'); close(); }
+    if(a === 'close')   { snooze(); close(); }
+    if(a === 'back')    openPicker();
+    if(a === 'share')   shareBadge();
+    if(a === 'save')    saveBadge();
+    if(a === 'done')    close();
+  });
+  modal.addEventListener('change', (e) => {
+    if(e.target && e.target.id === 'ms-pick-select') changeMilestone(e.target.value);
+  });
+  modal.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape'){ snooze(); close(); return; }
+    if(e.key === 'Tab'){ // keep focus inside the dialog
+      const f = [...panel.querySelectorAll('button:not([hidden]):not([disabled]), [href]')].filter(x => x.offsetParent !== null);
+      if(!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  });
+  // "Make a badge" buttons in the counters open the picker directly.
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-badge-ms]');
+    if(!b) return;
+    const start = M.savedStart(); if(!start) return;
+    const ms = M.compute(start, M.todayYMD()).all.find(m => m.id === b.dataset.badgeMs);
+    if(!ms) return;
+    current = { start, ms, key: P.keyFor(start, ms), fromPrompt: false };
+    fillMilestoneText();
+    openPicker();
+  });
+  document.addEventListener('change', (e) => {
+    if(!e.target.matches) return;
+    if(e.target.matches('[data-ms-notify]')) onToggle(e.target);
+    if(e.target.matches('[data-ms-privacy]')) N.setPrivacy(e.target.value).then(renderNotifyUI);
+  });
+  document.addEventListener('fpr:counterupdate', () => {
+    renderNotifyUI();
+    N.sync().then(renderNotifyUI).catch(() => {});
+    setTimeout(check, 600);
+  });
+  document.addEventListener('fpr:pagechange', () => setTimeout(check, 500));
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') setTimeout(checkAfterOpen, 600); });
+  // Tapping a milestone notification focuses the app; the service worker tells us.
+  if('serviceWorker' in navigator){
+    try { navigator.serviceWorker.addEventListener('message', (e) => { if(e.data && e.data.type === 'fpr-milestone-open') setTimeout(checkAfterOpen, 300); }); } catch(err){}
+  }
+
+  renderNotifyUI();
+  N.sync().then(renderNotifyUI).catch(() => {});
+  scheduleMidnight();
+  setTimeout(checkAfterOpen, 900); // first look, shortly after the app opens
+  window.FPRBadgeUI = { check, openPicker: (ms) => { const start = M.savedStart(); if(!start) return; current = { start, ms, key: P.keyFor(start, ms), fromPrompt: false }; fillMilestoneText(); openPicker(); } };
 })();
 
 /* ---------- Breathing tool: Inhale/Exhale synced to the circle, or a static
@@ -7099,6 +8219,23 @@ correct; those are labeled separately below.
 ============================================================
 
 FULLY WORKING (entirely client-side, nothing external required)
+- Milestone badges: popup when a badge milestone (30/60/90 days, 6/9/18
+  months, then yearly) was reached in the last 14 days and not yet handled
+  ("Maybe later" = ask again tomorrow; "Don't ask again" = never for that
+  milestone). Picker shows 4 backgrounds (early-recovery pair suggested
+  under 1 year, seasoned pair from 1 year); canvas renders the milestone
+  text into each template's measured circle; PNG preview with Web Share
+  (files) or Save image. "Milestone notifications" switch in both
+  counters; device notifications via the service worker, background check
+  through Periodic Background Sync where supported, midnight check while
+  the app is open. All prefs in localStorage 'fpr_milestone_prefs'
+- Recovery milestones under both counters: last/next milestone, days to
+  go, progress bar, badges (24 Hours, 1 Week, 30/60/90 Days, 6/9 Months,
+  1 Year, 18 Months, 2 Years, then yearly), and a celebration note on the
+  day one is reached. Computed from the saved start date; nothing new stored
+- Recovery Counter appears on the home page (right below the hero) and on
+  the Toolbox page; both read/write the same saved date, so changing either
+  updates both. Counts refresh when the app is reopened on a new day
 - Installable app (PWA): manifest.webmanifest, sw.js and the icon PNGs
   live next to index.html on GitHub Pages. sw.js loads the page
   network-first (updates show on next online open) and falls back to a
