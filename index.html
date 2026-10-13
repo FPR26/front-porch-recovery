@@ -679,7 +679,19 @@
   .toolbox-search-wrap input[type=text]{font-size:1rem;}
   #resource-body h3{font-size:1.1rem;}
   #resource-body ul{list-style:none; padding:0; margin:0;}
+
+  /* ---------- Optional account sign-in (Phase 1) ---------- */
+  .header-account-btn{background:none; border:none; font-size:.92rem; font-weight:600; color:var(--charcoal); padding:8px 6px; white-space:nowrap;}
+  .header-account-btn:hover{text-decoration:underline;}
+  #account-email-display{font-weight:700; color:var(--charcoal); word-break:break-word;}
+  .account-inactive-notice{font-size:.85rem; color:var(--charcoal-soft); background:var(--gray); border-radius:var(--radius-m); padding:10px 12px; margin-top:12px;}
+  .account-inactive-notice[hidden]{display:none !important;}
 </style>
+<!-- Supabase client (Phase 1): optional member accounts only. Loaded from
+     jsdelivr's CDN mirror of the published npm package; nothing here can
+     read or write Recovery Counter or Daily Check-In data, which stay
+     on-device as before. See supabase/README.md for the backend contract. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <a href="#main" class="skip-link">Skip to content</a>
@@ -706,6 +718,7 @@
       <button data-nav="about">About</button>
     </nav>
     <div style="display:flex; align-items:center; gap:10px;">
+      <button class="header-account-btn" id="header-account-btn" type="button" data-account-action="open">Sign In</button>
       <button class="btn btn-primary header-cta" data-nav="checkin">Check In</button>
       <button class="menu-toggle" id="menuOpenBtn" aria-label="Open menu" aria-expanded="false">
         <span></span>
@@ -732,6 +745,7 @@
     <button data-nav="about">My Story</button>
     <button data-nav="contact">Contact</button>
     <button data-nav="app">Get the App</button>
+    <button type="button" id="mobile-account-btn" data-account-action="open">Account / Sign In</button>
   </div>
   <div class="foot">
     <button class="btn btn-amber btn-block" data-nav="roughday">I'm having a rough day</button>
@@ -1856,6 +1870,47 @@
   </div>
 </div>
 
+<!-- ================= ACCOUNT (Phase 1: optional sign-in) =================
+     Fully optional. Visiting, checking in, and using the Recovery Counter
+     never require an account. No password: a one-time email link
+     (Supabase magic link) is the only sign-in method. Signing in does not
+     upload or sync Recovery Counter or Daily Check-In data — those stay
+     on this device exactly as before. -->
+<div id="account-modal" class="ms-modal" hidden>
+  <div class="ms-modal-panel" role="dialog" aria-modal="true" aria-labelledby="account-modal-title">
+    <button type="button" class="ms-modal-close" data-account-action="close" aria-label="Close">&times;</button>
+
+    <div data-account-view="signed-out">
+      <h2 id="account-modal-title" class="ms-modal-title">Sign in to Front Porch Recovery</h2>
+      <p class="ms-modal-text">A free account is completely optional. It's only used to recognize you across visits — it does not sync your Recovery Counter or Daily Check-In, and you can keep using every feature on this site without ever signing in.</p>
+      <p class="ms-modal-text">No password: enter your email and we'll send a one-time sign-in link. The display name below (optional — leave it blank to use "New member") is only saved the first time you sign in; it won't change an existing account.</p>
+
+      <form id="account-signin-form" novalidate>
+        <div class="field" style="text-align:left; margin-top:16px;">
+          <label for="account-display-name">Display name (optional)</label>
+          <input type="text" id="account-display-name" autocomplete="nickname" maxlength="80" placeholder="A first name or nickname is fine">
+          <p class="field-error" id="account-display-name-error" role="alert"></p>
+        </div>
+        <div class="field" style="text-align:left;">
+          <label for="account-email">Email</label>
+          <input type="email" id="account-email" autocomplete="email" required aria-describedby="account-email-error">
+          <p class="field-error" id="account-email-error" role="alert"></p>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="account-signin-submit">Send sign-in link</button>
+      </form>
+      <p class="status-msg" id="account-status" role="status" aria-live="polite"></p>
+      <p class="account-inactive-notice" id="account-inactive-notice" hidden>Account sign-in isn't connected yet. You can still use every other feature on this site without one.</p>
+    </div>
+
+    <div data-account-view="signed-in" hidden>
+      <h2 class="ms-modal-title">You're signed in</h2>
+      <p class="ms-modal-text">Signed in as <span id="account-email-display"></span>.</p>
+      <p class="ms-modal-text">This doesn't change anything else here — your Recovery Counter and Daily Check-In still stay on this device only.</p>
+      <button type="button" class="btn btn-outline btn-block" style="margin-top:14px;" data-account-action="signout">Sign out</button>
+    </div>
+  </div>
+</div>
+
 <footer>
   <div class="wrap">
     <div class="footer-grid">
@@ -1957,7 +2012,17 @@ const CONFIG = {
        Submission format may need to be adjusted for that provider —
        Mailchimp, ConvertKit, Formspree, etc. each expect different
        fields/headers, so this is not a drop-in value for any of them. */
-    newsletterEndpoint: ''
+    newsletterEndpoint: '',
+    /* Phase 1: optional member accounts only (Supabase magic-link sign-in).
+       This is the project's publishable ("anon") key — safe to ship in
+       client-side code precisely because every table it can touch is
+       locked down by the grants and RLS policies in supabase/schema.sql.
+       The service_role key is never used here or anywhere in this file.
+       Leaving either value blank disables the account UI gracefully
+       (it still shows, with a notice that sign-in isn't connected) —
+       nothing else on the site depends on this being set. */
+    supabaseUrl: 'https://ptmazxslypzslhhcqudn.supabase.co',
+    supabaseAnonKey: 'sb_publishable_1_TI_W8Zuk9319d-akZYrw_uAEVBtz8'
   },
   links: {
     etsy: 'https://frontporchrecovery.etsy.com',
@@ -6747,7 +6812,8 @@ function reduceMotion(){
 }
 const pages = document.querySelectorAll('.page');
 const mobileNav = document.getElementById('mobile-nav');
-function goTo(pageId){
+function goTo(pageId, opts){
+  opts = opts || {};
   if(pageId === 'daily'){ try { renderDaily(getTodaysPorchDay()); } catch(err){} }
   try {
     pages.forEach(p => p.classList.toggle('active', p.id === 'page-' + pageId));
@@ -6761,7 +6827,16 @@ function goTo(pageId){
     }
   } catch(err){}
   try { window.scrollTo({top:0, behavior: reduceMotion() ? 'auto' : 'smooth'}); } catch(err){ try{ window.scrollTo(0,0); }catch(e2){} }
-  try { if(history.replaceState){ history.replaceState(null,'','#'+pageId); } } catch(err){ /* sandboxed context: ignore */ }
+  /* skipHashUpdate (Phase 1): a Supabase magic-link redirect lands with
+     #access_token=...&refresh_token=...&type=magiclink in the hash. That
+     is not a page id, so without this guard the line below would
+     immediately overwrite it with '#home' via history.replaceState —
+     destroying the tokens before the Supabase client (initialized later,
+     asynchronously) ever gets to read them from the URL. The one caller
+     that can carry an auth-callback hash (initial page load, below)
+     passes skipHashUpdate so this routes to the home view visually
+     without touching location.hash. */
+  try { if(!opts.skipHashUpdate && history.replaceState){ history.replaceState(null,'','#'+pageId); } } catch(err){ /* sandboxed context: ignore */ }
   try { document.dispatchEvent(new CustomEvent('fpr:pagechange', { detail: { page: pageId } })); } catch(err){}
 }
 document.body.addEventListener('click', (e) => {
@@ -6819,10 +6894,20 @@ document.body.addEventListener('click', (e) => {
 })();
 
 let initial = 'home';
-try { initial = (location.hash || '#home').replace('#',''); } catch(err){ initial = 'home'; }
+/* Phase 1: a Supabase magic-link redirect also arrives as a URL hash
+   (#access_token=...&type=magiclink...), not a page id. Route those to
+   the home view without letting goTo() rewrite location.hash, so the
+   Supabase client — created later in this script — can still read and
+   consume the tokens once it initializes. */
+let isAuthCallbackHash = false;
+try {
+  const rawHash = location.hash || '';
+  isAuthCallbackHash = /access_token=|error_description=|type=(magiclink|signup|recovery|invite|email_change)/.test(rawHash);
+  initial = isAuthCallbackHash ? 'home' : rawHash.replace('#','') || 'home';
+} catch(err){ initial = 'home'; }
 const DETAIL_PARENT = { resource: 'toolbox', story: 'stories', porchtopic: 'porch' };
 if(DETAIL_PARENT[initial]) initial = DETAIL_PARENT[initial];
-if(document.getElementById('page-' + initial)){ goTo(initial); } else { goTo('home'); }
+if(document.getElementById('page-' + initial)){ goTo(initial, { skipHashUpdate: isAuthCallbackHash }); } else { goTo('home', { skipHashUpdate: isAuthCallbackHash }); }
 /* Typing a different #page into the address bar (no reload) should switch pages too. */
 window.addEventListener('hashchange', () => {
   let h = '';
@@ -8424,6 +8509,154 @@ const FPRBadge = (function(){
       submitBtn.textContent = originalLabel;
     }
   });
+})();
+/* ---------- Optional account sign-in (Phase 1) ----------
+   Supabase magic-link auth only. This never touches the Recovery Counter
+   or Daily Check-In — those remain on-device-only, exactly as documented
+   in the Privacy page. Signing in has no effect anywhere else on the
+   site yet; this is only the account shell Phase 1 adds. */
+(function(){
+  const supabaseUrl = CONFIG.services.supabaseUrl;
+  const supabaseAnonKey = CONFIG.services.supabaseAnonKey;
+
+  const modal = document.getElementById('account-modal');
+  const headerBtn = document.getElementById('header-account-btn');
+  const mobileBtn = document.getElementById('mobile-account-btn');
+  const signedOutView = modal.querySelector('[data-account-view="signed-out"]');
+  const signedInView = modal.querySelector('[data-account-view="signed-in"]');
+  const form = document.getElementById('account-signin-form');
+  const displayNameInput = document.getElementById('account-display-name');
+  const displayNameErr = document.getElementById('account-display-name-error');
+  const emailInput = document.getElementById('account-email');
+  const emailErr = document.getElementById('account-email-error');
+  const statusEl = document.getElementById('account-status');
+  const inactiveNotice = document.getElementById('account-inactive-notice');
+  const submitBtn = document.getElementById('account-signin-submit');
+  const emailDisplay = document.getElementById('account-email-display');
+
+  function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+  function setStatus(kind, text){
+    statusEl.className = 'status-msg' + (text ? ' show' : '') + (kind ? ' status-' + kind : '');
+    statusEl.textContent = text || '';
+  }
+
+  let client = null;
+  if (supabaseUrl && supabaseAnonKey && window.supabase && typeof window.supabase.createClient === 'function') {
+    try {
+      client = window.supabase.createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
+    } catch(err){ client = null; }
+  }
+
+  if (!client) {
+    inactiveNotice.hidden = false;
+    form.querySelectorAll('input, button').forEach(el => el.disabled = true);
+  }
+
+  function openModal(){
+    modal.hidden = false;
+    document.documentElement.classList.add('ms-modal-open');
+    if (client) emailInput.focus();
+  }
+  function closeModal(){
+    modal.hidden = true;
+    document.documentElement.classList.remove('ms-modal-open');
+  }
+
+  [headerBtn, mobileBtn].forEach(btn => {
+    if (!btn) return;
+    btn.addEventListener('click', openModal);
+  });
+  modal.addEventListener('click', function(e){
+    if (e.target === modal) closeModal();
+  });
+  modal.querySelectorAll('[data-account-action="close"]').forEach(btn => {
+    btn.addEventListener('click', closeModal);
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !modal.hidden) closeModal();
+  });
+
+  function renderSession(session){
+    const signedIn = !!(session && session.user);
+    signedOutView.hidden = signedIn;
+    signedInView.hidden = !signedIn;
+    [headerBtn, mobileBtn].forEach(btn => {
+      if (!btn) return;
+      btn.textContent = signedIn
+        ? (btn === mobileBtn ? 'Account' : (session.user.email || 'Account'))
+        : (btn === mobileBtn ? 'Account / Sign In' : 'Sign In');
+    });
+    if (signedIn) emailDisplay.textContent = session.user.email || '';
+  }
+
+  if (client) {
+    client.auth.getSession().then(({ data }) => renderSession(data.session));
+    client.auth.onAuthStateChange((_event, session) => renderSession(session));
+
+    form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      emailErr.textContent = '';
+      emailErr.classList.remove('show');
+      emailInput.classList.remove('invalid');
+      displayNameErr.textContent = '';
+      displayNameErr.classList.remove('show');
+      displayNameInput.classList.remove('invalid');
+      const email = emailInput.value.trim();
+      const displayName = displayNameInput.value.trim();
+      if (!email || !isValidEmail(email)) {
+        emailErr.textContent = 'Please enter a valid email address.';
+        emailErr.classList.add('show');
+        emailInput.classList.add('invalid');
+        return;
+      }
+      if (displayName.length > 80) {
+        displayNameErr.textContent = 'Display name must be 80 characters or fewer.';
+        displayNameErr.classList.add('show');
+        displayNameInput.classList.add('invalid');
+        return;
+      }
+      submitBtn.disabled = true;
+      const originalLabel = submitBtn.textContent;
+      submitBtn.textContent = 'Sending...';
+      setStatus('info', 'Sending your sign-in link...');
+      try {
+        // display_name only takes effect the moment this account is first
+        // created — it becomes raw_user_meta_data.display_name, which the
+        // on_auth_user_created trigger in schema.sql reads into profiles
+        // on insert only. It has no effect, and is not re-sent, on a
+        // returning user's sign-in link. Leaving it blank keeps the
+        // trigger's own "New member" default.
+        const otpOptions = { emailRedirectTo: window.location.origin + window.location.pathname };
+        if (displayName) otpOptions.data = { display_name: displayName };
+        const { error } = await client.auth.signInWithOtp({
+          email,
+          options: otpOptions
+        });
+        if (error) {
+          setStatus('error', 'Could not send a sign-in link right now. Please try again in a moment.');
+        } else {
+          setStatus('success', 'Check your email for a sign-in link. You can close this window.');
+          form.reset();
+        }
+      } catch(err){
+        setStatus('error', 'Could not send a sign-in link right now. Please try again in a moment.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
+      }
+    });
+
+    modal.querySelectorAll('[data-account-action="signout"]').forEach(btn => {
+      btn.addEventListener('click', async function(){
+        btn.disabled = true;
+        try { await client.auth.signOut(); } catch(err){}
+        btn.disabled = false;
+        closeModal();
+      });
+    });
+  }
 })();
 /* ---------- Installable app ----------
    Registers sw.js (offline support) when the site runs from its real web
