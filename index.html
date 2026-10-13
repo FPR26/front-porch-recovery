@@ -166,6 +166,29 @@
   }
   .hero-inner{max-width:var(--maxw);margin:0 auto;padding:0 20px; display:grid; gap:30px;}
   .hero-eyebrow{color:var(--sage); font-weight:600; font-size:.85rem;}
+
+  /* Compact recovery-progress summary inside the hero — same saved start
+     date/localStorage as the full Recovery Counter below (section
+     #home-counter). Purely a dynamic read + a shortcut link to that
+     section; it does not store or compute anything of its own. */
+  .hero-progress{
+    display:block; width:100%; max-width:360px; margin-top:18px;
+    background:rgba(255,255,255,0.06); border:1px solid var(--line-soft);
+    border-radius:var(--radius-m); padding:16px 18px; text-align:left;
+    cursor:pointer; transition:background .2s ease, transform .15s ease;
+  }
+  .hero-progress:hover{background:rgba(255,255,255,0.1); transform:translateY(-1px);}
+  .hero-progress:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+  .hero-progress-label{
+    display:block; color:var(--sage); font-weight:700; font-size:.72rem;
+    letter-spacing:.04em; text-transform:uppercase;
+  }
+  .hero-progress-main{
+    display:block; color:var(--white); font-weight:800; font-size:1.6rem;
+    line-height:1.2; margin-top:4px;
+  }
+  .hero-progress-tagline{display:block; color:var(--gray); opacity:.85; font-size:.88rem; margin-top:4px;}
+  .hero-progress-cta{display:block; color:var(--amber); font-weight:600; font-size:.85rem; margin-top:8px;}
   .hero h1{font-size:2.35rem; line-height:1.12; margin-top:10px; max-width:12ch;}
   .hero p.lede{margin-top:16px; color:var(--gray); font-size:1.05rem; max-width:42ch;}
   .hero-actions{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px;}
@@ -729,6 +752,12 @@
     <div class="hero-inner">
       <div>
         <p class="hero-eyebrow">Front Porch Recovery — One honest day at a time</p>
+        <button type="button" class="hero-progress" id="hero-progress" aria-describedby="hero-progress-main">
+          <span class="hero-progress-label">Your Progress</span>
+          <span class="hero-progress-main" id="hero-progress-main">Set your recovery date</span>
+          <span class="hero-progress-tagline" id="hero-progress-tagline" hidden>One honest day at a time.</span>
+          <span class="hero-progress-cta" id="hero-progress-cta">Start your counter →</span>
+        </button>
         <h1>Pull up a chair.<br>You belong here.</h1>
         <p class="lede">A place for people rebuilding their lives. Recovery. Real life. Second chances. Hard conversations. Dumb jokes. Accountability. Hope. And learning how to live again — one honest day at a time.</p>
         <div class="hero-actions">
@@ -1253,10 +1282,85 @@
       <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Real-life observations, not motivational speeches.</h1>
     </div>
   </section>
+  <section class="block bg-cream tight">
+    <div class="wrap" style="max-width:680px;">
+      <p class="kicker">Stories From the Porch</p>
+      <p style="margin-top:10px; font-size:1.05rem; color:var(--charcoal-soft); line-height:1.7;">Real people. Real experiences. Different paths.<br>Recovery does not look the same for everybody. This is a place for people to share what they have lived, what they have learned, what they are still working through, and what helped them keep going.</p>
+      <button type="button" class="btn btn-amber" data-nav="story-submit" style="margin-top:18px;">Share Your Porch Story</button>
+    </div>
+  </section>
   <section class="block bg-cream">
     <div class="wrap">
       <div class="grid grid-3" id="stories-grid"></div>
       <p style="margin-top:26px; font-size:.85rem; color:var(--charcoal-soft); opacity:.75; font-style:italic; max-width:60ch;">Stories shared on Front Porch Recovery reflect individual lived experiences. Everyone's recovery and mental-health journey is different.</p>
+    </div>
+  </section>
+</section>
+
+<!-- ================= SHARE YOUR PORCH STORY ================= -->
+<section class="page" id="page-story-submit">
+  <section class="block bg-charcoal tight">
+    <div class="wrap">
+      <button type="button" class="btn btn-outline-light" data-nav="stories" style="margin-bottom:18px;">&lsaquo; Back to Porch Stories</button>
+      <p class="hero-eyebrow" style="color:#A7B8A8;">Share Your Porch Story</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Pull up a chair. We're listening.</h1>
+      <p style="color:var(--gray); margin-top:10px; max-width:56ch;">Every story is reviewed by Front Porch Recovery before it's ever shared publicly. Nothing you submit here is published automatically.</p>
+    </div>
+  </section>
+  <section class="block bg-cream">
+    <div class="wrap" style="max-width:600px;">
+      <div id="story-submit-inactive-notice" class="status-msg status-info" style="margin-bottom:20px;" role="status">
+        <strong>Story submissions coming soon.</strong>
+        <p style="margin-top:6px; font-weight:400;">We're getting the porch ready. Submitting a story through the website isn't available just yet.</p>
+      </div>
+      <form class="form-card" id="story-submit-form" novalidate>
+        <div class="field">
+          <label for="ps-name">Display name</label>
+          <input type="text" id="ps-name" name="displayName" maxlength="80" required placeholder="Your name, a nickname, or &ldquo;Anonymous&rdquo;">
+          <p class="field-error" id="ps-name-error" role="alert"></p>
+        </div>
+        <div class="field">
+          <label for="ps-title">Story title</label>
+          <input type="text" id="ps-title" name="storyTitle" maxlength="120" required>
+          <p class="field-error" id="ps-title-error" role="alert"></p>
+        </div>
+        <div class="field">
+          <label for="ps-category">Category</label>
+          <select id="ps-category" name="category">
+            <option>Recovery</option>
+            <option>Mental health</option>
+            <option>Rebuilding life</option>
+            <option>Relationships</option>
+            <option>Grief / loss</option>
+            <option>Trauma / healing</option>
+            <option>Milestones</option>
+            <option>Hope</option>
+            <option>Humor</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ps-story">Your Porch Story</label>
+          <textarea id="ps-story" name="story" maxlength="8000" required style="min-height:220px;"></textarea>
+          <p class="field-error" id="ps-story-error" role="alert"></p>
+        </div>
+        <div class="field">
+          <label for="ps-email">Contact email <span style="font-weight:400;">(optional)</span></label>
+          <input type="email" id="ps-email" name="contactEmail" maxlength="254">
+          <p class="field-error" id="ps-email-error" role="alert"></p>
+          <p style="margin-top:6px; font-size:.82rem; color:var(--charcoal-soft); opacity:.8;">This is only so Front Porch Recovery can contact you about your submission. It will not be published.</p>
+        </div>
+        <div class="field" style="margin-bottom:10px;">
+          <label style="display:flex; align-items:flex-start; gap:10px; font-weight:400; cursor:pointer;">
+            <input type="checkbox" id="ps-permission" name="permission" required style="margin-top:4px; width:auto; flex-shrink:0;">
+            <span>I give Front Porch Recovery permission to review, edit for basic clarity if needed, and publish this story using the display name I provided.</span>
+          </label>
+          <p class="field-error" id="ps-permission-error" role="alert"></p>
+        </div>
+        <p style="margin:0 0 18px; font-size:.82rem; color:var(--charcoal-soft); opacity:.8;">Please don't submit private medical records, passwords, financial information, addresses, or other highly sensitive personal information.</p>
+        <button type="submit" class="btn btn-primary btn-block" id="ps-submit">Send My Porch Story</button>
+        <p id="ps-status" class="status-msg" role="status" aria-live="polite"></p>
+      </form>
     </div>
   </section>
 </section>
@@ -5841,8 +5945,8 @@ const CONFIG = {
      YouTube URLs. renderMusic() automatically converts a standard YouTube
      URL (watch?v=, youtu.be/, /embed/, /shorts/) into a responsive embed. */
   music: [
-    {title:'Walk Away Tall', url:'https://youtu.be/oK8-MJDwqME?si=Tt1fu2KLrn3VUtlA'},
-    {title:'Only the Water Knows', url:'https://youtu.be/V3RkWVm7tVA?si=xYYQvdcdnYRb_bLh'},
+    {title:'Walk Away Tall', url:'https://youtu.be/V3RkWVm7tVA?si=xYYQvdcdnYRb_bLh'},
+    {title:'Only the Water Knows', url:'https://youtu.be/oK8-MJDwqME?si=Tt1fu2KLrn3VUtlA'},
   ],
   /* Three real Porch Stories. Sue and Leonard are shared under pseudonyms
      (Renee and Marcus) since explicit permission to publish their real names
@@ -7257,6 +7361,23 @@ const FPRMilestones = (function(){
     // Lets the badge system (below) react whenever the counter changes.
     try { document.dispatchEvent(new CustomEvent('fpr:counterupdate', { detail: { start, today } })); } catch(err){}
   }
+  /* Compact hero progress summary — reads the SAME days count the full
+     counter above already computed; never a separate date/storage. */
+  function updateHeroProgress(days){
+    const mainEl = document.getElementById('hero-progress-main');
+    const tagEl = document.getElementById('hero-progress-tagline');
+    const ctaEl = document.getElementById('hero-progress-cta');
+    if(!mainEl) return;
+    if(days === null || days === undefined){
+      mainEl.textContent = 'Set your recovery date';
+      if(tagEl) tagEl.hidden = true;
+      if(ctaEl) ctaEl.textContent = 'Start your counter →';
+    } else {
+      mainEl.textContent = days.toLocaleString() + (days === 1 ? ' Day' : ' Days');
+      if(tagEl) tagEl.hidden = false;
+      if(ctaEl) ctaEl.textContent = 'View full recovery counter →';
+    }
+  }
   function update(value){
     COUNTERS.forEach(c => {
       if(c.input.value !== value) c.input.value = value;
@@ -7264,16 +7385,18 @@ const FPRMilestones = (function(){
       c.errorEl.classList.remove('show');
       c.input.classList.remove('invalid');
     });
-    if(!value){ COUNTERS.forEach(c => setNums(c, null)); clearMilestones(); announce(null, null); return; }
+    if(!value){ COUNTERS.forEach(c => setNums(c, null)); clearMilestones(); updateHeroProgress(null); announce(null, null); return; }
     const start = M.parseYMD(value);
     const today = M.todayYMD();
     if(!start){
       showError('That doesn’t look like a valid date.');
+      updateHeroProgress(null);
       announce(null, null);
       return;
     }
     if(M.compareYMD(start, today) > 0){
       showError('That date hasn’t happened yet — pick today or an earlier date.');
+      updateHeroProgress(null);
       announce(null, null);
       return;
     }
@@ -7284,6 +7407,7 @@ const FPRMilestones = (function(){
     const vals = [days, Math.floor(days / 7), M.fullMonthsBetween(start, today), M.fullYearsBetween(start, today)];
     try { localStorage.setItem('fpr_milestone_date', value); } catch(err){}
     COUNTERS.forEach(c => { setNums(c, vals); renderMilestones(c, start, today); });
+    updateHeroProgress(days);
     announce(start, today);
   }
   COUNTERS.forEach(c => {
@@ -7291,6 +7415,20 @@ const FPRMilestones = (function(){
   });
   window.FPRCounter = { refresh: () => { setMaxToToday(); update(COUNTERS[0].input.value); } };
   update(COUNTERS[0].input.value);
+
+  /* Hero progress card: just a shortcut into the full counter below —
+     no date input of its own, no separate storage. */
+  const heroProgressBtn = document.getElementById('hero-progress');
+  if(heroProgressBtn){
+    heroProgressBtn.addEventListener('click', () => {
+      const target = document.getElementById('home-counter');
+      if(!target) return;
+      try { target.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); }
+      catch(err){ target.scrollIntoView(); }
+      const dateInput = document.getElementById('home-milestone-date');
+      if(dateInput && !dateInput.value){ setTimeout(() => { try { dateInput.focus(); } catch(e){} }, reduceMotion() ? 0 : 400); }
+    });
+  }
 
   /* If the app stays open past midnight (or is reopened from the
      background the next day), refresh the count so it's never a day behind. */
@@ -8150,6 +8288,136 @@ const FPRBadge = (function(){
       }
     } catch(err){
       setStatus('error', 'Something went wrong sending that message. Please check your connection and try again.');
+    } finally {
+      submitting = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+    }
+  });
+})();
+/* ---------- Porch Story submission form ----------
+   Reuses the same Formspree endpoint and submission pattern as the
+   Contact form above (CONFIG.services.contactFormEndpoint) rather than
+   standing up a separate backend. A "_subject" field and a "type" field
+   let Front Porch Recovery tell story submissions apart from general
+   contact messages in the same inbox. Nothing here writes to
+   CONFIG.stories or stories-grid — a submission only ever reaches FPR by
+   email for review; it never appears on the site automatically. */
+(function(){
+  const form = document.getElementById('story-submit-form');
+  const submitBtn = document.getElementById('ps-submit');
+  const statusEl = document.getElementById('ps-status');
+  const nameInput = document.getElementById('ps-name');
+  const titleInput = document.getElementById('ps-title');
+  const categorySelect = document.getElementById('ps-category');
+  const storyInput = document.getElementById('ps-story');
+  const emailInput = document.getElementById('ps-email');
+  const permissionInput = document.getElementById('ps-permission');
+  const nameErr = document.getElementById('ps-name-error');
+  const titleErr = document.getElementById('ps-title-error');
+  const storyErr = document.getElementById('ps-story-error');
+  const emailErr = document.getElementById('ps-email-error');
+  const permissionErr = document.getElementById('ps-permission-error');
+  const inactiveNotice = document.getElementById('story-submit-inactive-notice');
+  const endpoint = CONFIG.services.contactFormEndpoint;
+
+  function setStatus(kind, text){
+    statusEl.className = 'status-msg show status-' + kind;
+    statusEl.textContent = text;
+  }
+  function setSuccessStatus(){
+    statusEl.className = 'status-msg show status-success';
+    statusEl.innerHTML = ''; // safe: developer-authored content only
+    const line1 = document.createElement('p');
+    line1.style.margin = '0';
+    line1.style.fontWeight = '600';
+    line1.textContent = 'Your story made it to the porch. Thank you for trusting us with it.';
+    const line2 = document.createElement('p');
+    line2.style.margin = '6px 0 0';
+    line2.style.fontWeight = '400';
+    line2.textContent = 'Submissions are reviewed before anything is published.';
+    statusEl.appendChild(line1);
+    statusEl.appendChild(line2);
+  }
+  function clearFieldErrors(){
+    [nameErr, titleErr, storyErr, emailErr, permissionErr].forEach(el => { el.textContent=''; el.classList.remove('show'); });
+    [nameInput, titleInput, storyInput, emailInput].forEach(el => el.classList.remove('invalid'));
+  }
+  function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+  if(!endpoint){
+    inactiveNotice.classList.add('show');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Story submissions not connected yet';
+    form.style.opacity = '0.6';
+  } else {
+    inactiveNotice.classList.remove('show');
+  }
+
+  let submitting = false;
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    if(!endpoint){
+      setStatus('info', 'This form isn’t connected to a message service yet, so nothing can be sent right now.');
+      return;
+    }
+    if(submitting) return; // guard against double submission
+    clearFieldErrors();
+    let valid = true;
+    if(!nameInput.value.trim()){
+      nameErr.textContent = 'Please enter a display name (a real name, nickname, or “Anonymous” is fine).'; nameErr.classList.add('show'); nameInput.classList.add('invalid'); valid = false;
+    } else if(nameInput.value.trim().length > 80){
+      nameErr.textContent = 'Display name must be 80 characters or fewer.'; nameErr.classList.add('show'); nameInput.classList.add('invalid'); valid = false;
+    }
+    if(!titleInput.value.trim()){
+      titleErr.textContent = 'Please give your story a title.'; titleErr.classList.add('show'); titleInput.classList.add('invalid'); valid = false;
+    } else if(titleInput.value.trim().length > 120){
+      titleErr.textContent = 'Title must be 120 characters or fewer.'; titleErr.classList.add('show'); titleInput.classList.add('invalid'); valid = false;
+    }
+    if(!storyInput.value.trim()){
+      storyErr.textContent = 'Please share your Porch Story before sending it.'; storyErr.classList.add('show'); storyInput.classList.add('invalid'); valid = false;
+    } else if(storyInput.value.trim().length > 8000){
+      storyErr.textContent = 'Story must be 8,000 characters or fewer.'; storyErr.classList.add('show'); storyInput.classList.add('invalid'); valid = false;
+    }
+    if(emailInput.value.trim() && !isValidEmail(emailInput.value.trim())){
+      emailErr.textContent = 'Please enter a valid email address, or leave this blank.'; emailErr.classList.add('show'); emailInput.classList.add('invalid'); valid = false;
+    } else if(emailInput.value.trim().length > 254){
+      emailErr.textContent = 'Email must be 254 characters or fewer.'; emailErr.classList.add('show'); emailInput.classList.add('invalid'); valid = false;
+    }
+    if(!permissionInput.checked){
+      permissionErr.textContent = 'Please check the box to give permission to review and publish your story.'; permissionErr.classList.add('show'); valid = false;
+    }
+    if(!valid){ setStatus('error', 'Please fix the fields above and try again.'); return; }
+
+    submitting = true;
+    submitBtn.disabled = true;
+    const originalLabel = submitBtn.textContent;
+    submitBtn.textContent = 'Sending...';
+    setStatus('info', 'Sending...');
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          _subject: 'New Porch Story submission',
+          type: 'Porch Story Submission',
+          displayName: nameInput.value.trim(),
+          storyTitle: titleInput.value.trim(),
+          category: categorySelect.value,
+          story: storyInput.value.trim(),
+          contactEmail: emailInput.value.trim(),
+          publishingPermission: permissionInput.checked ? 'Yes — may review, lightly edit for clarity, and publish under the display name provided' : 'No'
+        })
+      });
+      if(res.ok){
+        setSuccessStatus();
+        form.reset();
+      } else {
+        setStatus('error', 'Something went wrong sending that story. Please check your connection and try again.');
+      }
+    } catch(err){
+      setStatus('error', 'Something went wrong sending that story. Please check your connection and try again.');
     } finally {
       submitting = false;
       submitBtn.disabled = false;
