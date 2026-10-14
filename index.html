@@ -1305,6 +1305,7 @@
   </section>
   <section class="block bg-cream">
     <div class="wrap">
+      <p id="db-stories-notice" class="status-msg status-info" style="display:none; margin-bottom:14px;" role="status">Some community stories could not be loaded right now. Showing the stories available below.</p>
       <div class="grid grid-3" id="stories-grid"></div>
       <p style="margin-top:26px; font-size:.85rem; color:var(--charcoal-soft); opacity:.75; font-style:italic; max-width:60ch;">Stories shared on Front Porch Recovery reflect individual lived experiences. Everyone's recovery and mental-health journey is different.</p>
     </div>
@@ -6611,14 +6612,83 @@ function renderMusic(){
   }).join('');
 }
 
+/* ---------- Phase 5: published database Porch Stories ----------
+   dbStories holds rows read ONLY from public.porch_stories_public —
+   never public.porch_stories directly, and only the six columns that
+   view exposes (id, display_name, title, category, story_body,
+   published_at). That view already filters to status='published' and
+   already excludes every private/moderation column (contact_email,
+   user_id, reviewed_by, publishing_permission, reviewed_at, status
+   itself) — this code never requests or renders any of those, on top
+   of the view not offering them.
+
+   This is user-submitted content, unlike CONFIG.stories, so it is
+   NEVER passed through innerHTML. Every db story card and detail view
+   below is built with createElement/textContent only — no markup,
+   links, or scripts in story_body are ever interpreted, even if
+   someone's story contains characters that look like HTML. */
+let dbStories = []; // [] until loadDbStories() resolves; CONFIG.stories render immediately regardless
+let dbStoriesRequested = false; // guards against firing/rendering duplicates on repeat navigation
+
+function dbStorySlug(id){ return 'db-' + id; }
+
 function findStory(slug){
-  return (CONFIG.stories || []).find(s => s.slug === slug);
+  const builtIn = (CONFIG.stories || []).find(s => s.slug === slug);
+  if (builtIn) return builtIn;
+  if (typeof slug === 'string' && slug.indexOf('db-') === 0) {
+    const id = slug.slice(3);
+    return dbStories.find(s => s.id === id) || null;
+  }
+  return null;
+}
+
+function buildDbStoryCard(s){
+  const card = document.createElement('div');
+  card.className = 'card story-card';
+
+  const catEl = document.createElement('span');
+  catEl.className = 'story-cat';
+  catEl.textContent = s.category || 'Porch Story';
+  card.appendChild(catEl);
+
+  const titleEl = document.createElement('h3');
+  titleEl.textContent = s.title || 'Untitled';
+  card.appendChild(titleEl);
+
+  if (s.display_name) {
+    const byline = document.createElement('p');
+    byline.style.margin = '2px 0 0';
+    byline.style.fontSize = '.82rem';
+    byline.style.opacity = '.7';
+    byline.textContent = 'by ' + s.display_name;
+    card.appendChild(byline);
+  }
+
+  const excerptEl = document.createElement('p');
+  const body = s.story_body || '';
+  excerptEl.textContent = body.length > 160 ? body.slice(0, 160).trim() + '…' : body;
+  card.appendChild(excerptEl);
+
+  const btn = document.createElement('button');
+  btn.className = 'card-link';
+  btn.type = 'button';
+  btn.setAttribute('data-story', dbStorySlug(s.id));
+  btn.style.background = 'none';
+  btn.style.border = 'none';
+  btn.style.padding = '0';
+  btn.style.cursor = 'pointer';
+  btn.style.textAlign = 'left';
+  btn.textContent = 'Read the story';
+  card.appendChild(btn);
+
+  return card;
 }
 
 function renderStories(){
   const grid = document.getElementById('stories-grid');
   if(!grid) return;
-  if(!CONFIG.stories || CONFIG.stories.length === 0){
+
+  if((!CONFIG.stories || CONFIG.stories.length === 0) && dbStories.length === 0){
     grid.innerHTML = `
     <div class="card" style="grid-column:1/-1; text-align:center;">
       <h3>Story coming soon</h3>
@@ -6627,15 +6697,65 @@ function renderStories(){
     </div>`;
     return;
   }
-  grid.innerHTML = CONFIG.stories.map(s => {
-    return `
+
+  grid.innerHTML = ''; // clear once, then rebuild in the required order (no duplicate accumulation across calls)
+
+  // Newly published database stories first (already ordered by
+  // published_at descending in the query)...
+  dbStories.forEach(s => grid.appendChild(buildDbStoryCard(s)));
+
+  // ...followed by the three existing built-in stories, kept exactly
+  // as they were — same trusted-markup rendering approach as before.
+  if (CONFIG.stories && CONFIG.stories.length > 0) {
+    grid.insertAdjacentHTML('beforeend', CONFIG.stories.map(s => `
     <div class="card story-card">
       <span class="story-cat">${s.cat}</span>
       <h3>${s.title}</h3>
       <p>${s.excerpt}</p>
       <button class="card-link" type="button" data-story="${s.slug}" style="background:none; border:none; padding:0; cursor:pointer; text-align:left;">Read the story</button>
-    </div>`;
-  }).join('');
+    </div>`).join(''));
+  }
+}
+
+async function loadDbStories(){
+  if (dbStoriesRequested) return; // never re-fetch/re-render duplicates on repeat navigation
+  dbStoriesRequested = true;
+
+  const notice = document.getElementById('db-stories-notice');
+  try {
+    // Same project URL and publishable key already used everywhere else
+    // in this file (CONFIG.services) — never service_role. A dedicated,
+    // session-less client rather than reusing the Phase 1 sign-in
+    // client: this read never depends on who's signed in (the view
+    // grants SELECT to anon and authenticated identically), and the
+    // sign-in IIFE runs later in this file, so depending on its client
+    // here would be an initialization-order hazard for no benefit.
+    const url = CONFIG.services.supabaseUrl;
+    const key = CONFIG.services.supabaseAnonKey;
+    if (!url || !key || !window.supabase || typeof window.supabase.createClient !== 'function') {
+      if (notice) notice.style.display = 'block';
+      return;
+    }
+    const dbClient = window.supabase.createClient(url, key, { auth: { persistSession: false } });
+
+    const { data, error } = await dbClient
+      .from('porch_stories_public')
+      .select('id, display_name, title, category, story_body, published_at')
+      .order('published_at', { ascending: false });
+
+    if (error || !data) {
+      if (notice) notice.style.display = 'block';
+      return; // CONFIG.stories already rendered — the page is not broken
+    }
+
+    dbStories = data;
+    if (notice) notice.style.display = 'none';
+    renderStories(); // re-render once with the now-loaded db stories prepended
+  } catch(err) {
+    if (notice) notice.style.display = 'block';
+    // CONFIG.stories remain rendered from the initial call — failure
+    // here never replaces or blanks the Stories page.
+  }
 }
 
 function openStory(slug){
@@ -6644,6 +6764,69 @@ function openStory(slug){
 
   const titleEl = document.getElementById('story-title');
   const catEl = document.getElementById('story-cat');
+  const body = document.getElementById('story-body');
+
+  const isDbStory = typeof slug === 'string' && slug.indexOf('db-') === 0;
+
+  if (isDbStory) {
+    // Database story: user-submitted content. Every piece of text
+    // below goes through textContent only — never innerHTML, never
+    // markup interpretation of story_body, matching the handling in
+    // buildDbStoryCard() above.
+    if (titleEl) titleEl.textContent = s.title || 'Untitled';
+    if (catEl) catEl.textContent = s.category || 'Porch Story';
+
+    if (body) {
+      body.innerHTML = ''; // clear only — nothing untrusted is ever assigned to innerHTML below
+
+      if (s.display_name) {
+        const byline = document.createElement('p');
+        byline.style.marginTop = '6px';
+        byline.style.fontWeight = '600';
+        byline.style.color = 'var(--charcoal-soft)';
+        byline.textContent = 'Shared by ' + s.display_name;
+        body.appendChild(byline);
+      }
+
+      (s.story_body || '').split(/\n+/).forEach(para => {
+        if (!para.trim()) return;
+        const p = document.createElement('p');
+        p.style.marginTop = '18px';
+        p.style.color = 'var(--charcoal-soft)';
+        p.style.fontSize = '1.05rem';
+        p.textContent = para;
+        body.appendChild(p);
+      });
+
+      if (s.published_at) {
+        const dateEl = document.createElement('p');
+        dateEl.style.marginTop = '26px';
+        dateEl.style.fontSize = '.85rem';
+        dateEl.style.color = 'var(--charcoal-soft)';
+        dateEl.style.opacity = '.75';
+        let dateText = s.published_at;
+        try { dateText = new Date(s.published_at).toLocaleDateString(undefined, { dateStyle: 'medium' }); } catch(err){}
+        dateEl.textContent = 'Published ' + dateText;
+        body.appendChild(dateEl);
+      }
+
+      // Same disclaimer every CONFIG story detail view ends with —
+      // developer-authored, so a plain trusted node is fine here too.
+      const disclaimer = document.createElement('p');
+      disclaimer.style.marginTop = '30px';
+      disclaimer.style.fontSize = '.85rem';
+      disclaimer.style.color = 'var(--charcoal-soft)';
+      disclaimer.style.opacity = '.75';
+      disclaimer.textContent = 'Stories shared on Front Porch Recovery reflect individual lived experiences. Everyone’s recovery and mental-health journey is different.';
+      body.appendChild(disclaimer);
+    }
+
+    goTo('story');
+    return;
+  }
+
+  // Built-in CONFIG story: unchanged from before Phase 5 — developer-
+  // authored content, trusted, same innerHTML rendering as always.
   if(titleEl) titleEl.textContent = s.title;
   if(catEl) catEl.textContent = s.cat;
 
@@ -6653,7 +6836,6 @@ function openStory(slug){
   }
   html += `<p style="margin-top:30px; font-size:.85rem; color:var(--charcoal-soft); opacity:.75;">Stories shared on Front Porch Recovery reflect individual lived experiences. Everyone's recovery and mental-health journey is different.</p>`;
 
-  const body = document.getElementById('story-body');
   if(body) body.innerHTML = html; // safe: CONFIG data only, developer-authored, never visitor input
 
   goTo('story');
@@ -6817,7 +6999,7 @@ function renderBrandAssets(){
   }
 }
 
-renderHome(); renderPorch(); renderBooks(); renderShop(); renderToolbox(); renderDaily(getTodaysPorchDay()); initDailyNav(); renderMusic(); renderStories(); renderFooterLinks(); renderFacebookLinks(); renderRoughDayReachOut(); renderLegalPages(); renderBrandAssets();
+renderHome(); renderPorch(); renderBooks(); renderShop(); renderToolbox(); renderDaily(getTodaysPorchDay()); initDailyNav(); renderMusic(); renderStories(); loadDbStories(); renderFooterLinks(); renderFacebookLinks(); renderRoughDayReachOut(); renderLegalPages(); renderBrandAssets();
 document.getElementById('year').textContent = new Date().getFullYear();
 
 /* ---------- Navigation ---------- */
