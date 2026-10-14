@@ -166,6 +166,40 @@
   details.debug-details .value{font-family:monospace; font-size:.78rem; word-break:break-all;}
 
   .loading-note{text-align:center; padding:60px 20px; color:var(--charcoal-soft); opacity:.7;}
+
+  /* ---------- Phase 4: moderation ---------- */
+  .mod-info-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; margin-top:14px; padding:12px 14px; background:var(--white); border-radius:var(--radius-m);}
+  @media(max-width:480px){ .mod-info-grid{grid-template-columns:1fr;} }
+  .mod-info-grid .label{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--charcoal-soft); opacity:.7;}
+  .mod-info-grid .value{font-size:.88rem; margin-top:2px;}
+
+  .action-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;}
+  .btn-danger{background:#B4573F; color:var(--white);}
+  .btn-danger.outline{background:transparent; color:#B4573F; border:1.5px solid #B4573F;}
+
+  .confirm-panel{margin-top:16px; padding:16px; border-radius:var(--radius-m); background:#FBEDE9; border:1.5px solid #E3B6A9;}
+  .confirm-panel.confirm-strong{background:#F9E3DC; border-color:#D98B73;}
+  .confirm-panel p{font-size:.88rem; color:var(--charcoal-soft);}
+  .confirm-panel .action-row{margin-top:12px;}
+
+  .edit-panel{margin-top:16px;}
+  .edit-panel .mod-edit-badge{display:inline-block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#7A5B20; background:var(--amber-soft); padding:3px 9px; border-radius:999px; margin-bottom:10px;}
+  .edit-panel .field{margin-top:12px;}
+  .edit-panel textarea{
+    width:100%; padding:11px 13px; border:1.5px solid var(--line); border-radius:var(--radius-s);
+    font-size:.92rem; font-family:inherit; background:var(--cream); min-height:160px; resize:vertical;
+  }
+  .edit-panel select{
+    width:100%; padding:11px 13px; border:1.5px solid var(--line); border-radius:var(--radius-s);
+    font-size:.92rem; font-family:inherit; background:var(--cream);
+  }
+  .edit-panel input:focus, .edit-panel textarea:focus, .edit-panel select:focus{outline:2px solid var(--sage-deep); outline-offset:1px;}
+
+  .mod-status-msg{margin-top:14px; font-size:.86rem; padding:10px 12px; border-radius:var(--radius-s); display:none;}
+  .mod-status-msg.show{display:block;}
+  .mod-status-msg.status-success{background:var(--sage); color:var(--charcoal);}
+  .mod-status-msg.status-error{background:#F4D9D6; color:#7A2E24;}
+  .mod-status-msg.status-info{background:var(--gray); color:var(--charcoal-soft);}
 </style>
 </head>
 <body>
@@ -174,7 +208,7 @@
   <div class="wrap">
     <div>
       <h1>Front Porch Recovery — Admin</h1>
-      <p class="sub">Porch Stories dashboard (read-only)</p>
+      <p class="sub">Porch Stories moderation dashboard</p>
     </div>
     <div class="session-info" id="session-info" hidden>
       <span class="session-email" id="session-email"></span>
@@ -272,6 +306,71 @@
       <div class="preview-body-box" id="preview-body"></div>
     </div>
 
+    <!-- Phase 4: moderation review info, visible (not tucked in debug) -->
+    <div class="mod-info-grid">
+      <div>
+        <div class="label">Reviewed</div>
+        <div class="value" id="mod-reviewed-at">—</div>
+      </div>
+      <div>
+        <div class="label">Reviewer</div>
+        <div class="value" id="mod-reviewed-by">—</div>
+      </div>
+      <div>
+        <div class="label">Published</div>
+        <div class="value" id="mod-published-at">—</div>
+      </div>
+      <div>
+        <div class="label">Current status</div>
+        <div class="value" id="mod-current-status">—</div>
+      </div>
+    </div>
+
+    <!-- Phase 4: moderation actions. Buttons shown here depend entirely
+         on story.status (see renderModActions) — pending gets
+         Edit/Approve/Reject, approved gets Edit/Publish/Reject,
+         published and rejected get none (read-only, no delete). -->
+    <div class="action-row" id="mod-action-row"></div>
+
+    <div class="confirm-panel" id="mod-confirm-panel" hidden></div>
+
+    <div class="edit-panel" id="mod-edit-panel" hidden>
+      <span class="mod-edit-badge">Moderation edit</span>
+      <div class="field">
+        <label for="mod-edit-display-name">Display name</label>
+        <input type="text" id="mod-edit-display-name" maxlength="80">
+      </div>
+      <div class="field">
+        <label for="mod-edit-title">Title</label>
+        <input type="text" id="mod-edit-title" maxlength="120">
+      </div>
+      <div class="field">
+        <label for="mod-edit-category">Category</label>
+        <select id="mod-edit-category">
+          <option>Recovery</option>
+          <option>Mental health</option>
+          <option>Rebuilding life</option>
+          <option>Relationships</option>
+          <option>Grief / loss</option>
+          <option>Trauma / healing</option>
+          <option>Milestones</option>
+          <option>Hope</option>
+          <option>Humor</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="mod-edit-body">Story</label>
+        <textarea id="mod-edit-body" maxlength="8000"></textarea>
+      </div>
+      <div class="action-row">
+        <button type="button" class="btn btn-amber" id="mod-edit-save">Save edit</button>
+        <button type="button" class="btn btn-outline" id="mod-edit-cancel">Cancel</button>
+      </div>
+    </div>
+
+    <p class="mod-status-msg" id="mod-status-msg" role="status" aria-live="polite"></p>
+
     <details class="debug-details">
       <summary>Admin / debug details</summary>
       <div class="preview-row">
@@ -304,16 +403,26 @@
 
 <script>
 /* ============================================================
-   Front Porch Recovery — Porch Stories admin dashboard (Phase 2)
+   Front Porch Recovery — Porch Stories admin dashboard
+   (Phase 2: read-only. Phase 4: moderation added.)
 
-   Strictly read-only. Every Supabase call in this file is one of:
-   auth.signInWithOtp, auth.getSession, auth.onAuthStateChange,
-   auth.signOut, rpc('is_admin'), or .from('porch_stories').select(...).
-   There is no .insert(, .update(, .delete(, or .upsert( anywhere in
-   this file, and none is added by any later phase without a separate,
-   explicit approval. Database RLS (schema.sql) is what actually
-   enforces access — the gating below only decides what this page
-   *shows*; it is not itself a security boundary.
+   Every Supabase call in this file is one of: auth.signInWithOtp,
+   auth.getSession, auth.onAuthStateChange, auth.signOut,
+   rpc('is_admin'), .from('porch_stories').select(...) (read-only), or
+   — as of Phase 4 — rpc('moderate_porch_story', ...). There is still
+   no .insert(, .update(, .delete(, or .upsert( anywhere in this file,
+   and no service_role key. Every moderation write (approve/reject/
+   publish/edit) goes through that one SECURITY DEFINER function,
+   which is the only thing in the database allowed to write to
+   porch_stories at all now — schema.sql revoked UPDATE on the table
+   from `authenticated` entirely in the Phase 4 migration, specifically
+   so this page (or any other authenticated client) has no way to
+   write to id/user_id/contact_email/publishing_permission/
+   submitted_at, and no way to set status/reviewed_at/reviewed_by/
+   published_at to anything the function's own transition rules
+   wouldn't allow. This file's job is only to decide what to *show*
+   and which button to send which action to — it is not itself the
+   security boundary, the same as Phase 2.
    ============================================================ */
 (function(){
   const CONFIG = {
@@ -345,6 +454,16 @@
     emptyState: document.getElementById('empty-state'),
     previewModal: document.getElementById('preview-modal'),
     previewClose: document.getElementById('preview-close'),
+    modActionRow: document.getElementById('mod-action-row'),
+    modConfirmPanel: document.getElementById('mod-confirm-panel'),
+    modEditPanel: document.getElementById('mod-edit-panel'),
+    modEditDisplayName: document.getElementById('mod-edit-display-name'),
+    modEditTitle: document.getElementById('mod-edit-title'),
+    modEditCategory: document.getElementById('mod-edit-category'),
+    modEditBody: document.getElementById('mod-edit-body'),
+    modEditSave: document.getElementById('mod-edit-save'),
+    modEditCancel: document.getElementById('mod-edit-cancel'),
+    modStatusMsg: document.getElementById('mod-status-msg'),
   };
 
   function showOnly(stateEl){
@@ -527,7 +646,10 @@
     });
   }
 
-  function openPreview(story){
+  let currentPreviewStory = null; // the story object currently shown in the modal
+  let currentAdminId = null;      // this signed-in admin's own user id (for "Reviewer: You")
+
+  function renderPreviewFields(story){
     document.getElementById('preview-title').textContent = story.title;
     document.getElementById('preview-display-name').textContent = story.display_name || '—';
     document.getElementById('preview-category').textContent = story.category || '—';
@@ -544,12 +666,226 @@
     document.getElementById('preview-reviewed-by').textContent = story.reviewed_by || '—';
     document.getElementById('preview-published-at').textContent = fmtDate(story.published_at);
 
+    document.getElementById('mod-reviewed-at').textContent = fmtDate(story.reviewed_at);
+    document.getElementById('mod-reviewed-by').textContent = story.reviewed_by
+      ? (story.reviewed_by === currentAdminId ? 'You' : story.reviewed_by)
+      : '—';
+    document.getElementById('mod-published-at').textContent = fmtDate(story.published_at);
+    document.getElementById('mod-current-status').textContent = story.status;
+
     const badgeRow = document.getElementById('preview-badges');
     badgeRow.innerHTML = '';
     const statusBadge = document.createElement('span');
     statusBadge.className = 'badge status-' + story.status;
     statusBadge.textContent = story.status;
     badgeRow.appendChild(statusBadge);
+  }
+
+  function setModStatus(kind, text){
+    els.modStatusMsg.className = 'mod-status-msg' + (text ? ' show' : '') + (kind ? ' status-' + kind : '');
+    els.modStatusMsg.textContent = text || '';
+  }
+
+  function hideConfirmPanel(){
+    els.modConfirmPanel.hidden = true;
+    els.modConfirmPanel.innerHTML = '';
+    els.modConfirmPanel.classList.remove('confirm-strong');
+  }
+  function hideEditPanel(){
+    els.modEditPanel.hidden = true;
+  }
+
+  // Buttons shown depend entirely on story.status — this is the UI layer
+  // only; moderate_porch_story() enforces the same rules independently
+  // at the database level, so a crafted call can't do more than this
+  // ever offers.
+  function renderModActions(story){
+    els.modActionRow.innerHTML = '';
+    hideConfirmPanel();
+    hideEditPanel();
+
+    if (story.status === 'pending' || story.status === 'approved') {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'btn btn-outline';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', () => openEditPanel(story));
+      els.modActionRow.appendChild(editBtn);
+    }
+
+    if (story.status === 'pending') {
+      const approveBtn = document.createElement('button');
+      approveBtn.type = 'button';
+      approveBtn.className = 'btn btn-amber';
+      approveBtn.textContent = 'Approve';
+      approveBtn.addEventListener('click', () => runModeration(story, 'approve'));
+      els.modActionRow.appendChild(approveBtn);
+
+      const rejectBtn = document.createElement('button');
+      rejectBtn.type = 'button';
+      rejectBtn.className = 'btn-danger outline btn';
+      rejectBtn.textContent = 'Reject';
+      rejectBtn.addEventListener('click', () => askReject(story));
+      els.modActionRow.appendChild(rejectBtn);
+    }
+
+    if (story.status === 'approved') {
+      const publishBtn = document.createElement('button');
+      publishBtn.type = 'button';
+      publishBtn.className = 'btn btn-amber';
+      publishBtn.textContent = 'Publish';
+      publishBtn.addEventListener('click', () => askPublish(story));
+      els.modActionRow.appendChild(publishBtn);
+
+      const rejectBtn = document.createElement('button');
+      rejectBtn.type = 'button';
+      rejectBtn.className = 'btn-danger outline btn';
+      rejectBtn.textContent = 'Reject';
+      rejectBtn.addEventListener('click', () => askReject(story));
+      els.modActionRow.appendChild(rejectBtn);
+    }
+    // published and rejected: no buttons at all — read-only, and
+    // rejected gets no delete button, per Phase 4 scope.
+  }
+
+  function askReject(story){
+    hideEditPanel();
+    els.modConfirmPanel.hidden = false;
+    els.modConfirmPanel.classList.remove('confirm-strong');
+    els.modConfirmPanel.innerHTML = '';
+    const msg = document.createElement('p');
+    msg.textContent = 'Reject "' + story.title + '"? It stays stored and visible under the Rejected filter — it is not deleted.';
+    const row = document.createElement('div');
+    row.className = 'action-row';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'btn btn-danger';
+    confirmBtn.textContent = 'Yes, reject this story';
+    confirmBtn.addEventListener('click', () => runModeration(story, 'reject'));
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn btn-outline';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', hideConfirmPanel);
+    row.appendChild(confirmBtn);
+    row.appendChild(cancelBtn);
+    els.modConfirmPanel.appendChild(msg);
+    els.modConfirmPanel.appendChild(row);
+  }
+
+  function askPublish(story){
+    hideEditPanel();
+    els.modConfirmPanel.hidden = false;
+    els.modConfirmPanel.classList.add('confirm-strong');
+    els.modConfirmPanel.innerHTML = '';
+    const line1 = document.createElement('strong');
+    line1.textContent = 'This makes the story publicly visible right now.';
+    const line2 = document.createElement('p');
+    line2.style.marginTop = '4px';
+    line2.textContent = '"' + story.title + '" by ' + (story.display_name || '—') + ' will appear on the public site immediately after you confirm. This cannot be done by mistake — type PUBLISH below to confirm.';
+    const confirmInput = document.createElement('input');
+    confirmInput.type = 'text';
+    confirmInput.placeholder = 'Type PUBLISH to confirm';
+    confirmInput.style.cssText = 'width:100%; margin-top:10px; padding:10px 12px; border:1.5px solid var(--line); border-radius:6px; font-family:inherit;';
+    const row = document.createElement('div');
+    row.className = 'action-row';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'btn btn-amber';
+    confirmBtn.textContent = 'Publish this story';
+    confirmBtn.disabled = true;
+    confirmInput.addEventListener('input', () => {
+      confirmBtn.disabled = confirmInput.value.trim().toUpperCase() !== 'PUBLISH';
+    });
+    confirmBtn.addEventListener('click', () => runModeration(story, 'publish'));
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn btn-outline';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', hideConfirmPanel);
+    row.appendChild(confirmBtn);
+    row.appendChild(cancelBtn);
+    els.modConfirmPanel.appendChild(line1);
+    els.modConfirmPanel.appendChild(line2);
+    els.modConfirmPanel.appendChild(confirmInput);
+    els.modConfirmPanel.appendChild(row);
+  }
+
+  function openEditPanel(story){
+    hideConfirmPanel();
+    els.modEditDisplayName.value = story.display_name || '';
+    els.modEditTitle.value = story.title || '';
+    els.modEditCategory.value = story.category || 'Other';
+    els.modEditBody.value = story.story_body || '';
+    els.modEditPanel.hidden = false;
+  }
+
+  els.modEditCancel.addEventListener('click', hideEditPanel);
+  els.modEditSave.addEventListener('click', () => {
+    if (!currentPreviewStory) return;
+    const displayName = els.modEditDisplayName.value.trim();
+    const title = els.modEditTitle.value.trim();
+    const category = els.modEditCategory.value;
+    const storyBody = els.modEditBody.value.trim();
+    if (!displayName || !title || !storyBody) {
+      setModStatus('error', 'Display name, title, and story body cannot be empty.');
+      return;
+    }
+    runModeration(currentPreviewStory, 'edit', { displayName, title, category, storyBody });
+  });
+
+  // The one and only write path in this file: moderate_porch_story().
+  // It independently re-checks admin status and the current status
+  // transition server-side — this function only decides which action
+  // to send and how to react to the result, never trusts a locally
+  // assumed "it must have worked."
+  async function runModeration(story, action, editFields){
+    setModStatus('info', 'Saving...');
+    els.modActionRow.querySelectorAll('button').forEach(b => b.disabled = true);
+
+    const params = { p_story_id: story.id, p_action: action };
+    if (action === 'edit' && editFields) {
+      params.p_display_name = editFields.displayName;
+      params.p_title = editFields.title;
+      params.p_category = editFields.category;
+      params.p_story_body = editFields.storyBody;
+    }
+
+    try {
+      const { data: updatedStory, error } = await client.rpc('moderate_porch_story', params);
+      if (error) {
+        setModStatus('error', 'Could not save that change: ' + error.message);
+        els.modActionRow.querySelectorAll('button').forEach(b => b.disabled = false);
+        return;
+      }
+
+      // Success: trust only what the database actually returned, not
+      // an assumed new state. Merge it into the in-memory list so
+      // filter counts and the card behind the modal update too.
+      const idx = allStories.findIndex(s => s.id === updatedStory.id);
+      if (idx !== -1) allStories[idx] = updatedStory;
+      currentPreviewStory = updatedStory;
+
+      renderFilters();
+      renderList();
+      renderPreviewFields(updatedStory);
+      renderModActions(updatedStory);
+      hideConfirmPanel();
+      hideEditPanel();
+
+      const verb = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : action === 'publish' ? 'published' : 'saved';
+      setModStatus('success', 'Story ' + verb + '.');
+    } catch(err) {
+      setModStatus('error', 'Could not save that change. Please try again.');
+      els.modActionRow.querySelectorAll('button').forEach(b => b.disabled = false);
+    }
+  }
+
+  function openPreview(story){
+    currentPreviewStory = story;
+    renderPreviewFields(story);
+    renderModActions(story);
+    setModStatus('', '');
 
     els.previewModal.hidden = false;
     document.documentElement.classList.add('admin-modal-open');
@@ -557,6 +893,10 @@
   function closePreview(){
     els.previewModal.hidden = true;
     document.documentElement.classList.remove('admin-modal-open');
+    currentPreviewStory = null;
+    hideConfirmPanel();
+    hideEditPanel();
+    setModStatus('', '');
   }
   els.previewClose.addEventListener('click', closePreview);
   els.previewModal.addEventListener('click', (e) => { if (e.target === els.previewModal) closePreview(); });
@@ -585,6 +925,7 @@
   async function showDashboard(session){
     els.sessionInfo.hidden = false;
     els.sessionEmail.textContent = session.user.email || '';
+    currentAdminId = session.user.id || null;
     showOnly(els.stateDashboard);
     await loadStories();
   }
