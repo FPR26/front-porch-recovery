@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin — Front Porch Recovery</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Front Porch Recovery — Porch Stories admin dashboard (read-only, admin access required).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<!-- Supabase client: same pinned CDN build and the same publishable/anon
+     key used on the public site (index.html). This key is safe to ship —
+     every table it can touch is locked down by the grants and RLS
+     policies in supabase/schema.sql. The service_role key is never used
+     here or anywhere client-side. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --charcoal:#1A1A1A;
+    --charcoal-soft:#2B2B2B;
+    --gray:#E5E5E5;
+    --white:#FFFFFF;
+    --sage:#A7B8A8;
+    --sage-dark:#758377;
+    --sage-deep:#4F5A50;
+    --sage-text:#5C6B5D;
+    --amber:#D9A65B;
+    --amber-soft:#F0DDB8;
+    --cream:#F6F5F2;
+    --line:rgba(26,26,26,0.12);
+    --radius-s:6px;
+    --radius-m:12px;
+    --radius-l:22px;
+    --shadow: 0 10px 30px rgba(26,26,26,0.10);
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--cream);
+    color:var(--charcoal);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{margin:0;font-weight:700;letter-spacing:-0.01em;}
+  p{margin:0;}
+  button{font-family:inherit;cursor:pointer;}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 18px;}
+
+  header.admin-header{
+    background:var(--charcoal); color:var(--white);
+    padding:16px 0;
+  }
+  header.admin-header .wrap{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  header.admin-header h1{font-size:1.05rem;}
+  header.admin-header .sub{font-size:.78rem; opacity:.7; margin-top:2px;}
+  .session-info{display:flex; align-items:center; gap:10px; font-size:.82rem;}
+  .session-email{opacity:.85; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+  main{padding:28px 0 60px;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    border:none; border-radius:999px; padding:11px 20px; font-size:.9rem; font-weight:600;
+    background:var(--sage-deep); color:var(--white); transition:opacity .15s ease;
+  }
+  .btn:hover{opacity:.88;}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+  .btn-amber{background:var(--amber); color:var(--charcoal);}
+  .btn-outline{background:transparent; color:var(--charcoal); border:1.5px solid var(--line); }
+  .btn-outline-light{background:transparent; color:var(--white); border:1.5px solid rgba(255,255,255,0.4); padding:7px 14px; font-size:.8rem;}
+  .btn-small{padding:7px 14px; font-size:.82rem;}
+
+  /* ---------- Gate states ---------- */
+  .gate{
+    max-width:460px; margin:40px auto; background:var(--white); border-radius:var(--radius-l);
+    box-shadow:var(--shadow); padding:34px 28px; text-align:center;
+  }
+  .gate h2{font-size:1.25rem; margin-bottom:10px;}
+  .gate p{color:var(--charcoal-soft); opacity:.85; font-size:.92rem; margin-bottom:6px;}
+  .gate .icon{width:46px; height:46px; margin:0 auto 14px; color:var(--sage-deep);}
+  .gate .icon svg{width:100%; height:100%;}
+  .gate.denied .icon{color:#B4573F;}
+  .field{margin-top:18px; text-align:left;}
+  .field label{display:block; font-weight:600; font-size:.86rem; margin-bottom:6px;}
+  .field input{
+    width:100%; padding:11px 13px; border:1.5px solid var(--line); border-radius:var(--radius-s);
+    font-size:.95rem; font-family:inherit; background:var(--cream);
+  }
+  .field input:focus{outline:2px solid var(--sage-deep); outline-offset:1px;}
+  .status-msg{margin-top:14px; font-size:.86rem; padding:10px 12px; border-radius:var(--radius-s); display:none;}
+  .status-msg.show{display:block;}
+  .status-msg.status-success{background:var(--sage); color:var(--charcoal);}
+  .status-msg.status-error{background:#F4D9D6; color:#7A2E24;}
+  .status-msg.status-info{background:var(--gray); color:var(--charcoal-soft);}
+  [hidden]{display:none !important;}
+
+  /* ---------- Dashboard ---------- */
+  .dash-toolbar{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:18px;}
+  .filters{display:flex; gap:8px; flex-wrap:wrap;}
+  .filter-btn{
+    border:1.5px solid var(--line); background:var(--white); color:var(--charcoal-soft);
+    border-radius:999px; padding:8px 16px; font-size:.84rem; font-weight:600;
+  }
+  .filter-btn .count{opacity:.65; font-weight:500;}
+  .filter-btn.active{background:var(--sage-deep); border-color:var(--sage-deep); color:var(--white);}
+  .filter-btn.active .count{opacity:.85;}
+  .refresh-note{font-size:.78rem; color:var(--charcoal-soft); opacity:.7;}
+
+  .story-list{display:flex; flex-direction:column; gap:12px;}
+  .story-card{
+    background:var(--white); border-radius:var(--radius-m); box-shadow:0 2px 10px rgba(26,26,26,0.06);
+    padding:16px 18px; display:grid; gap:4px; cursor:pointer; border:1.5px solid transparent;
+    transition:border-color .15s ease;
+  }
+  .story-card:hover{border-color:var(--sage);}
+  .story-card:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+  .story-top{display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .story-title{font-weight:700; font-size:1rem;}
+  .story-meta{font-size:.8rem; color:var(--charcoal-soft); opacity:.8;}
+  .story-snippet{font-size:.88rem; color:var(--charcoal-soft); opacity:.85; margin-top:2px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .badge-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
+  .badge{font-size:.7rem; font-weight:700; letter-spacing:.02em; text-transform:uppercase;
+    padding:3px 9px; border-radius:999px; background:var(--gray); color:var(--charcoal-soft);}
+  .badge.status-pending{background:var(--amber-soft); color:#7A5B20;}
+  .badge.status-approved{background:var(--sage); color:var(--charcoal);}
+  .badge.status-published{background:var(--sage-deep); color:var(--white);}
+  .badge.status-rejected{background:#F4D9D6; color:#7A2E24;}
+  .badge.outline{background:transparent; border:1px solid var(--line); color:var(--charcoal-soft);}
+
+  .empty-state{text-align:center; padding:50px 20px; color:var(--charcoal-soft); opacity:.75;}
+
+  /* ---------- Preview modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0; z-index:200; background:rgba(26,26,26,0.55);
+    display:flex; align-items:flex-end; justify-content:center; padding:0;
+  }
+  @media(min-width:640px){ .modal-backdrop{align-items:center; padding:24px;} }
+  .modal-panel{
+    position:relative; width:100%; max-width:600px; max-height:90vh; overflow-y:auto;
+    background:var(--cream); border-radius:22px 22px 0 0; padding:28px 22px 26px;
+    box-shadow:0 -10px 40px rgba(0,0,0,.25);
+  }
+  @media(min-width:640px){ .modal-panel{border-radius:var(--radius-l);} }
+  .modal-close{
+    position:absolute; top:10px; right:12px; width:40px; height:40px; border-radius:999px;
+    border:none; background:transparent; font-size:1.6rem; line-height:1; color:var(--charcoal-soft);
+  }
+  .modal-close:hover{background:var(--gray);}
+  .preview-kicker{font-size:.74rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--sage-text);}
+  .preview-title{font-size:1.3rem; margin-top:4px;}
+  .preview-row{margin-top:16px;}
+  .preview-row .label{font-size:.76rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--charcoal-soft); opacity:.75; margin-bottom:4px;}
+  .preview-row .value{font-size:.94rem; white-space:pre-wrap;}
+  .preview-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px;}
+  @media(max-width:480px){ .preview-grid{grid-template-columns:1fr;} }
+  .preview-body-box{
+    background:var(--white); border-radius:var(--radius-m); padding:16px; margin-top:8px;
+    max-height:280px; overflow-y:auto; font-size:.92rem; white-space:pre-wrap;
+  }
+  details.debug-details{margin-top:20px; font-size:.8rem; color:var(--charcoal-soft);}
+  details.debug-details summary{cursor:pointer; font-weight:600;}
+  details.debug-details .value{font-family:monospace; font-size:.78rem; word-break:break-all;}
+
+  .loading-note{text-align:center; padding:60px 20px; color:var(--charcoal-soft); opacity:.7;}
+</style>
+</head>
+<body>
+
+<header class="admin-header">
+  <div class="wrap">
+    <div>
+      <h1>Front Porch Recovery — Admin</h1>
+      <p class="sub">Porch Stories dashboard (read-only)</p>
+    </div>
+    <div class="session-info" id="session-info" hidden>
+      <span class="session-email" id="session-email"></span>
+      <button type="button" class="btn-outline-light" id="signout-btn">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- Checking session / admin status -->
+    <div id="state-checking" class="loading-note">Checking your session…</div>
+
+    <!-- Not signed in -->
+    <div id="state-signed-out" class="gate" hidden>
+      <div class="icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>
+      </div>
+      <h2>Admin sign-in required</h2>
+      <p>This page is for Front Porch Recovery admins only. Sign in with the same email you use for your admin account — a one-time link will be emailed to you, same as on the main site.</p>
+      <form id="signin-form" novalidate>
+        <div class="field">
+          <label for="admin-email">Email</label>
+          <input type="email" id="admin-email" autocomplete="email" required>
+          <p class="status-msg" id="field-error" role="alert"></p>
+        </div>
+        <button type="submit" class="btn btn-amber btn-block" id="signin-submit" style="width:100%; margin-top:16px;">Send sign-in link</button>
+      </form>
+      <p class="status-msg" id="signin-status" role="status" aria-live="polite"></p>
+      <p class="status-msg" id="supabase-inactive-notice" hidden>Supabase sign-in isn't connected right now.</p>
+    </div>
+
+    <!-- Signed in, not an admin -->
+    <div id="state-no-admin" class="gate denied" hidden>
+      <div class="icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 8l8 8M16 8l-8 8"/></svg>
+      </div>
+      <h2>You do not have admin access</h2>
+      <p>You're signed in as <strong id="no-admin-email"></strong>, but this account isn't a Front Porch Recovery admin, so there's nothing here for it to see.</p>
+      <button type="button" class="btn btn-outline" id="no-admin-signout-btn" style="margin-top:18px;">Sign out</button>
+    </div>
+
+    <!-- Admin dashboard -->
+    <div id="state-dashboard" hidden>
+      <div class="dash-toolbar">
+        <div class="filters" id="filters" role="tablist" aria-label="Filter by status"></div>
+        <span class="refresh-note" id="refresh-note"></span>
+      </div>
+      <div class="story-list" id="story-list"></div>
+      <div class="empty-state" id="empty-state" hidden>No stories in this view yet.</div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Preview modal -->
+<div id="preview-modal" class="modal-backdrop" hidden>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="preview-title">
+    <button type="button" class="modal-close" id="preview-close" aria-label="Close">&times;</button>
+    <p class="preview-kicker">Porch Story preview</p>
+    <h2 class="preview-title" id="preview-title"></h2>
+
+    <div class="badge-row" id="preview-badges"></div>
+
+    <div class="preview-grid">
+      <div class="preview-row">
+        <div class="label">Display name</div>
+        <div class="value" id="preview-display-name"></div>
+      </div>
+      <div class="preview-row">
+        <div class="label">Category</div>
+        <div class="value" id="preview-category"></div>
+      </div>
+      <div class="preview-row">
+        <div class="label">Submitted</div>
+        <div class="value" id="preview-submitted"></div>
+      </div>
+      <div class="preview-row">
+        <div class="label">Contact email</div>
+        <div class="value" id="preview-email"></div>
+      </div>
+      <div class="preview-row">
+        <div class="label">Publishing permission</div>
+        <div class="value" id="preview-permission"></div>
+      </div>
+      <div class="preview-row">
+        <div class="label">Current status</div>
+        <div class="value" id="preview-status"></div>
+      </div>
+    </div>
+
+    <div class="preview-row">
+      <div class="label">Full story</div>
+      <div class="preview-body-box" id="preview-body"></div>
+    </div>
+
+    <details class="debug-details">
+      <summary>Admin / debug details</summary>
+      <div class="preview-row">
+        <div class="label">Story ID</div>
+        <div class="value" id="preview-id"></div>
+      </div>
+      <div class="preview-row">
+        <div class="label">Submitted by signed-in user?</div>
+        <div class="value" id="preview-user-exists"></div>
+      </div>
+      <div class="preview-row">
+        <div class="label">user_id</div>
+        <div class="value" id="preview-user-id"></div>
+      </div>
+      <div class="preview-row">
+        <div class="label">Reviewed at</div>
+        <div class="value" id="preview-reviewed-at"></div>
+      </div>
+      <div class="preview-row">
+        <div class="label">Reviewed by (admin_users.user_id)</div>
+        <div class="value" id="preview-reviewed-by"></div>
+      </div>
+      <div class="preview-row">
+        <div class="label">Published at</div>
+        <div class="value" id="preview-published-at"></div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Front Porch Recovery — Porch Stories admin dashboard (Phase 2)
+
+   Strictly read-only. Every Supabase call in this file is one of:
+   auth.signInWithOtp, auth.getSession, auth.onAuthStateChange,
+   auth.signOut, rpc('is_admin'), or .from('porch_stories').select(...).
+   There is no .insert(, .update(, .delete(, or .upsert( anywhere in
+   this file, and none is added by any later phase without a separate,
+   explicit approval. Database RLS (schema.sql) is what actually
+   enforces access — the gating below only decides what this page
+   *shows*; it is not itself a security boundary.
+   ============================================================ */
+(function(){
+  const CONFIG = {
+    // Same project, same publishable/anon key as index.html. Never the
+    // service_role key — that must never exist in any browser-shipped file.
+    supabaseUrl: 'https://ptmazxslypzslhhcqudn.supabase.co',
+    supabaseAnonKey: 'sb_publishable_1_TI_W8Zuk9319d-akZYrw_uAEVBtz8'
+  };
+
+  const els = {
+    sessionInfo: document.getElementById('session-info'),
+    sessionEmail: document.getElementById('session-email'),
+    signoutBtn: document.getElementById('signout-btn'),
+    stateChecking: document.getElementById('state-checking'),
+    stateSignedOut: document.getElementById('state-signed-out'),
+    stateNoAdmin: document.getElementById('state-no-admin'),
+    stateDashboard: document.getElementById('state-dashboard'),
+    signinForm: document.getElementById('signin-form'),
+    adminEmail: document.getElementById('admin-email'),
+    fieldError: document.getElementById('field-error'),
+    signinSubmit: document.getElementById('signin-submit'),
+    signinStatus: document.getElementById('signin-status'),
+    supabaseInactiveNotice: document.getElementById('supabase-inactive-notice'),
+    noAdminEmail: document.getElementById('no-admin-email'),
+    noAdminSignoutBtn: document.getElementById('no-admin-signout-btn'),
+    filters: document.getElementById('filters'),
+    refreshNote: document.getElementById('refresh-note'),
+    storyList: document.getElementById('story-list'),
+    emptyState: document.getElementById('empty-state'),
+    previewModal: document.getElementById('preview-modal'),
+    previewClose: document.getElementById('preview-close'),
+  };
+
+  function showOnly(stateEl){
+    [els.stateChecking, els.stateSignedOut, els.stateNoAdmin, els.stateDashboard].forEach(el => {
+      el.hidden = (el !== stateEl);
+    });
+  }
+
+  function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+  function setSigninStatus(kind, text){
+    els.signinStatus.className = 'status-msg' + (text ? ' show' : '') + (kind ? ' status-' + kind : '');
+    els.signinStatus.textContent = text || '';
+  }
+
+  let client = null;
+  if (CONFIG.supabaseUrl && CONFIG.supabaseAnonKey && window.supabase && typeof window.supabase.createClient === 'function') {
+    try {
+      client = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
+    } catch(err){ client = null; }
+  }
+
+  if (!client) {
+    showOnly(els.stateSignedOut);
+    els.supabaseInactiveNotice.hidden = false;
+    els.signinForm.querySelectorAll('input, button').forEach(el => el.disabled = true);
+    return;
+  }
+
+  // The main site (index.html) is the only URL currently allow-listed in
+  // Supabase's Auth → URL Configuration. Sending the admin straight back
+  // to this page would require adding admin.html there too — a Supabase
+  // dashboard change this file does not make on its own. Instead, the
+  // magic link returns to the main site (where the session is saved to
+  // the same browser storage this page reads), and the admin re-opens
+  // this page afterward. If admin.html is later added to the Redirect
+  // URLs allow list, this can point at window.location instead.
+  function mainSiteUrl(){
+    // Same path this file lives next to, minus its own filename.
+    const path = window.location.pathname.replace(/admin\.html$/, '');
+    return window.location.origin + path;
+  }
+
+  els.signinForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    els.fieldError.textContent = '';
+    els.fieldError.classList.remove('show');
+    const email = els.adminEmail.value.trim();
+    if (!email || !isValidEmail(email)) {
+      els.fieldError.textContent = 'Please enter a valid email address.';
+      els.fieldError.classList.add('show');
+      return;
+    }
+    els.signinSubmit.disabled = true;
+    const original = els.signinSubmit.textContent;
+    els.signinSubmit.textContent = 'Sending...';
+    setSigninStatus('info', 'Sending your sign-in link...');
+    try {
+      const { error } = await client.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: mainSiteUrl() }
+      });
+      if (error) {
+        setSigninStatus('error', 'Could not send a sign-in link right now. Please try again in a moment.');
+      } else {
+        setSigninStatus('success', 'Check your email for a sign-in link. It will open the main site, already signed in — come back to this page afterward.');
+        els.signinForm.reset();
+      }
+    } catch(err) {
+      setSigninStatus('error', 'Could not send a sign-in link right now. Please try again in a moment.');
+    } finally {
+      els.signinSubmit.disabled = false;
+      els.signinSubmit.textContent = original;
+    }
+  });
+
+  async function handleSignOut(){
+    try { await client.auth.signOut(); } catch(err){}
+  }
+  els.signoutBtn.addEventListener('click', handleSignOut);
+  els.noAdminSignoutBtn.addEventListener('click', handleSignOut);
+
+  /* ---------- Dashboard ---------- */
+  const STATUS_FILTERS = [
+    { key: 'all', label: 'All' },
+    { key: 'pending', label: 'Pending' },
+    { key: 'approved', label: 'Approved' },
+    { key: 'published', label: 'Published' },
+    { key: 'rejected', label: 'Rejected' },
+  ];
+  let allStories = [];
+  let activeFilter = 'all';
+
+  function fmtDate(v){
+    if (!v) return '—';
+    try { return new Date(v).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }); }
+    catch(err){ return v; }
+  }
+
+  function renderFilters(){
+    els.filters.innerHTML = '';
+    STATUS_FILTERS.forEach(f => {
+      const count = f.key === 'all' ? allStories.length : allStories.filter(s => s.status === f.key).length;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'filter-btn' + (activeFilter === f.key ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(activeFilter === f.key));
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = f.label + ' ';
+      const countSpan = document.createElement('span');
+      countSpan.className = 'count';
+      countSpan.textContent = '(' + count + ')';
+      btn.appendChild(labelSpan);
+      btn.appendChild(countSpan);
+      btn.addEventListener('click', () => { activeFilter = f.key; renderFilters(); renderList(); });
+      els.filters.appendChild(btn);
+    });
+  }
+
+  function renderList(){
+    const visible = activeFilter === 'all' ? allStories : allStories.filter(s => s.status === activeFilter);
+    els.storyList.innerHTML = '';
+    els.emptyState.hidden = visible.length !== 0;
+    visible.forEach(story => {
+      const card = document.createElement('div');
+      card.className = 'story-card';
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', 'Preview story: ' + story.title);
+
+      const top = document.createElement('div');
+      top.className = 'story-top';
+      const title = document.createElement('div');
+      title.className = 'story-title';
+      title.textContent = story.title;
+      const meta = document.createElement('div');
+      meta.className = 'story-meta';
+      meta.textContent = 'by ' + (story.display_name || '—') + ' · ' + fmtDate(story.submitted_at);
+      top.appendChild(title);
+      top.appendChild(meta);
+
+      const snippet = document.createElement('div');
+      snippet.className = 'story-snippet';
+      snippet.textContent = (story.story_body || '').slice(0, 160);
+
+      const badges = document.createElement('div');
+      badges.className = 'badge-row';
+      const statusBadge = document.createElement('span');
+      statusBadge.className = 'badge status-' + story.status;
+      statusBadge.textContent = story.status;
+      badges.appendChild(statusBadge);
+
+      const categoryBadge = document.createElement('span');
+      categoryBadge.className = 'badge outline';
+      categoryBadge.textContent = story.category;
+      badges.appendChild(categoryBadge);
+
+      if (!story.publishing_permission) {
+        const permBadge = document.createElement('span');
+        permBadge.className = 'badge outline';
+        permBadge.textContent = 'No publishing permission';
+        badges.appendChild(permBadge);
+      }
+
+      const userBadge = document.createElement('span');
+      userBadge.className = 'badge outline';
+      userBadge.textContent = story.user_id ? 'Signed-in submission' : 'Anonymous submission';
+      badges.appendChild(userBadge);
+
+      card.appendChild(top);
+      card.appendChild(snippet);
+      card.appendChild(badges);
+
+      card.addEventListener('click', () => openPreview(story));
+      card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPreview(story); } });
+
+      els.storyList.appendChild(card);
+    });
+  }
+
+  function openPreview(story){
+    document.getElementById('preview-title').textContent = story.title;
+    document.getElementById('preview-display-name').textContent = story.display_name || '—';
+    document.getElementById('preview-category').textContent = story.category || '—';
+    document.getElementById('preview-submitted').textContent = fmtDate(story.submitted_at);
+    document.getElementById('preview-email').textContent = story.contact_email || '— (none provided)';
+    document.getElementById('preview-permission').textContent = story.publishing_permission ? 'Yes' : 'No';
+    document.getElementById('preview-status').textContent = story.status;
+    document.getElementById('preview-body').textContent = story.story_body || '';
+
+    document.getElementById('preview-id').textContent = story.id;
+    document.getElementById('preview-user-exists').textContent = story.user_id ? 'Yes — signed-in submission' : 'No — anonymous submission';
+    document.getElementById('preview-user-id').textContent = story.user_id || '—';
+    document.getElementById('preview-reviewed-at').textContent = fmtDate(story.reviewed_at);
+    document.getElementById('preview-reviewed-by').textContent = story.reviewed_by || '—';
+    document.getElementById('preview-published-at').textContent = fmtDate(story.published_at);
+
+    const badgeRow = document.getElementById('preview-badges');
+    badgeRow.innerHTML = '';
+    const statusBadge = document.createElement('span');
+    statusBadge.className = 'badge status-' + story.status;
+    statusBadge.textContent = story.status;
+    badgeRow.appendChild(statusBadge);
+
+    els.previewModal.hidden = false;
+    document.documentElement.classList.add('admin-modal-open');
+  }
+  function closePreview(){
+    els.previewModal.hidden = true;
+    document.documentElement.classList.remove('admin-modal-open');
+  }
+  els.previewClose.addEventListener('click', closePreview);
+  els.previewModal.addEventListener('click', (e) => { if (e.target === els.previewModal) closePreview(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !els.previewModal.hidden) closePreview(); });
+
+  async function loadStories(){
+    // Read-only. Admin RLS policy (porch_stories_admin_all) is what
+    // actually allows this to return every row/column for an admin
+    // session — this call does not and cannot grant anything by itself.
+    const { data, error } = await client
+      .from('porch_stories')
+      .select('id, display_name, title, category, story_body, contact_email, publishing_permission, status, submitted_at, reviewed_at, published_at, reviewed_by, user_id')
+      .order('submitted_at', { ascending: false });
+
+    if (error) {
+      els.refreshNote.textContent = 'Could not load stories: ' + error.message;
+      allStories = [];
+    } else {
+      allStories = data || [];
+      els.refreshNote.textContent = allStories.length + ' total · loaded ' + new Date().toLocaleTimeString();
+    }
+    renderFilters();
+    renderList();
+  }
+
+  async function showDashboard(session){
+    els.sessionInfo.hidden = false;
+    els.sessionEmail.textContent = session.user.email || '';
+    showOnly(els.stateDashboard);
+    await loadStories();
+  }
+
+  function showNoAdmin(session){
+    els.sessionInfo.hidden = false;
+    els.sessionEmail.textContent = session.user.email || '';
+    els.noAdminEmail.textContent = session.user.email || 'this account';
+    showOnly(els.stateNoAdmin);
+  }
+
+  function showSignedOut(){
+    els.sessionInfo.hidden = true;
+    showOnly(els.stateSignedOut);
+  }
+
+  async function evaluateSession(session){
+    if (!session || !session.user) {
+      showSignedOut();
+      return;
+    }
+    showOnly(els.stateChecking);
+    try {
+      // is_admin() is the same function and the same RLS source of truth
+      // used throughout schema.sql — this call only asks it what it
+      // already knows; it changes nothing and is granted to `authenticated`
+      // specifically so a signed-in session can ask this question.
+      const { data: isAdmin, error } = await client.rpc('is_admin');
+      if (error) {
+        els.refreshNote && (els.refreshNote.textContent = '');
+        showNoAdmin(session);
+        return;
+      }
+      if (isAdmin === true) {
+        await showDashboard(session);
+      } else {
+        showNoAdmin(session);
+      }
+    } catch(err) {
+      showNoAdmin(session);
+    }
+  }
+
+  client.auth.getSession().then(({ data }) => evaluateSession(data.session));
+  client.auth.onAuthStateChange((_event, session) => evaluateSession(session));
+})();
+</script>
+</body>
+</html>
