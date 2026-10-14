@@ -715,6 +715,7 @@
       <button data-nav="daily">Daily Porch</button>
       <button data-nav="music">Music</button>
       <button data-nav="stories">Stories</button>
+      <button data-nav="community">Community</button>
       <button data-nav="about">About</button>
     </nav>
     <div style="display:flex; align-items:center; gap:10px;">
@@ -742,6 +743,7 @@
     <button data-nav="daily">Daily Porch</button>
     <button data-nav="music">Music</button>
     <button data-nav="stories">Porch Stories</button>
+    <button data-nav="community">Community</button>
     <button data-nav="about">My Story</button>
     <button data-nav="contact">Contact</button>
     <button data-nav="app">Get the App</button>
@@ -1393,6 +1395,62 @@
     <div class="wrap" style="max-width:680px;">
       <div id="story-body" style="line-height:1.75;"></div>
       <button type="button" class="btn btn-outline" data-nav="stories" style="margin-top:30px;">&lsaquo; Back to Porch Stories</button>
+    </div>
+  </section>
+</section>
+
+<!-- ================= COMMUNITY ================= -->
+<section class="page" id="page-community">
+  <section class="block bg-charcoal tight">
+    <div class="wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;">Community</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Front Porch Recovery Community</h1>
+      <p style="color:var(--gray); margin-top:10px; max-width:56ch;">A place to talk with people rebuilding life, not another place to perform recovery perfectly.</p>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap" style="max-width:680px;">
+      <!-- Signed-out: read-only prompt where posting controls would be. -->
+      <div id="community-signedout-notice" class="status-msg status-info" style="display:block;" role="status">
+        <strong>Sign in to post.</strong>
+        <p style="margin-top:6px; font-weight:400;">Anyone can read the community feed below. <button type="button" class="btn btn-outline" id="community-signin-link" data-account-action="open" style="padding:4px 14px; font-size:.85rem; display:inline-flex; width:auto; margin-left:4px;">Sign in</button> to share your own post.</p>
+      </div>
+
+      <!-- Signed-in: post form (hidden until a session is confirmed). -->
+      <form class="form-card" id="community-post-form" style="display:none;" novalidate>
+        <div class="field">
+          <label for="community-post-body">Share something with the porch</label>
+          <textarea id="community-post-body" name="body" maxlength="2000" required style="min-height:120px;" placeholder="What's on your mind today?"></textarea>
+          <p class="field-error" id="community-post-body-error" role="alert"></p>
+          <p style="margin-top:6px; font-size:.8rem; color:var(--charcoal-soft); opacity:.75;"><span id="community-post-charcount">0</span> / 2000</p>
+        </div>
+        <button type="submit" class="btn btn-primary" id="community-post-submit">Post to the Community</button>
+        <p id="community-post-status" class="status-msg" role="status" aria-live="polite"></p>
+      </form>
+
+      <!-- Edit form for a member's own post, shown only when Edit is clicked. -->
+      <form class="form-card" id="community-edit-form" style="display:none; margin-top:16px;" novalidate>
+        <div class="field">
+          <label for="community-edit-body">Edit your post</label>
+          <textarea id="community-edit-body" name="body" maxlength="2000" required style="min-height:120px;"></textarea>
+          <p class="field-error" id="community-edit-body-error" role="alert"></p>
+          <p style="margin-top:6px; font-size:.8rem; color:var(--charcoal-soft); opacity:.75;"><span id="community-edit-charcount">0</span> / 2000</p>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button type="submit" class="btn btn-primary" id="community-edit-submit">Save changes</button>
+          <button type="button" class="btn btn-outline" id="community-edit-cancel">Cancel</button>
+        </div>
+        <p id="community-edit-status" class="status-msg" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap" style="max-width:680px;">
+      <p id="community-feed-notice" class="status-msg status-info" style="display:none; margin-bottom:14px;" role="status">The community feed couldn't be loaded right now. The rest of the site still works — please try this page again later.</p>
+      <p id="community-feed-empty" style="display:none; color:var(--charcoal-soft);">No posts yet. Be the first to say hello.</p>
+      <div id="community-feed" style="display:flex; flex-direction:column; gap:16px;"></div>
     </div>
   </section>
 </section>
@@ -8928,6 +8986,310 @@ const FPRBadge = (function(){
       });
     });
   }
+})();
+/* ---------- Community (Phase 6A) ----------
+   Read-only feed via community_posts_public (same for signed-out
+   visitors and signed-in members — no identity required). Posting and
+   editing call create_community_post/edit_community_post through the
+   shared signed-in client (window.__fprSupabaseClient, set above), so
+   the member's own session JWT is what the server checks — never
+   anything this code sends about who the member is. Moderation lives
+   only in admin.html. This never reads or writes the Recovery Counter,
+   Daily Check-In, moods, cravings, reflections, or any other on-device
+   recovery data — nothing about those is referenced anywhere below. */
+(function(){
+  const client = window.__fprSupabaseClient;
+  const supabaseUrl = CONFIG.services.supabaseUrl;
+  const supabaseAnonKey = CONFIG.services.supabaseAnonKey;
+
+  const signedOutNotice = document.getElementById('community-signedout-notice');
+  const postForm = document.getElementById('community-post-form');
+  const postBody = document.getElementById('community-post-body');
+  const postBodyErr = document.getElementById('community-post-body-error');
+  const postCharcount = document.getElementById('community-post-charcount');
+  const postSubmitBtn = document.getElementById('community-post-submit');
+  const postStatus = document.getElementById('community-post-status');
+
+  const editForm = document.getElementById('community-edit-form');
+  const editBody = document.getElementById('community-edit-body');
+  const editBodyErr = document.getElementById('community-edit-body-error');
+  const editCharcount = document.getElementById('community-edit-charcount');
+  const editSubmitBtn = document.getElementById('community-edit-submit');
+  const editCancelBtn = document.getElementById('community-edit-cancel');
+  const editStatus = document.getElementById('community-edit-status');
+
+  const feedEl = document.getElementById('community-feed');
+  const feedNotice = document.getElementById('community-feed-notice');
+  const feedEmpty = document.getElementById('community-feed-empty');
+
+  if (!signedOutNotice || !postForm || !feedEl) return; // defensive: markup missing
+
+  // A dedicated, session-less client for the public feed read — same
+  // pattern as loadDbStories() on the Porch Stories page. The feed
+  // query needs no identity, so it stays decoupled from the sign-in
+  // client's own async initialization entirely.
+  let readClient = null;
+  if (supabaseUrl && supabaseAnonKey && window.supabase && typeof window.supabase.createClient === 'function') {
+    try {
+      readClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false } });
+    } catch(err){ readClient = null; }
+  }
+
+  let feedLoaded = false;
+  let feedLoading = false;
+  let myPostIds = new Set();
+  let currentSession = null;
+  let editingPostId = null;
+
+  function setStatus(el, kind, text){
+    el.className = 'status-msg' + (text ? ' show' : '') + (kind ? ' status-' + kind : '');
+    el.textContent = text || '';
+  }
+
+  function formatDate(iso){
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch(err){ return ''; }
+  }
+
+  // Every value below comes straight from the database and is placed
+  // with textContent only — never innerHTML — so a post body or
+  // display name that looks like a markup/script tag renders as
+  // plain, inert text instead of being parsed.
+  function buildPostCard(post){
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.setAttribute('data-post-id', post.id);
+
+    const meta = document.createElement('p');
+    meta.style.margin = '0';
+    meta.style.fontWeight = '600';
+    meta.style.color = 'var(--charcoal)';
+    meta.style.opacity = '1';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = post.display_name || 'Community member';
+    meta.appendChild(nameSpan);
+
+    const dateSpan = document.createElement('span');
+    dateSpan.style.fontWeight = '400';
+    dateSpan.style.marginLeft = '8px';
+    dateSpan.style.fontSize = '.85rem';
+    dateSpan.style.opacity = '.75';
+    dateSpan.textContent = formatDate(post.created_at);
+    meta.appendChild(dateSpan);
+
+    if (post.edited_at) {
+      const editedSpan = document.createElement('span');
+      editedSpan.style.fontWeight = '400';
+      editedSpan.style.marginLeft = '8px';
+      editedSpan.style.fontSize = '.8rem';
+      editedSpan.style.opacity = '.6';
+      editedSpan.style.fontStyle = 'italic';
+      editedSpan.textContent = '(edited)';
+      meta.appendChild(editedSpan);
+    }
+    card.appendChild(meta);
+
+    const bodyEl = document.createElement('p');
+    bodyEl.style.whiteSpace = 'pre-wrap';
+    bodyEl.style.margin = '0';
+    bodyEl.style.opacity = '1';
+    bodyEl.style.color = 'var(--charcoal-soft)';
+    bodyEl.textContent = post.body || ''; // plain text only — no linkification, no markup parsing
+    card.appendChild(bodyEl);
+
+    if (myPostIds.has(post.id)) {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'btn btn-outline';
+      editBtn.style.alignSelf = 'flex-start';
+      editBtn.style.padding = '6px 16px';
+      editBtn.style.fontSize = '.85rem';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', function(){ openEditForm(post); });
+      card.appendChild(editBtn);
+    }
+
+    return card;
+  }
+
+  function renderFeed(posts){
+    feedEl.innerHTML = ''; // clearing only; every node re-added below is built via createElement/textContent
+    if (!posts || posts.length === 0){
+      feedEmpty.style.display = 'block';
+      return;
+    }
+    feedEmpty.style.display = 'none';
+    posts.forEach(p => feedEl.appendChild(buildPostCard(p)));
+  }
+
+  async function loadFeed(){
+    if (feedLoading) return;
+    feedLoading = true;
+    try {
+      if (!readClient) throw new Error('Community feed client unavailable');
+      const { data, error } = await readClient
+        .from('community_posts_public')
+        .select('id, body, created_at, updated_at, edited_at, display_name')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      feedNotice.style.display = 'none';
+      renderFeed(data || []);
+      feedLoaded = true;
+    } catch(err){
+      // Failure here never breaks the rest of the site — just this
+      // one page's feed shows a subtle message instead.
+      feedNotice.style.display = 'block';
+    } finally {
+      feedLoading = false;
+    }
+  }
+
+  async function refreshMyPosts(){
+    myPostIds = new Set();
+    if (!client || !currentSession) return;
+    try {
+      const { data, error } = await client.rpc('list_my_community_posts');
+      if (!error && Array.isArray(data)) {
+        data.forEach(p => myPostIds.add(p.id));
+      }
+    } catch(err){ /* best-effort only — Edit buttons simply won't show */ }
+  }
+
+  function openEditForm(post){
+    editingPostId = post.id;
+    editBody.value = post.body || '';
+    editCharcount.textContent = String(editBody.value.length);
+    setStatus(editStatus, '', '');
+    editForm.style.display = 'block';
+    try { editForm.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'center' }); } catch(err){}
+    editBody.focus();
+  }
+  function closeEditForm(){
+    editingPostId = null;
+    editForm.style.display = 'none';
+  }
+  editCancelBtn.addEventListener('click', closeEditForm);
+
+  postBody.addEventListener('input', function(){ postCharcount.textContent = String(postBody.value.length); });
+  editBody.addEventListener('input', function(){ editCharcount.textContent = String(editBody.value.length); });
+
+  function updateSignedInUI(session){
+    currentSession = (session && session.user) ? session : null;
+    const signedIn = !!currentSession;
+    signedOutNotice.style.display = signedIn ? 'none' : 'block';
+    postForm.style.display = signedIn ? 'block' : 'none';
+    if (!signedIn) {
+      closeEditForm();
+      myPostIds = new Set();
+      if (feedLoaded) loadFeed();
+    } else {
+      refreshMyPosts().then(function(){ if (feedLoaded) loadFeed(); });
+    }
+  }
+
+  if (client) {
+    client.auth.getSession().then(({ data }) => updateSignedInUI(data.session));
+    client.auth.onAuthStateChange((_event, session) => updateSignedInUI(session));
+  } else {
+    signedOutNotice.style.display = 'block';
+    postForm.style.display = 'none';
+  }
+
+  let submittingPost = false;
+  postForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (submittingPost) return;
+    postBodyErr.textContent = ''; postBodyErr.classList.remove('show'); postBody.classList.remove('invalid');
+    const val = postBody.value.trim();
+    if (!val){
+      postBodyErr.textContent = 'Please write something before posting.'; postBodyErr.classList.add('show'); postBody.classList.add('invalid');
+      return;
+    }
+    if (val.length > 2000){
+      postBodyErr.textContent = 'Posts must be 2,000 characters or fewer.'; postBodyErr.classList.add('show'); postBody.classList.add('invalid');
+      return;
+    }
+    if (!client || !currentSession){
+      setStatus(postStatus, 'error', 'Please sign in to post.');
+      return;
+    }
+    submittingPost = true;
+    postSubmitBtn.disabled = true;
+    const originalLabel = postSubmitBtn.textContent;
+    postSubmitBtn.textContent = 'Posting...';
+    setStatus(postStatus, 'info', 'Posting...');
+    try {
+      const { data, error } = await client.rpc('create_community_post', { p_body: val });
+      if (error) throw error;
+      if (data && data.id) myPostIds.add(data.id);
+      postForm.reset();
+      postCharcount.textContent = '0';
+      setStatus(postStatus, 'success', 'Posted. Thanks for sharing.');
+      loadFeed(); // only after the database confirms the write — never optimistic
+    } catch(err){
+      setStatus(postStatus, 'error', (err && err.message) ? err.message : 'Something went wrong posting that. Please try again.');
+    } finally {
+      submittingPost = false;
+      postSubmitBtn.disabled = false;
+      postSubmitBtn.textContent = originalLabel;
+    }
+  });
+
+  let submittingEdit = false;
+  editForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (submittingEdit || !editingPostId) return;
+    editBodyErr.textContent = ''; editBodyErr.classList.remove('show'); editBody.classList.remove('invalid');
+    const val = editBody.value.trim();
+    if (!val){
+      editBodyErr.textContent = 'Please write something before saving.'; editBodyErr.classList.add('show'); editBody.classList.add('invalid');
+      return;
+    }
+    if (val.length > 2000){
+      editBodyErr.textContent = 'Posts must be 2,000 characters or fewer.'; editBodyErr.classList.add('show'); editBody.classList.add('invalid');
+      return;
+    }
+    if (!client || !currentSession){
+      setStatus(editStatus, 'error', 'Please sign in to edit your post.');
+      return;
+    }
+    const targetId = editingPostId;
+    submittingEdit = true;
+    editSubmitBtn.disabled = true;
+    const originalLabel = editSubmitBtn.textContent;
+    editSubmitBtn.textContent = 'Saving...';
+    setStatus(editStatus, 'info', 'Saving...');
+    try {
+      const { data, error } = await client.rpc('edit_community_post', { p_post_id: targetId, p_body: val });
+      if (error) throw error;
+      setStatus(editStatus, 'success', 'Saved.');
+      closeEditForm();
+      loadFeed(); // only after the database confirms the write — never optimistic
+    } catch(err){
+      setStatus(editStatus, 'error', (err && err.message) ? err.message : 'Something went wrong saving that. Please try again.');
+    } finally {
+      submittingEdit = false;
+      editSubmitBtn.disabled = false;
+      editSubmitBtn.textContent = originalLabel;
+    }
+  });
+
+  // Load the feed the first time the Community page is actually
+  // visited, not at startup, so a never-opened page never fires an
+  // avoidable network request. Repeat visits don't re-fetch except
+  // after a post/edit, handled explicitly above.
+  document.addEventListener('fpr:pagechange', function(e){
+    if (e && e.detail && e.detail.page === 'community' && !feedLoaded){
+      loadFeed();
+    }
+  });
+  // A direct link/bookmark to #community fires goTo() before this
+  // listener exists, so check once on startup too.
+  if (location.hash === '#community') { loadFeed(); }
 })();
 /* ---------- Installable app ----------
    Registers sw.js (offline support) when the site runs from its real web
