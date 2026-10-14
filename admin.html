@@ -601,11 +601,18 @@
     showOnly(els.stateSignedOut);
   }
 
+  let evaluatingToken = null; // dedupe: skip a redundant re-evaluation of the same session
+
   async function evaluateSession(session){
     if (!session || !session.user) {
+      evaluatingToken = null;
       showSignedOut();
       return;
     }
+    const token = session.access_token;
+    if (token && token === evaluatingToken) return; // same session already evaluated/evaluating
+    evaluatingToken = token;
+
     showOnly(els.stateChecking);
     try {
       // is_admin() is the same function and the same RLS source of truth
@@ -628,8 +635,23 @@
     }
   }
 
+  // Deferred wrapper for use inside onAuthStateChange specifically. The
+  // Supabase JS v2 auth client holds an internal lock while running its
+  // listeners; awaiting another Supabase call (rpc/from/select) directly
+  // inside that listener waits on the very lock the listener itself is
+  // holding, so it never resolves — the page hangs forever on whatever
+  // state was showing when the listener fired ("Checking your session...").
+  // Scheduling the real work with setTimeout(..., 0) runs it on a fresh
+  // task after the listener has returned and released the lock, which is
+  // Supabase's own documented workaround for this. The direct call from
+  // getSession().then(...) below is unaffected — that one isn't running
+  // inside the listener, so it's safe to await Supabase calls there.
+  function deferredEvaluateSession(session){
+    setTimeout(() => { evaluateSession(session); }, 0);
+  }
+
   client.auth.getSession().then(({ data }) => evaluateSession(data.session));
-  client.auth.onAuthStateChange((_event, session) => evaluateSession(session));
+  client.auth.onAuthStateChange((_event, session) => deferredEvaluateSession(session));
 })();
 </script>
 </body>
