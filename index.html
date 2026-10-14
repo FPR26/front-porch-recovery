@@ -2022,7 +2022,22 @@ const CONFIG = {
        (it still shows, with a notice that sign-in isn't connected) —
        nothing else on the site depends on this being set. */
     supabaseUrl: 'https://ptmazxslypzslhhcqudn.supabase.co',
-    supabaseAnonKey: 'sb_publishable_1_TI_W8Zuk9319d-akZYrw_uAEVBtz8'
+    supabaseAnonKey: 'sb_publishable_1_TI_W8Zuk9319d-akZYrw_uAEVBtz8',
+    /* Phase 3: the Porch Story submission Edge Function (submit-porch-story)
+       has JWT verification enabled at the Supabase gateway level, which
+       only understands legacy JWT-format keys as a Bearer token — the
+       newer publishable key above (sb_publishable_...) is NOT a JWT and
+       is sent on its own "apikey" header elsewhere in this file, never as
+       Authorization. This is that project's public, legacy anon key in
+       JWT form, used ONLY as the Authorization bearer for anonymous
+       (not-signed-in) calls to that one Edge Function so the gateway's
+       JWT check passes. It is exactly as safe to ship here as the
+       publishable key above — same "anon" role, same RLS, no elevated
+       access — just a different key *format* for a header that requires
+       one. A signed-in visitor's own session access token is used
+       instead of this whenever one exists; see the Porch Story submission
+       handler above. */
+    supabaseAnonJwt: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0bWF6eHNseXB6c2xoaGNxdWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5Mjc2NzEsImV4cCI6MjEwNzUwMzY3MX0.XOWnMHrOkGWGbKTxcx0H08W7oqAD1DawUt3nQfEc7pA'
   },
   links: {
     etsy: 'https://frontporchrecovery.etsy.com',
@@ -8381,13 +8396,20 @@ const FPRBadge = (function(){
   });
 })();
 /* ---------- Porch Story submission form ----------
-   Reuses the same Formspree endpoint and submission pattern as the
-   Contact form above (CONFIG.services.contactFormEndpoint) rather than
-   standing up a separate backend. A "_subject" field and a "type" field
-   let Front Porch Recovery tell story submissions apart from general
-   contact messages in the same inbox. Nothing here writes to
-   CONFIG.stories or stories-grid — a submission only ever reaches FPR by
-   email for review; it never appears on the site automatically. */
+   Phase 3: the authoritative submission path is now the submit-porch-story
+   Supabase Edge Function, which is the ONLY way a story reaches
+   public.porch_stories (every row lands there as status='pending' for
+   admin review — nothing here, or in that function, can publish a story
+   automatically). The Formspree endpoint below (CONFIG.services.
+   contactFormEndpoint) is kept as a secondary, best-effort EMAIL
+   NOTIFICATION only, sent after a successful Supabase submission so
+   Justin still gets the "new Porch Story" email he's used to. Formspree
+   never touches the database, so there is no duplicate-row risk between
+   the two: at most one database row is ever created (by the Edge
+   Function), and the Formspree call either sends a courtesy email or
+   silently fails — a Formspree failure never blocks or rolls back the
+   actual submission, and the Edge Function is never skipped because
+   Formspree is unreachable. */
 (function(){
   const form = document.getElementById('story-submit-form');
   const submitBtn = document.getElementById('ps-submit');
@@ -8404,7 +8426,13 @@ const FPRBadge = (function(){
   const emailErr = document.getElementById('ps-email-error');
   const permissionErr = document.getElementById('ps-permission-error');
   const inactiveNotice = document.getElementById('story-submit-inactive-notice');
-  const endpoint = CONFIG.services.contactFormEndpoint;
+  const notifyEndpoint = CONFIG.services.contactFormEndpoint; // Formspree: best-effort email notice only
+  const supabaseUrl = CONFIG.services.supabaseUrl;
+  const submitEndpoint = supabaseUrl ? (supabaseUrl.replace(/\/+$/, '') + '/functions/v1/submit-porch-story') : '';
+  // The form is "connected" as long as the Supabase Edge Function endpoint
+  // can be built — that's the path that actually stores the story.
+  // Formspree is optional on top of that (notifyEndpoint may be blank).
+  const endpoint = submitEndpoint;
 
   function setStatus(kind, text){
     statusEl.className = 'status-msg show status-' + kind;
@@ -8480,26 +8508,80 @@ const FPRBadge = (function(){
     submitBtn.textContent = 'Sending...';
     setStatus('info', 'Sending...');
 
+    const displayNameVal = nameInput.value.trim();
+    const titleVal = titleInput.value.trim();
+    const categoryVal = categorySelect.value;
+    const storyVal = storyInput.value.trim();
+    const contactEmailVal = emailInput.value.trim();
+
     try {
-      const res = await fetch(endpoint, {
+      // 1) Authoritative submission: the Edge Function, never a direct
+      //    browser insert into public.porch_stories (there is no grant
+      //    that would allow that; see supabase/schema.sql). If the
+      //    visitor is signed in, their own session access token is sent
+      //    so the function can verify it and attach the real user_id;
+      //    otherwise the project's public anon key (in JWT form) is sent
+      //    so the request clears the function's JWT gate as anonymous.
+      //    Nothing about user identity is ever taken from the request
+      //    body — the server derives it from this header alone.
+      let accessToken = null;
+      try {
+        if (window.__fprSupabaseClient) {
+          const { data } = await window.__fprSupabaseClient.auth.getSession();
+          accessToken = (data && data.session) ? data.session.access_token : null;
+        }
+      } catch(sessionErr) { accessToken = null; }
+      const bearer = accessToken || CONFIG.services.supabaseAnonJwt;
+
+      const res = await fetch(submitEndpoint, {
         method: 'POST',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + bearer
+        },
         body: JSON.stringify({
-          _subject: 'New Porch Story submission',
-          type: 'Porch Story Submission',
-          displayName: nameInput.value.trim(),
-          storyTitle: titleInput.value.trim(),
-          category: categorySelect.value,
-          story: storyInput.value.trim(),
-          contactEmail: emailInput.value.trim(),
-          publishingPermission: permissionInput.checked ? 'Yes — may review, lightly edit for clarity, and publish under the display name provided' : 'No'
+          display_name: displayNameVal,
+          title: titleVal,
+          category: categoryVal,
+          story_body: storyVal,
+          contact_email: contactEmailVal,
+          publishing_permission: permissionInput.checked === true
         })
       });
-      if(res.ok){
+
+      let resBody = null;
+      try { resBody = await res.json(); } catch(parseErr) { resBody = null; }
+
+      if(res.ok && resBody && resBody.ok){
         setSuccessStatus();
         form.reset();
+
+        // 2) Best-effort email notice only, sent after the real
+        //    submission succeeded. Formspree never writes to the
+        //    database, so this can never create a duplicate or
+        //    conflicting porch_stories row — it either sends Justin a
+        //    courtesy email or quietly fails, and either way the story
+        //    the visitor just sent is already safely stored.
+        if (notifyEndpoint) {
+          fetch(notifyEndpoint, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              _subject: 'New Porch Story submission',
+              type: 'Porch Story Submission',
+              displayName: displayNameVal,
+              storyTitle: titleVal,
+              category: categoryVal,
+              story: storyVal,
+              contactEmail: contactEmailVal,
+              publishingPermission: 'Yes — may review, lightly edit for clarity, and publish under the display name provided',
+              note: 'Stored in Supabase (status: pending); this email is a courtesy notice only.'
+            })
+          }).catch(function(){ /* notification-only; never affects the user-facing result */ });
+        }
       } else {
-        setStatus('error', 'Something went wrong sending that story. Please check your connection and try again.');
+        setStatus('error', (resBody && resBody.error) ? resBody.error : 'Something went wrong sending that story. Please check your connection and try again.');
       }
     } catch(err){
       setStatus('error', 'Something went wrong sending that story. Please check your connection and try again.');
@@ -8548,6 +8630,13 @@ const FPRBadge = (function(){
       });
     } catch(err){ client = null; }
   }
+  /* Shared read-only reference so the Porch Story submission handler
+     (defined earlier in this file) can check for a signed-in session
+     when calling the submit-porch-story Edge Function, without creating
+     a second, redundant Supabase client/auth-listener pair. Nothing
+     about this client's privileges changes — it still only ever holds
+     the publishable key, never service_role. */
+  window.__fprSupabaseClient = client;
 
   if (!client) {
     inactiveNotice.hidden = false;
