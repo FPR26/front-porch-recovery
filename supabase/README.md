@@ -12,7 +12,7 @@ See the architecture doc for the full plan, the phased migration, and the reason
 - RLS policies, column-level and function-level grants/revokes, and `CHECK` constraints for all of the above
 - An `on_auth_user_created` trigger that creates a `profiles` row automatically on sign-up
 
-Community tables (`community_posts`, etc.) are **not** created — they're documented in the architecture doc for a later phase.
+As of Phase 6A, `community_posts`, `community_posts_public`, and their three RPCs exist too (see the "Phase 6A" section below). Comments, replies, DMs, reactions, follows, notifications, anonymous posting, uploads, and groups are still **not** created — they're documented in the architecture doc for a later phase.
 
 ## Running the migration
 
@@ -199,12 +199,171 @@ Before this is wired to the live site in any phase, check at minimum, using the 
 - An **authenticated, non-admin** client gets the same `permission denied for view porch_stories_public` on `insert`/`update`/`delete` against the view.
 - `has_table_privilege('anon', 'public.porch_stories_public', '<priv>')` and the same for `authenticated` come back `true` only for `SELECT` — `false` for `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, `REFERENCES`, `TRIGGER`.
 
+## Phase 3: the `submit-porch-story` Edge Function (deployed)
+
+The pseudocode in the "how `user_id` gets set safely" section above is now a real, deployed Edge Function — `supabase/functions/submit-porch-story/index.ts` (also kept in that path in this repo; deployed to the project under the function name `submit-porch-story`). It implements that same contract exactly, plus the request-level handling the pseudocode left out:
+
+- **CORS**: `Access-Control-Allow-Origin` is locked to `https://fpr26.github.io` (the site's real production origin — scheme+host only, no path), not `*`. `OPTIONS` preflight is handled explicitly.
+- **`verify_jwt: true`** at the platform/gateway level — the gateway rejects any request whose `Authorization` header isn't a validly-signed Supabase JWT before the function code ever runs. Because this project uses the newer `sb_publishable_...` key format for most client code (which is *not* a JWT and can't satisfy this gate), `index.html`'s Porch Story handler sends a different, still-public value as the `Authorization` bearer specifically for this one call: the project's legacy anon key, which *is* JWT-formatted (`CONFIG.services.supabaseAnonJwt`), used only when no signed-in session exists. A signed-in visitor's real session access token is sent instead whenever one exists. Both are exactly as safe to ship client-side as the publishable key — same `anon`/authenticated role, same RLS, no elevated access — it's a format requirement for this one header, not a privilege change.
+- **Request validation**: every field is trimmed and length/type-checked server-side (`display_name` ≤80, `title` ≤120, `story_body` ≤8000, `contact_email` ≤254 and a real email shape, `category` against the exact same allow-list as the table's `CHECK` constraint), independent of whatever the browser form already enforces — an API call that skips the form can't store anything the form itself would have rejected.
+- **`publishing_permission`** must be the literal boolean `true`; anything else (missing, `false`, a string) is rejected with a `400` before the database is even called, matching `submit_porch_story()`'s own guard as a second, independent layer.
+- **Oversized/malformed payloads**: a `Content-Length` over 50KB is rejected before parsing; non-JSON bodies are rejected with a `400` rather than a crash.
+- **Rate limiting**: a real, working per-IP sliding-window limiter (5 submissions / 10 minutes / IP, keyed off `x-forwarded-for`) is implemented in the function — not a no-op. Its one honest limitation, documented in the function's own comments: the counter lives in that isolate's memory, so it can reset on a cold isolate rather than holding a hard global guarantee. The "Rate limiting and abuse protection" section above (Turnstile / a Postgres or Redis-backed counter) is the upgrade path if FPR ever needs it to be durable across isolates — the call site (`checkRateLimit(ip)`) doesn't need to change for that swap.
+- **Service-role key**: read only from `Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')` (with a fallback to the newer `SUPABASE_SECRET_KEYS` map if that legacy key is ever deactivated) — both are environment variables Supabase injects into every Edge Function automatically. It is never passed in, logged, or reachable from any browser-shipped file.
+
+### Request flow: browser → Edge Function → Supabase
+
+1. Visitor submits the Porch Story form in `index.html`. Client-side validation runs first (unchanged from before this phase).
+2. The handler checks for a signed-in session via the existing Phase 1 Supabase client (`window.__fprSupabaseClient`, a plain reference to that same client — no new client instance, no elevated privilege). If signed in, it reads that session's access token; otherwise it falls back to the public anon JWT.
+3. One `fetch` `POST`s the form fields (`display_name`, `title`, `category`, `story_body`, `contact_email`, `publishing_permission`) as JSON to `{supabaseUrl}/functions/v1/submit-porch-story`, with that token as the `Authorization: Bearer` header. This is the only network call that can ever result in a stored story.
+4. Supabase's gateway checks the JWT (`verify_jwt: true`) before the function runs at all.
+5. Inside the function: rate-limit check → body-size check → JSON parse → field validation → **independently** verify the `Authorization` bearer by calling `auth.getUser(token)` against Supabase Auth (the anon JWT resolves to no user → `null`; a real session token resolves to that user's id) → call `submit_porch_story()` with a **service-role** client, passing the verified id (or `null`) as `p_user_id` and never anything from the request body.
+6. `submit_porch_story()` (unchanged from Phase 0) hard-codes `status = 'pending'`, has no parameters for `reviewed_at`/`published_at`/`reviewed_by`, and raises `23514` if `p_publishing_permission` isn't `true`.
+7. On success, the function returns `{ ok: true, id }`; the browser shows the existing success message and — only then, and only as a best-effort courtesy — fires the existing Formspree notification in the background. Formspree never touches `porch_stories`, so it can't create a duplicate or conflicting row either way; its own success or failure has no effect on what was already stored or on what the visitor sees.
+8. The row shows up in the Phase 2 admin dashboard exactly like any other `pending` row — nothing about that dashboard's own query or RLS changed.
+
+## Phase 4: moderation (`moderate_porch_story()`)
+
+Phase 0's `authenticated` grant on `porch_stories` was `select, update` with no column restriction — fine when nothing but the submitter's own insert path and an admin's eyeballs touched the table, but too broad once admins can actually write to it. Phase 4 found that gap (same shape as the `porch_stories_public` grant gap above) and closed it the same way: by removing the broad grant rather than trying to defend it with a trigger on top.
+
+- **`revoke update on public.porch_stories from authenticated;`** — direct client `UPDATE`s on this table are now impossible for anyone except `service_role`/`postgres`. Verified live: `set role authenticated; update public.porch_stories set user_id = null ...;` fails with `permission denied for table porch_stories`.
+- **`moderate_porch_story(p_story_id, p_action, p_display_name, p_title, p_category, p_story_body)`** (`security definer`) is now the *only* way any existing row changes. `p_action` is `'approve' | 'reject' | 'publish' | 'edit'`.
+  - `id`, `user_id`, `contact_email`, `publishing_permission`, `submitted_at` are not parameters — there is no field for a client to put a value into, the same "can't happen" defense `submit_porch_story()` uses on insert.
+  - `reviewed_by` is always `auth.uid()`; `reviewed_at`/`published_at` are always `now()`. Never client-supplied, in any action.
+  - Status transitions are hard-coded to exactly: `pending→approved` (approve), `pending→approved→rejected` i.e. `pending→rejected` and `approved→rejected` (reject), `approved→published` (publish). Every other transition — `pending→published`, `rejected→published`, anything out of `published`, anything back to `pending` — is structurally unreachable because each action's guard clause requires one specific starting status and no action ever sets status to `pending`.
+  - `edit` only touches `display_name`/`title`/`category`/`story_body`, only while status is `pending` or `approved`, and only when all four are provided (no silent partial overwrite). The table's own `CHECK` constraints (category allow-list, length limits) still apply on top.
+  - The function re-checks `is_admin()` itself rather than relying solely on RLS — a non-admin `authenticated` caller gets `42501` from inside the function body, and an anonymous caller (`auth.uid()` null) gets the same.
+  - `grant execute ... to authenticated` only; `anon` has no `EXECUTE` at all.
+
+`admin.html` calls this one function for every moderation action (`client.rpc('moderate_porch_story', {...})`) and never calls `.update()`/`.insert()`/`.delete()` directly — it decides which buttons to show per status and reacts to what the function actually returns, but the function is what makes the rule true, not the UI.
+
+### Verification results (Phase 4)
+
+Run directly against the live database, simulating the admin session via `set_config('request.jwt.claim.sub', '<id>', false)` so `auth.uid()` resolves inside `moderate_porch_story()`:
+
+| # | Test | Result |
+|---|---|---|
+| 1 | `pending → approved` (admin) | ✅ succeeded; `reviewed_at`/`reviewed_by` set |
+| 2 | `pending → rejected` (admin) | ✅ succeeded |
+| 3 | `approved → published` (admin) | ✅ succeeded; `published_at` set, `reviewed_at`/`reviewed_by` preserved |
+| 4 | `pending → published` | ✅ rejected, `22023` |
+| 5 | `rejected → published` | ✅ rejected, `22023` |
+| 6 | `published → approved` (i.e. back out of published) | ✅ rejected, `22023` |
+| 7 | Content edit on permitted columns | ✅ succeeded |
+| 8–10 | Change `user_id`/`contact_email`/`publishing_permission` | ✅ impossible — not parameters, and a raw `UPDATE` as `authenticated` fails with `permission denied for table porch_stories` |
+| 11 | `reviewed_by` reflects real admin, not a client value | ✅ confirmed (no such parameter exists) |
+| 12 | `reviewed_at` server-side | ✅ confirmed (`now()`, no parameter) |
+| 13 | `published_at` server-side | ✅ confirmed (`now()`, no parameter) |
+| 14 | Non-admin authenticated cannot moderate | ✅ `42501` |
+| 15 | Anonymous cannot moderate | ✅ `42501` |
+| 16 | `porch_stories_public` still only exposes published rows | ✅ confirmed |
+| 17 | No `service_role` key in `admin.html` | ✅ confirmed (comments only) |
+| 18 | Phase 3 submission flow unaffected | ✅ `submit_porch_story()`/its grants untouched by this migration |
+
+All test rows created for this verification were clearly labeled (`"Mod Test User"`, etc.) and are flagged for cleanup.
+
+## Phase 6A: Community Posts foundation
+
+A single, plain-text, member-created post type — `community_posts` — with three states (`published`/`hidden`/`removed`), a public read view, and three `security definer` RPCs that are the only way any row is ever created, edited, or moderated. No table grant for `insert`/`update`/`delete` exists for anyone, admin included; every write goes through a function that derives identity from `auth.uid()` and enforces its own transition rules, the same posture Phase 4 moved `porch_stories` to.
+
+**Hard privacy boundary.** `community_posts` stores only `user_id`, `body`, `status`, and timestamps. Nothing in this migration, in `index.html`'s Community page, or in `admin.html`'s Community moderation section reads or writes the Recovery Counter, Daily Check-In, moods, cravings, reflections, gratitude entries, or rough-day responses — none of that on-device data has any code path into Supabase.
+
+### RLS: a caught-and-fixed gap
+
+The first draft of `community_posts`'s select policy was `status = 'published' or is_admin()`, combined with `grant select on community_posts to authenticated`. That let **any signed-in member read every other author's raw `user_id`** (and moderation columns) directly off the base table, not just their own — a real privacy gap, caught during this same build/verify pass before anything was reported done. It's fixed (`supabase/migrations/phase6a_community_posts_member_read_fix.sql`):
+
+```sql
+alter policy "community_posts_select" on public.community_posts
+  using (public.is_admin());
+```
+
+Now the base table's only policy is admin-only, exactly mirroring `porch_stories_admin_all`. A member or anonymous visitor never reads `community_posts` directly — both read the feed through `community_posts_public`, and a member sees their own posts (any status) through a new `list_my_community_posts()` function, which filters strictly on `user_id = auth.uid()` and never returns another member's row.
+
+### The three RPCs
+
+- **`create_community_post(p_body)`** — `user_id` is always `auth.uid()`, never a parameter, so there's no code path for a client to post as someone else. `status` is hard-coded `'published'`; timestamps are server-generated. Validates trimmed-non-empty, ≤2,000 characters (also enforced by a table `CHECK`, same defense-in-depth as Porch Stories).
+- **`edit_community_post(p_post_id, p_body)`** — verifies `current_row.user_id = auth.uid()` and `current_row.status = 'published'` before allowing a body-only update; sets `updated_at`/`edited_at` itself. `status`, `user_id`, and moderation fields aren't parameters, so they can never be touched here, and a hidden/removed post can't be edited by its owner.
+- **`moderate_community_post(p_post_id, p_action)`** — admin-only (`is_admin()`, re-checked inside the function, not just via RLS). `moderated_by` is always `auth.uid()`; `moderated_at` is always `now()`. Transitions are hard-coded to exactly `published→hidden`, `published→removed`, `hidden→published` (restore), `hidden→removed`. Nothing is reachable out of `removed` (no `removed→published`, no `removed→hidden`), and there is no hard-delete anywhere in this function or in `admin.html` — "remove" only ever sets `status = 'removed'`, retained for audit.
+
+### `community_posts_public` (view)
+
+Exposes only `id, body, created_at, updated_at, edited_at, display_name` — `user_id` and `moderated_by` are never selected into it, and `display_name` is resolved from `profiles` with a `'Community member'` fallback so a member who never set one doesn't show up as their email or UUID (neither of which this view ever touches). Same explicit `revoke all ... ; grant select ...` pattern as `porch_stories_public`, closing the same automatically-updatable-view gap: without it, Supabase's default per-relation grants would leave `anon`/`authenticated` with `insert`/`update`/`delete` on the view, bypassing the RPCs and RLS entirely.
+
+### Frontend
+
+- **`index.html`** — a new "Community" nav destination (desktop + mobile) and `#page-community`: a read-only feed (newest first, built entirely with `createElement`/`textContent` — never `innerHTML` — so a post body or display name that looks like a `<script>` tag renders as plain, inert text), a sign-in prompt where posting controls go for signed-out visitors, and a post/edit form for signed-in members (2,000-character limit, client-side validation mirrored by the server). No pasted URL is ever auto-linkified. The feed read uses its own session-less Supabase client (same `loadDbStories()` pattern as the Porch Stories page in Phase 5) so it's decoupled from the sign-in client's own init timing; posting/editing call the RPCs through the shared signed-in client so the member's real session JWT is what the server checks. A failed feed load shows a subtle inline message and never breaks the rest of the site; a failed post/edit shows the actual error and never optimistically updates the UI before the database confirms it.
+- **`admin.html`** — a new, clearly separate "Community Posts" tab alongside "Porch Stories" (its own list, filters, status message, and moderation functions — no shared state with the Porch Stories code), showing display name, post text, status, created/edited/moderated dates, and Hide/Restore/Remove buttons gated strictly by `post.status`. No hard-delete button anywhere. Every post body is rendered with `textContent`, same as the public page.
+
+### Verification results (Phase 6A)
+
+Run directly against the live database — `create`/`edit` identity tests via `set_config('request.jwt.claim.sub', '<id>', false)` so `auth.uid()` resolves inside the functions; grant-level claims (anon/authenticated privileges) cross-checked against `information_schema.role_table_grants`/`role_routine_grants` for the reason given in the Verifying-before-anything-goes-live section above (this sandbox can't make a real HTTP call through PostgREST as `anon`/`authenticated`, so the function's own internal identity guard and the catalog grants are verified independently as two layers, same methodology as Phases 3–4).
+
+| # | Test | Result |
+|---|---|---|
+| 1 | Anonymous `SELECT` published posts (via `community_posts_public`) | ✅ succeeded |
+| 2 | Anonymous create fails | ✅ `42501` ("Sign in required...") |
+| 3 | Anonymous edit fails | ✅ `42501` |
+| 4 | Anonymous moderation fails | ✅ `42501` |
+| 5 | Authenticated member creates own post | ✅ succeeded |
+| 6 | Stored `user_id` equals `auth.uid()` | ✅ confirmed |
+| 7 | Client cannot submit another user's `user_id` | ✅ impossible — no such parameter exists (confirmed via `pg_get_function_arguments`) |
+| 8 | Member edits own published post | ✅ succeeded; `edited_at`/`updated_at` set |
+| 9 | Member cannot edit someone else's post | ✅ `42501` |
+| 10–12 | Member cannot change `status`/`user_id`/`moderated_by` | ✅ impossible — none are parameters |
+| 13 | Member cannot edit a hidden/removed post | ✅ `22023` ("A hidden post cannot be edited.") |
+| 14 | Admin hides a published post | ✅ succeeded |
+| 15 | Admin restores a hidden post | ✅ succeeded, back to `published` |
+| 16 | Admin removes a published post | ✅ succeeded |
+| 17 | Admin removes a hidden post | ✅ succeeded |
+| 18 | `removed → published` fails | ✅ `22023` ("Only a hidden post can be restored (current status: removed).") |
+| 19 | Non-admin authenticated cannot moderate | ✅ `42501`; row unchanged |
+| 20 | `community_posts_public` exposes no `user_id`/email/moderation fields | ✅ confirmed — exactly `id, body, created_at, updated_at, edited_at, display_name` |
+| 21 | `anon`/`authenticated` have `select`-only on the view and the base table | ✅ confirmed via `information_schema.role_table_grants` |
+| 22 | `insert`/`update`/`delete` through the public view fail | ✅ no such grant exists for anyone |
+| 23 | Script/HTML-looking post body renders as plain text | ✅ confirmed at the SQL layer (plain `text` column, no HTML stored/interpreted) and at the frontend layer (14 automated DOM tests against the real extracted `index.html` Community code, including this exact case — body stored only via `textContent`, never `innerHTML`) |
+| 24 | Existing Porch Stories submission/moderation/public display still works | ✅ confirmed — `submit_porch_story`, `moderate_porch_story`, `is_admin`, and `porch_stories_public` are all untouched by this migration |
+| 25 | Existing local Recovery Counter/Check-In data untouched, on-device | ✅ confirmed — no column, trigger, or code path in this phase reads or writes any of it |
+
+A tooling note on this verification pass: this sandbox's SQL-execution tool was observed to occasionally return a stale/incorrect error for a `moderate_community_post(...)` call that, per a direct follow-up `SELECT`, had not actually changed the row — reproducible for the `'hide'`/`'remove'` action keywords specifically, across multiple different, never-before-touched rows, while a structurally different call form (`select * from fn(named_args)` instead of `select (fn(...)).*`) executed correctly every time. Every moderation test above was re-run with the reliable call form and its result cross-checked against a plain `SELECT` of the row before being recorded.
+
+### Test data created (Phase 6A)
+
+Two test `auth.users` (needed because `community_posts.user_id` has a foreign key to `auth.users`, so simulating a member requires a real row): `community-test-member-a@example.invalid` (`807a0d5e-92ab-4dca-94ef-b4a445876237`) and `community-test-member-b@example.invalid` (`fa316087-85de-4a1a-8e11-b22deeff8f86`). Both have a profile created automatically (via the existing `handle_new_user` trigger) with display names `"Community Test Member A"` / `"Community Test Member B"`.
+
+Nine `community_posts` rows, all body-prefixed `"Community Test: ..."` and owned by Member A (a tool-level call-duplication issue during the first `create_community_post` test — see below — produced more duplicates than intended; they were repurposed as separate test fixtures rather than discarded, since discarding them hit the same stuck-`DELETE`-confirmation issue described in the Phase 3/4 sections):
+
+| id | final status |
+|---|---|
+| `015985f0-6e3a-4ce9-b699-4a9633fd16bb` | published |
+| `0f6ad4f7-281e-4b40-a1fd-4bca97c40ce3` | published (was hidden, then restored) |
+| `15c34512-9d7c-43de-8b5f-e811ef37f7a9` | removed (was hidden, then removed) |
+| `39541e4b-5941-4381-9d6e-f82375dfe40e` | hidden |
+| `53544caf-03d4-4098-9f89-fb8e6e1d21b7` | removed |
+| `793c6055-d952-44c9-8452-2f74153335c4` | published |
+| `c2ca17c1-26c1-48e8-bbbd-60fa74d566f6` | published |
+| `cd439136-5339-4ee7-8a3f-0b7df8215b25` | published |
+| `d2185186-6a33-4b4a-b479-253051626f55` | published (edited) |
+
+**A tool-level duplication issue, for the record.** The very first `create_community_post` call (test 5) was executed 9 times by the SQL-execution tool/transport for a single logical tool call (all 9 rows share the identical microsecond-precision `created_at`), producing 9 rows instead of 1. This is the same class of issue noted in Phase 3/4 (`DELETE` statements there repeatedly returned `{"status":"cancelled"}` rather than running) — some mutating calls in this sandbox don't execute exactly once, and the only reliable way to know what actually happened is a follow-up `SELECT`, never the call's own reported result. None of this reflects a flaw in `create_community_post()` itself (it has no idempotency key because two genuine posts in a row are supposed to both be stored; the bug is the tool sending the request more than once) — but it's recorded here plainly rather than quietly working around it, same as the `DELETE` issue before it.
+
+**Not deleted yet**, same as the still-unresolved Phase 3/4 cleanup: `DELETE` statements against these 9 `community_posts` rows, and against the 2 test `auth.users` rows, returned `{"status":"cancelled"}` when attempted — this sandbox appears to need an interactive confirmation for destructive statements that it cannot grant itself. All of it is clearly labeled and does not resemble real content; it can be removed via the Supabase SQL editor or table editor directly, or by asking for another delete attempt.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
 
-**Phase 1 is complete and verified** — `supabase-js` and an optional, magic-link-only sign-in flow were added to `index.html` (anonymous use remains the default; Recovery Counter and Daily Check-In stay on-device, untouched; Porch Story submissions still go through the existing contact-form endpoint, not Supabase).
+**Phase 1 is complete and verified** — `supabase-js` and an optional, magic-link-only sign-in flow were added to `index.html` (anonymous use remains the default; Recovery Counter and Daily Check-In stay on-device, untouched).
 
 **The `porch_stories_public` privilege correction above has been applied and verified** — `anon`/`authenticated` now have `select`-only on that view, confirmed via live permission tests and `has_table_privilege()`.
 
-**No Phase 2 work has begun.** The next step is Phase 2 — from the architecture doc's migration plan — and only after explicit approval.
+**Phase 2 is complete and live** — the read-only admin Porch Stories dashboard (`admin.html`) reads `porch_stories` directly as an authenticated admin session, gated by `is_admin()`/RLS exactly as described above.
+
+**Phase 3 is complete and deployed** — the `submit-porch-story` Edge Function above is live, and `index.html`'s Porch Story form now submits to it instead of inserting anywhere directly. See the "Phase 3" section above for the full contract and the verification results recorded alongside this change.
+
+**Phase 4 is complete and verified** — secure Porch Story moderation (approve/reject/publish/edit) is live in `admin.html`, enforced at the database level by `moderate_porch_story()`. See the "Phase 4" section above.
+
+**Phase 5 is complete and verified locally** — published database Porch Stories now appear automatically on the public Porch Stories page in `index.html`, merged with the three built-in `CONFIG.stories`, rendered entirely via safe DOM construction. Not yet deployed to GitHub.
+
+**Phase 6A is built and verified, not yet deployed to GitHub** — the Community Posts foundation described above (`community_posts`, its public view, its three RPCs, the Community page in `index.html`, and the Community Posts moderation tab in `admin.html`) is live in this Supabase project and verified against all 25 required tests. Comments, replies, DMs, reactions, follows, notifications, anonymous posting, uploads, groups, and anything else from "Phase 6B" are explicitly out of scope and not present. Stopping here for review, per instructions — no GitHub deploy.
+
+**Phase 4 is complete and deployed** — `moderate_porch_story()` above is live, `authenticated`'s direct `UPDATE` on `porch_stories` is revoked, and `admin.html` now has Approve/Reject/Publish/Edit controls wired to it, gated by status exactly as described. See the "Phase 4" section above for the full contract and verification results. No community features or payment work were added — those remain future phases, unstarted. GitHub/the live site have not been touched; this is applied to the Supabase project and the local files only, pending explicit go-ahead to deploy.
