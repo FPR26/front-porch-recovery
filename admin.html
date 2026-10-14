@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Admin — Front Porch Recovery</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="Front Porch Recovery — Porch Stories admin dashboard (read-only, admin access required).">
+<meta name="description" content="Front Porch Recovery — Porch Stories and Community Posts moderation dashboard (admin access required).">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
@@ -200,6 +200,17 @@
   .mod-status-msg.status-success{background:var(--sage); color:var(--charcoal);}
   .mod-status-msg.status-error{background:#F4D9D6; color:#7A2E24;}
   .mod-status-msg.status-info{background:var(--gray); color:var(--charcoal-soft);}
+
+  /* ---------- Phase 6A: Community Posts moderation ---------- */
+  .dash-tabs{display:flex; gap:8px; margin-bottom:18px; border-bottom:1.5px solid var(--line); padding-bottom:0;}
+  .tab-btn{
+    background:transparent; border:none; border-bottom:3px solid transparent; padding:10px 4px; margin-right:18px;
+    font-size:.92rem; font-weight:700; color:var(--charcoal-soft); opacity:.65;
+  }
+  .tab-btn.active{color:var(--charcoal); opacity:1; border-bottom-color:var(--sage-deep);}
+  .badge.status-hidden{background:var(--amber-soft); color:#7A5B20;}
+  .badge.status-removed{background:#F4D9D6; color:#7A2E24;}
+  .community-post-body{font-size:.9rem; color:var(--charcoal-soft); white-space:pre-wrap; margin-top:6px;}
 </style>
 </head>
 <body>
@@ -254,12 +265,33 @@
 
     <!-- Admin dashboard -->
     <div id="state-dashboard" hidden>
-      <div class="dash-toolbar">
-        <div class="filters" id="filters" role="tablist" aria-label="Filter by status"></div>
-        <span class="refresh-note" id="refresh-note"></span>
+      <div class="dash-tabs" role="tablist" aria-label="Moderation section">
+        <button type="button" class="tab-btn active" id="tab-porch" role="tab" aria-selected="true">Porch Stories</button>
+        <button type="button" class="tab-btn" id="tab-community" role="tab" aria-selected="false">Community Posts</button>
       </div>
-      <div class="story-list" id="story-list"></div>
-      <div class="empty-state" id="empty-state" hidden>No stories in this view yet.</div>
+
+      <!-- Porch Stories moderation (unchanged from Phase 2/4) -->
+      <div id="porch-dashboard">
+        <div class="dash-toolbar">
+          <div class="filters" id="filters" role="tablist" aria-label="Filter by status"></div>
+          <span class="refresh-note" id="refresh-note"></span>
+        </div>
+        <div class="story-list" id="story-list"></div>
+        <div class="empty-state" id="empty-state" hidden>No stories in this view yet.</div>
+      </div>
+
+      <!-- Community Posts moderation (Phase 6A) — a clearly separate
+           section with its own list, filters, and status messages, so
+           nothing here shares state with the Porch Stories code above. -->
+      <div id="community-dashboard" hidden>
+        <div class="dash-toolbar">
+          <div class="filters" id="community-filters" role="tablist" aria-label="Filter community posts by status"></div>
+          <span class="refresh-note" id="community-refresh-note"></span>
+        </div>
+        <div class="story-list" id="community-post-list"></div>
+        <div class="empty-state" id="community-empty-state" hidden>No community posts in this view yet.</div>
+        <p class="mod-status-msg" id="community-status-msg" role="status" aria-live="polite"></p>
+      </div>
     </div>
 
   </div>
@@ -408,21 +440,27 @@
 
    Every Supabase call in this file is one of: auth.signInWithOtp,
    auth.getSession, auth.onAuthStateChange, auth.signOut,
-   rpc('is_admin'), .from('porch_stories').select(...) (read-only), or
-   — as of Phase 4 — rpc('moderate_porch_story', ...). There is still
-   no .insert(, .update(, .delete(, or .upsert( anywhere in this file,
+   rpc('is_admin'), .from('porch_stories').select(...) (read-only),
+   .from('community_posts').select(...) (read-only, Phase 6A), or one
+   of rpc('moderate_porch_story', ...) (Phase 4) / rpc(
+   'moderate_community_post', ...) (Phase 6A). There is still no
+   .insert(, .update(, .delete(, or .upsert( anywhere in this file,
    and no service_role key. Every moderation write (approve/reject/
-   publish/edit) goes through that one SECURITY DEFINER function,
-   which is the only thing in the database allowed to write to
-   porch_stories at all now — schema.sql revoked UPDATE on the table
-   from `authenticated` entirely in the Phase 4 migration, specifically
-   so this page (or any other authenticated client) has no way to
-   write to id/user_id/contact_email/publishing_permission/
-   submitted_at, and no way to set status/reviewed_at/reviewed_by/
-   published_at to anything the function's own transition rules
-   wouldn't allow. This file's job is only to decide what to *show*
-   and which button to send which action to — it is not itself the
-   security boundary, the same as Phase 2.
+   publish/edit for Porch Stories; hide/restore/remove for Community
+   Posts) goes through one of those two SECURITY DEFINER functions,
+   which are the only things in the database allowed to write to
+   porch_stories or community_posts at all — neither table has any
+   INSERT/UPDATE/DELETE grant for `authenticated` (schema.sql), so
+   this page (or any other authenticated client) has no way to write
+   to id/user_id/submitted_at/created_at or any other protected
+   column, and no way to set a status/moderation field to anything
+   the relevant function's own transition rules wouldn't allow. This
+   file's job is only to decide what to *show* and which button sends
+   which action — it is not itself the security boundary, the same as
+   Phase 2. The Community Posts section (tab, list, filters, and
+   moderation functions) is kept entirely separate from the Porch
+   Stories code above it — no shared arrays, no shared DOM elements —
+   so nothing here can break Porch Stories moderation.
    ============================================================ */
 (function(){
   const CONFIG = {
@@ -464,6 +502,15 @@
     modEditSave: document.getElementById('mod-edit-save'),
     modEditCancel: document.getElementById('mod-edit-cancel'),
     modStatusMsg: document.getElementById('mod-status-msg'),
+    tabPorch: document.getElementById('tab-porch'),
+    tabCommunity: document.getElementById('tab-community'),
+    porchDashboard: document.getElementById('porch-dashboard'),
+    communityDashboard: document.getElementById('community-dashboard'),
+    communityFilters: document.getElementById('community-filters'),
+    communityRefreshNote: document.getElementById('community-refresh-note'),
+    communityPostList: document.getElementById('community-post-list'),
+    communityEmptyState: document.getElementById('community-empty-state'),
+    communityStatusMsg: document.getElementById('community-status-msg'),
   };
 
   function showOnly(stateEl){
@@ -922,12 +969,275 @@
     renderList();
   }
 
+  /* ============================================================
+     Phase 6A: Community Posts moderation.
+
+     Deliberately separate from everything above: its own array
+     (communityPosts), its own filter state, its own render/list/
+     status-message functions, and its own call to its own RPC
+     (moderate_community_post) — nothing here reads or writes
+     allStories, currentPreviewStory, or any Porch Story element, so
+     this cannot break Porch Stories moderation.
+
+     Every Supabase call below is .from('community_posts').select(...)
+     (read-only — the same is_admin()-gated RLS policy that lets this
+     page see every porch_stories row also lets it see every
+     community_posts row, including hidden/removed) or
+     rpc('moderate_community_post', ...). There is no .insert(,
+     .update(, .delete(, or .upsert( here either, and no hard-delete
+     button anywhere in this section — Remove only ever sets
+     status = 'removed', which stays queryable/auditable forever.
+     ============================================================ */
+  const COMMUNITY_STATUS_FILTERS = [
+    { key: 'all', label: 'All' },
+    { key: 'published', label: 'Published' },
+    { key: 'hidden', label: 'Hidden' },
+    { key: 'removed', label: 'Removed' },
+  ];
+  let communityPosts = [];
+  let communityActiveFilter = 'all';
+
+  function renderCommunityFilters(){
+    els.communityFilters.innerHTML = '';
+    COMMUNITY_STATUS_FILTERS.forEach(f => {
+      const count = f.key === 'all' ? communityPosts.length : communityPosts.filter(p => p.status === f.key).length;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'filter-btn' + (communityActiveFilter === f.key ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(communityActiveFilter === f.key));
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = f.label + ' ';
+      const countSpan = document.createElement('span');
+      countSpan.className = 'count';
+      countSpan.textContent = '(' + count + ')';
+      btn.appendChild(labelSpan);
+      btn.appendChild(countSpan);
+      btn.addEventListener('click', () => { communityActiveFilter = f.key; renderCommunityFilters(); renderCommunityList(); });
+      els.communityFilters.appendChild(btn);
+    });
+  }
+
+  function setCommunityStatus(kind, text){
+    els.communityStatusMsg.className = 'mod-status-msg' + (text ? ' show' : '') + (kind ? ' status-' + kind : '');
+    els.communityStatusMsg.textContent = text || '';
+  }
+
+  // The one and only write path for this section: moderate_community_post().
+  // It independently re-checks admin status and the current status
+  // transition server-side (published<->hidden, (published|hidden)->removed,
+  // never out of removed) — this function only decides which action to
+  // send and how to react to the result, never trusts an assumed outcome.
+  async function runCommunityModeration(post, action){
+    setCommunityStatus('info', 'Saving...');
+    try {
+      const { data: updated, error } = await client.rpc('moderate_community_post', { p_post_id: post.id, p_action: action });
+      if (error) {
+        setCommunityStatus('error', 'Could not save that change: ' + error.message);
+        return;
+      }
+      const idx = communityPosts.findIndex(p => p.id === updated.id);
+      if (idx !== -1) communityPosts[idx] = updated;
+      renderCommunityFilters();
+      renderCommunityList();
+      const verb = action === 'hide' ? 'hidden' : action === 'restore' ? 'restored' : action === 'remove' ? 'removed' : 'saved';
+      setCommunityStatus('success', 'Post ' + verb + '.');
+    } catch(err) {
+      setCommunityStatus('error', 'Could not save that change. Please try again.');
+    }
+  }
+
+  function askCommunityRemove(post, rowEl){
+    rowEl.querySelectorAll('.confirm-panel').forEach(el => el.remove());
+    const panel = document.createElement('div');
+    panel.className = 'confirm-panel';
+    const msg = document.createElement('p');
+    msg.textContent = 'Remove this post from public/member view? It stays stored for moderation/audit — this is not a delete.';
+    const row = document.createElement('div');
+    row.className = 'action-row';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'btn btn-danger';
+    confirmBtn.textContent = 'Yes, remove this post';
+    confirmBtn.addEventListener('click', () => { panel.remove(); runCommunityModeration(post, 'remove'); });
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn btn-outline';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => panel.remove());
+    row.appendChild(confirmBtn);
+    row.appendChild(cancelBtn);
+    panel.appendChild(msg);
+    panel.appendChild(row);
+    rowEl.appendChild(panel);
+  }
+
+  // post.body and post.display_name are untrusted, member-submitted
+  // content — every piece of it below is placed with textContent only,
+  // never innerHTML, so a post that looks like a markup/script tag
+  // renders as plain, inert text here too.
+  function buildCommunityCard(post){
+    const card = document.createElement('div');
+    card.className = 'story-card';
+    card.style.cursor = 'default';
+
+    const top = document.createElement('div');
+    top.className = 'story-top';
+    const title = document.createElement('div');
+    title.className = 'story-title';
+    title.textContent = post.display_name || 'Community member';
+    const meta = document.createElement('div');
+    meta.className = 'story-meta';
+    let metaText = 'posted ' + fmtDate(post.created_at);
+    if (post.edited_at) metaText += ' · edited ' + fmtDate(post.edited_at);
+    if (post.moderated_at) metaText += ' · moderated ' + fmtDate(post.moderated_at);
+    meta.textContent = metaText;
+    top.appendChild(title);
+    top.appendChild(meta);
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'community-post-body';
+    bodyEl.textContent = post.body || '';
+
+    const badges = document.createElement('div');
+    badges.className = 'badge-row';
+    const statusBadge = document.createElement('span');
+    statusBadge.className = 'badge status-' + post.status;
+    statusBadge.textContent = post.status;
+    badges.appendChild(statusBadge);
+
+    const actionRow = document.createElement('div');
+    actionRow.className = 'action-row';
+
+    if (post.status === 'published') {
+      const hideBtn = document.createElement('button');
+      hideBtn.type = 'button';
+      hideBtn.className = 'btn btn-outline';
+      hideBtn.textContent = 'Hide';
+      hideBtn.addEventListener('click', () => runCommunityModeration(post, 'hide'));
+      actionRow.appendChild(hideBtn);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-danger outline btn';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', () => askCommunityRemove(post, card));
+      actionRow.appendChild(removeBtn);
+    } else if (post.status === 'hidden') {
+      const restoreBtn = document.createElement('button');
+      restoreBtn.type = 'button';
+      restoreBtn.className = 'btn btn-amber';
+      restoreBtn.textContent = 'Restore';
+      restoreBtn.addEventListener('click', () => runCommunityModeration(post, 'restore'));
+      actionRow.appendChild(restoreBtn);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-danger outline btn';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', () => askCommunityRemove(post, card));
+      actionRow.appendChild(removeBtn);
+    }
+    // removed: no buttons at all — read-only, no hard-delete, matches
+    // Porch Stories' published/rejected read-only states above.
+
+    card.appendChild(top);
+    card.appendChild(bodyEl);
+    card.appendChild(badges);
+    if (actionRow.children.length) card.appendChild(actionRow);
+
+    return card;
+  }
+
+  function renderCommunityList(){
+    const visible = communityActiveFilter === 'all' ? communityPosts : communityPosts.filter(p => p.status === communityActiveFilter);
+    els.communityPostList.innerHTML = '';
+    els.communityEmptyState.hidden = visible.length !== 0;
+    visible.forEach(post => els.communityPostList.appendChild(buildCommunityCard(post)));
+  }
+
+  async function loadCommunityPosts(){
+    // Read-only. The admin-only RLS policy on community_posts
+    // (community_posts_select, using is_admin()) is what actually
+    // allows this to return every row/column for an admin session —
+    // this call does not and cannot grant anything by itself. A
+    // non-admin authenticated session gets zero rows back here, same
+    // as it would for porch_stories above.
+    const { data, error } = await client
+      .from('community_posts')
+      .select('id, user_id, body, status, created_at, updated_at, edited_at, moderated_at, moderated_by')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      els.communityRefreshNote.textContent = 'Could not load community posts: ' + error.message;
+      communityPosts = [];
+      renderCommunityFilters();
+      renderCommunityList();
+      return;
+    }
+
+    communityPosts = data || [];
+
+    // community_posts has no display_name column (it lives on
+    // profiles), and PostgREST can't auto-embed profiles here since
+    // there is no direct foreign key from community_posts to
+    // profiles (both reference auth.users separately, not each
+    // other). So: a second, explicit read of profiles for exactly
+    // the user_ids on this page, merged in client-side.
+    //
+    // This adds no new privilege. profiles already grants admin
+    // sessions full-row SELECT via the Phase 0 "profiles_select_admin"
+    // RLS policy (using (is_admin())), and profiles has no email
+    // column at all — email lives only in auth.users, which this file
+    // never queries. Nothing here is publicly exposed: this whole
+    // tab is behind the same is_admin()-gated dashboard as Porch
+    // Stories, and display_name is rendered with textContent only,
+    // same as every other member-supplied value in this file.
+    const userIds = Array.from(new Set(communityPosts.map(p => p.user_id).filter(Boolean)));
+    let displayNameById = {};
+    if (userIds.length) {
+      try {
+        const { data: profileRows, error: profileErr } = await client
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', userIds);
+        if (!profileErr && Array.isArray(profileRows)) {
+          profileRows.forEach(p => { displayNameById[p.id] = p.display_name; });
+        }
+      } catch(err) { /* best-effort — posts still render with a neutral fallback below */ }
+    }
+    communityPosts = communityPosts.map(p => Object.assign({}, p, {
+      display_name: (p.user_id && displayNameById[p.user_id]) || 'Community member',
+    }));
+
+    els.communityRefreshNote.textContent = communityPosts.length + ' total · loaded ' + new Date().toLocaleTimeString();
+    renderCommunityFilters();
+    renderCommunityList();
+  }
+
+  function showPorchTab(){
+    els.tabPorch.classList.add('active'); els.tabPorch.setAttribute('aria-selected', 'true');
+    els.tabCommunity.classList.remove('active'); els.tabCommunity.setAttribute('aria-selected', 'false');
+    els.porchDashboard.hidden = false;
+    els.communityDashboard.hidden = true;
+  }
+  function showCommunityTab(){
+    els.tabCommunity.classList.add('active'); els.tabCommunity.setAttribute('aria-selected', 'true');
+    els.tabPorch.classList.remove('active'); els.tabPorch.setAttribute('aria-selected', 'false');
+    els.communityDashboard.hidden = false;
+    els.porchDashboard.hidden = true;
+  }
+  els.tabPorch.addEventListener('click', showPorchTab);
+  els.tabCommunity.addEventListener('click', showCommunityTab);
+
   async function showDashboard(session){
     els.sessionInfo.hidden = false;
     els.sessionEmail.textContent = session.user.email || '';
     currentAdminId = session.user.id || null;
     showOnly(els.stateDashboard);
+    showPorchTab();
     await loadStories();
+    await loadCommunityPosts();
   }
 
   function showNoAdmin(session){
