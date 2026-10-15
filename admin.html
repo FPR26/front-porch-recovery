@@ -211,6 +211,12 @@
   .badge.status-hidden{background:var(--amber-soft); color:#7A5B20;}
   .badge.status-removed{background:#F4D9D6; color:#7A2E24;}
   .community-post-body{font-size:.9rem; color:var(--charcoal-soft); white-space:pre-wrap; margin-top:6px;}
+
+  /* ---------- Phase 6B: Community Comments + Reports moderation ---------- */
+  .badge.status-open{background:var(--amber-soft); color:#7A5B20;}
+  .badge.status-resolved{background:var(--sage); color:var(--charcoal);}
+  .badge.status-dismissed{background:var(--gray); color:var(--charcoal-soft);}
+  .report-target-preview{font-size:.85rem; color:var(--charcoal-soft); white-space:pre-wrap; margin-top:4px; padding:8px 10px; background:var(--cream, #F7F4EE); border-radius:6px;}
 </style>
 </head>
 <body>
@@ -219,7 +225,7 @@
   <div class="wrap">
     <div>
       <h1>Front Porch Recovery — Admin</h1>
-      <p class="sub">Porch Stories moderation dashboard</p>
+      <p class="sub">Front Porch Recovery moderation dashboard</p>
     </div>
     <div class="session-info" id="session-info" hidden>
       <span class="session-email" id="session-email"></span>
@@ -268,6 +274,8 @@
       <div class="dash-tabs" role="tablist" aria-label="Moderation section">
         <button type="button" class="tab-btn active" id="tab-porch" role="tab" aria-selected="true">Porch Stories</button>
         <button type="button" class="tab-btn" id="tab-community" role="tab" aria-selected="false">Community Posts</button>
+        <button type="button" class="tab-btn" id="tab-community-comments" role="tab" aria-selected="false">Community Comments</button>
+        <button type="button" class="tab-btn" id="tab-reports" role="tab" aria-selected="false">Reports</button>
       </div>
 
       <!-- Porch Stories moderation (unchanged from Phase 2/4) -->
@@ -291,6 +299,31 @@
         <div class="story-list" id="community-post-list"></div>
         <div class="empty-state" id="community-empty-state" hidden>No community posts in this view yet.</div>
         <p class="mod-status-msg" id="community-status-msg" role="status" aria-live="polite"></p>
+      </div>
+
+      <!-- Community Comments moderation (Phase 6B) — its own list,
+           filters, and status message; no shared state with Porch
+           Stories or Community Posts above. -->
+      <div id="community-comments-dashboard" hidden>
+        <div class="dash-toolbar">
+          <div class="filters" id="community-comments-filters" role="tablist" aria-label="Filter community comments by status"></div>
+          <span class="refresh-note" id="community-comments-refresh-note"></span>
+        </div>
+        <div class="story-list" id="community-comments-list"></div>
+        <div class="empty-state" id="community-comments-empty-state" hidden>No community comments in this view yet.</div>
+        <p class="mod-status-msg" id="community-comments-status-msg" role="status" aria-live="polite"></p>
+      </div>
+
+      <!-- Reports moderation (Phase 6B) — member reports against
+           community posts/comments. Resolve/Dismiss only, no delete. -->
+      <div id="reports-dashboard" hidden>
+        <div class="dash-toolbar">
+          <div class="filters" id="reports-filters" role="tablist" aria-label="Filter reports by status"></div>
+          <span class="refresh-note" id="reports-refresh-note"></span>
+        </div>
+        <div class="story-list" id="reports-list"></div>
+        <div class="empty-state" id="reports-empty-state" hidden>No reports in this view yet.</div>
+        <p class="mod-status-msg" id="reports-status-msg" role="status" aria-live="polite"></p>
       </div>
     </div>
 
@@ -511,6 +544,20 @@
     communityPostList: document.getElementById('community-post-list'),
     communityEmptyState: document.getElementById('community-empty-state'),
     communityStatusMsg: document.getElementById('community-status-msg'),
+    tabCommunityComments: document.getElementById('tab-community-comments'),
+    tabReports: document.getElementById('tab-reports'),
+    communityCommentsDashboard: document.getElementById('community-comments-dashboard'),
+    communityCommentsFilters: document.getElementById('community-comments-filters'),
+    communityCommentsRefreshNote: document.getElementById('community-comments-refresh-note'),
+    communityCommentsList: document.getElementById('community-comments-list'),
+    communityCommentsEmptyState: document.getElementById('community-comments-empty-state'),
+    communityCommentsStatusMsg: document.getElementById('community-comments-status-msg'),
+    reportsDashboard: document.getElementById('reports-dashboard'),
+    reportsFilters: document.getElementById('reports-filters'),
+    reportsRefreshNote: document.getElementById('reports-refresh-note'),
+    reportsList: document.getElementById('reports-list'),
+    reportsEmptyState: document.getElementById('reports-empty-state'),
+    reportsStatusMsg: document.getElementById('reports-status-msg'),
   };
 
   function showOnly(stateEl){
@@ -1156,6 +1203,27 @@
     visible.forEach(post => els.communityPostList.appendChild(buildCommunityCard(post)));
   }
 
+  // Shared by Community Posts, Community Comments, and Reports below —
+  // same admin-safe, no-new-privilege lookup each of those three
+  // sections already needed independently (PostgREST can't auto-embed
+  // profiles since there's no direct FK to it; profiles has no email
+  // column at all; and this whole dashboard is already gated to
+  // admins). One request per distinct set of user ids, never more.
+  async function resolveDisplayNames(userIds){
+    const displayNameById = {};
+    if (!userIds || !userIds.length) return displayNameById;
+    try {
+      const { data: profileRows, error } = await client
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', userIds);
+      if (!error && Array.isArray(profileRows)) {
+        profileRows.forEach(p => { displayNameById[p.id] = p.display_name; });
+      }
+    } catch(err) { /* best-effort — callers fall back to a neutral label */ }
+    return displayNameById;
+  }
+
   async function loadCommunityPosts(){
     // Read-only. The admin-only RLS policy on community_posts
     // (community_posts_select, using is_admin()) is what actually
@@ -1194,18 +1262,7 @@
     // Stories, and display_name is rendered with textContent only,
     // same as every other member-supplied value in this file.
     const userIds = Array.from(new Set(communityPosts.map(p => p.user_id).filter(Boolean)));
-    let displayNameById = {};
-    if (userIds.length) {
-      try {
-        const { data: profileRows, error: profileErr } = await client
-          .from('profiles')
-          .select('id, display_name')
-          .in('id', userIds);
-        if (!profileErr && Array.isArray(profileRows)) {
-          profileRows.forEach(p => { displayNameById[p.id] = p.display_name; });
-        }
-      } catch(err) { /* best-effort — posts still render with a neutral fallback below */ }
-    }
+    const displayNameById = await resolveDisplayNames(userIds);
     communityPosts = communityPosts.map(p => Object.assign({}, p, {
       display_name: (p.user_id && displayNameById[p.user_id]) || 'Community member',
     }));
@@ -1215,20 +1272,439 @@
     renderCommunityList();
   }
 
+  /* ============================================================
+     Phase 6B: Community Comments moderation
+     ============================================================ */
+  const COMMUNITY_COMMENT_STATUS_FILTERS = [
+    { key: 'all', label: 'All' },
+    { key: 'published', label: 'Published' },
+    { key: 'hidden', label: 'Hidden' },
+    { key: 'removed', label: 'Removed' },
+  ];
+  let communityComments = [];
+  let communityCommentsActiveFilter = 'all';
+  let communityCommentsLoaded = false;
+
+  function renderCommunityCommentsFilters(){
+    els.communityCommentsFilters.innerHTML = '';
+    COMMUNITY_COMMENT_STATUS_FILTERS.forEach(f => {
+      const count = f.key === 'all' ? communityComments.length : communityComments.filter(c => c.status === f.key).length;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'filter-btn' + (communityCommentsActiveFilter === f.key ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(communityCommentsActiveFilter === f.key));
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = f.label + ' ';
+      const countSpan = document.createElement('span');
+      countSpan.className = 'count';
+      countSpan.textContent = '(' + count + ')';
+      btn.appendChild(labelSpan);
+      btn.appendChild(countSpan);
+      btn.addEventListener('click', () => { communityCommentsActiveFilter = f.key; renderCommunityCommentsFilters(); renderCommunityCommentsList(); });
+      els.communityCommentsFilters.appendChild(btn);
+    });
+  }
+
+  function setCommunityCommentsStatus(kind, text){
+    els.communityCommentsStatusMsg.className = 'mod-status-msg' + (text ? ' show' : '') + (kind ? ' status-' + kind : '');
+    els.communityCommentsStatusMsg.textContent = text || '';
+  }
+
+  // The one and only write path here: moderate_community_comment(),
+  // same posture as runCommunityModeration() above — the function
+  // re-checks admin status and the transition rules server-side.
+  async function runCommentModeration(comment, action){
+    setCommunityCommentsStatus('info', 'Saving...');
+    try {
+      const { data: updated, error } = await client.rpc('moderate_community_comment', { p_comment_id: comment.id, p_action: action });
+      if (error) {
+        setCommunityCommentsStatus('error', 'Could not save that change: ' + error.message);
+        return;
+      }
+      const idx = communityComments.findIndex(c => c.id === updated.id);
+      if (idx !== -1) communityComments[idx] = Object.assign({}, communityComments[idx], updated);
+      renderCommunityCommentsFilters();
+      renderCommunityCommentsList();
+      const verb = action === 'hide' ? 'hidden' : action === 'restore' ? 'restored' : action === 'remove' ? 'removed' : 'saved';
+      setCommunityCommentsStatus('success', 'Comment ' + verb + '.');
+    } catch(err) {
+      setCommunityCommentsStatus('error', 'Could not save that change. Please try again.');
+    }
+  }
+
+  function askCommentRemove(comment, rowEl){
+    rowEl.querySelectorAll('.confirm-panel').forEach(el => el.remove());
+    const panel = document.createElement('div');
+    panel.className = 'confirm-panel';
+    const msg = document.createElement('p');
+    msg.textContent = 'Remove this comment from public/member view? It stays stored for moderation/audit — this is not a delete.';
+    const row = document.createElement('div');
+    row.className = 'action-row';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'btn btn-danger';
+    confirmBtn.textContent = 'Yes, remove this comment';
+    confirmBtn.addEventListener('click', () => { panel.remove(); runCommentModeration(comment, 'remove'); });
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn btn-outline';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => panel.remove());
+    row.appendChild(confirmBtn);
+    row.appendChild(cancelBtn);
+    panel.appendChild(msg);
+    panel.appendChild(row);
+    rowEl.appendChild(panel);
+  }
+
+  // comment.body and comment.display_name are untrusted, member-
+  // submitted content — placed with textContent only, never
+  // innerHTML, same as every other member-supplied value in this file.
+  function buildCommunityCommentCard(comment){
+    const card = document.createElement('div');
+    card.className = 'story-card';
+    card.style.cursor = 'default';
+
+    const top = document.createElement('div');
+    top.className = 'story-top';
+    const title = document.createElement('div');
+    title.className = 'story-title';
+    title.textContent = comment.display_name || 'Community member';
+    const meta = document.createElement('div');
+    meta.className = 'story-meta';
+    let metaText = (comment.parent_comment_id ? 'reply · ' : 'comment · ') + 'posted ' + fmtDate(comment.created_at);
+    if (comment.edited_at) metaText += ' · edited ' + fmtDate(comment.edited_at);
+    if (comment.moderated_at) metaText += ' · moderated ' + fmtDate(comment.moderated_at);
+    meta.textContent = metaText;
+    top.appendChild(title);
+    top.appendChild(meta);
+
+    const onPost = document.createElement('div');
+    onPost.className = 'report-target-preview';
+    const parentPost = communityPosts.find(p => p.id === comment.post_id);
+    const postPreview = parentPost ? (parentPost.body || '').slice(0, 140) : '(post not loaded)';
+    onPost.textContent = 'On post: ' + postPreview + (parentPost && parentPost.body && parentPost.body.length > 140 ? '…' : '');
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'community-post-body';
+    bodyEl.textContent = comment.body || '';
+
+    const badges = document.createElement('div');
+    badges.className = 'badge-row';
+    const statusBadge = document.createElement('span');
+    statusBadge.className = 'badge status-' + comment.status;
+    statusBadge.textContent = comment.status;
+    badges.appendChild(statusBadge);
+
+    const actionRow = document.createElement('div');
+    actionRow.className = 'action-row';
+
+    if (comment.status === 'published') {
+      const hideBtn = document.createElement('button');
+      hideBtn.type = 'button';
+      hideBtn.className = 'btn btn-outline';
+      hideBtn.textContent = 'Hide';
+      hideBtn.addEventListener('click', () => runCommentModeration(comment, 'hide'));
+      actionRow.appendChild(hideBtn);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-danger outline btn';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', () => askCommentRemove(comment, card));
+      actionRow.appendChild(removeBtn);
+    } else if (comment.status === 'hidden') {
+      const restoreBtn = document.createElement('button');
+      restoreBtn.type = 'button';
+      restoreBtn.className = 'btn btn-amber';
+      restoreBtn.textContent = 'Restore';
+      restoreBtn.addEventListener('click', () => runCommentModeration(comment, 'restore'));
+      actionRow.appendChild(restoreBtn);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-danger outline btn';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', () => askCommentRemove(comment, card));
+      actionRow.appendChild(removeBtn);
+    }
+    // removed: read-only, no hard-delete.
+
+    card.appendChild(top);
+    card.appendChild(onPost);
+    card.appendChild(bodyEl);
+    card.appendChild(badges);
+    if (actionRow.children.length) card.appendChild(actionRow);
+
+    return card;
+  }
+
+  function renderCommunityCommentsList(){
+    const visible = communityCommentsActiveFilter === 'all' ? communityComments : communityComments.filter(c => c.status === communityCommentsActiveFilter);
+    els.communityCommentsList.innerHTML = '';
+    els.communityCommentsEmptyState.hidden = visible.length !== 0;
+    visible.forEach(comment => els.communityCommentsList.appendChild(buildCommunityCommentCard(comment)));
+  }
+
+  async function loadCommunityComments(){
+    // Read-only. community_comments_select (using is_admin()) is what
+    // actually allows this to return every row for an admin session.
+    const { data, error } = await client
+      .from('community_comments')
+      .select('id, post_id, user_id, parent_comment_id, body, status, created_at, updated_at, edited_at, moderated_at, moderated_by')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      els.communityCommentsRefreshNote.textContent = 'Could not load community comments: ' + error.message;
+      communityComments = [];
+      renderCommunityCommentsFilters();
+      renderCommunityCommentsList();
+      return;
+    }
+
+    communityComments = data || [];
+    const userIds = Array.from(new Set(communityComments.map(c => c.user_id).filter(Boolean)));
+    const displayNameById = await resolveDisplayNames(userIds);
+    communityComments = communityComments.map(c => Object.assign({}, c, {
+      display_name: (c.user_id && displayNameById[c.user_id]) || 'Community member',
+    }));
+
+    els.communityCommentsRefreshNote.textContent = communityComments.length + ' total · loaded ' + new Date().toLocaleTimeString();
+    communityCommentsLoaded = true;
+    renderCommunityCommentsFilters();
+    renderCommunityCommentsList();
+  }
+
+  /* ============================================================
+     Phase 6B: Reports moderation
+     ============================================================ */
+  const REPORT_STATUS_FILTERS = [
+    { key: 'all', label: 'All' },
+    { key: 'open', label: 'Open' },
+    { key: 'resolved', label: 'Resolved' },
+    { key: 'dismissed', label: 'Dismissed' },
+  ];
+  let communityReports = [];
+  let reportsActiveFilter = 'all';
+  let reportsLoaded = false;
+
+  function renderReportsFilters(){
+    els.reportsFilters.innerHTML = '';
+    REPORT_STATUS_FILTERS.forEach(f => {
+      const count = f.key === 'all' ? communityReports.length : communityReports.filter(r => r.status === f.key).length;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'filter-btn' + (reportsActiveFilter === f.key ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(reportsActiveFilter === f.key));
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = f.label + ' ';
+      const countSpan = document.createElement('span');
+      countSpan.className = 'count';
+      countSpan.textContent = '(' + count + ')';
+      btn.appendChild(labelSpan);
+      btn.appendChild(countSpan);
+      btn.addEventListener('click', () => { reportsActiveFilter = f.key; renderReportsFilters(); renderReportsList(); });
+      els.reportsFilters.appendChild(btn);
+    });
+  }
+
+  function setReportsStatus(kind, text){
+    els.reportsStatusMsg.className = 'mod-status-msg' + (text ? ' show' : '') + (kind ? ' status-' + kind : '');
+    els.reportsStatusMsg.textContent = text || '';
+  }
+
+  // The one and only write path here: moderate_community_report()
+  // ('resolve' | 'dismiss'). No hard delete, no re-opening a
+  // resolved/dismissed report from this UI.
+  async function runReportModeration(report, action){
+    setReportsStatus('info', 'Saving...');
+    try {
+      const { data: updated, error } = await client.rpc('moderate_community_report', { p_report_id: report.id, p_action: action });
+      if (error) {
+        setReportsStatus('error', 'Could not save that change: ' + error.message);
+        return;
+      }
+      const idx = communityReports.findIndex(r => r.id === updated.id);
+      if (idx !== -1) communityReports[idx] = Object.assign({}, communityReports[idx], updated);
+      renderReportsFilters();
+      renderReportsList();
+      setReportsStatus('success', 'Report ' + (action === 'resolve' ? 'resolved' : 'dismissed') + '.');
+    } catch(err) {
+      setReportsStatus('error', 'Could not save that change. Please try again.');
+    }
+  }
+
+  const REPORT_REASON_LABELS = {
+    harassment: 'Harassment',
+    hate_or_abuse: 'Hate or abuse',
+    dangerous_content: 'Dangerous content',
+    spam: 'Spam',
+    privacy: 'Privacy concern',
+    other: 'Other',
+  };
+
+  // report.details, the reporter's display name, and the reported
+  // content's own body are all untrusted, member-supplied content —
+  // placed with textContent only, never innerHTML.
+  function buildReportCard(report){
+    const card = document.createElement('div');
+    card.className = 'story-card';
+    card.style.cursor = 'default';
+
+    const top = document.createElement('div');
+    top.className = 'story-top';
+    const title = document.createElement('div');
+    title.className = 'story-title';
+    title.textContent = (report.post_id ? 'Post report' : 'Comment report') + ' — ' + (REPORT_REASON_LABELS[report.reason] || report.reason);
+    const meta = document.createElement('div');
+    meta.className = 'story-meta';
+    let metaText = 'reported ' + fmtDate(report.created_at) + ' by ' + (report.reporter_display_name || 'a member');
+    if (report.reviewed_at) metaText += ' · reviewed ' + fmtDate(report.reviewed_at);
+    meta.textContent = metaText;
+    top.appendChild(title);
+    top.appendChild(meta);
+
+    const targetPreview = document.createElement('div');
+    targetPreview.className = 'report-target-preview';
+    let targetBody = '(content not loaded)';
+    if (report.post_id) {
+      const p = communityPosts.find(p => p.id === report.post_id);
+      targetBody = p ? (p.body || '') : '(post no longer available)';
+    } else if (report.comment_id) {
+      const c = communityComments.find(c => c.id === report.comment_id);
+      targetBody = c ? (c.body || '') : '(comment not loaded — open the Community Comments tab first)';
+    }
+    targetPreview.textContent = 'Reported content: ' + targetBody.slice(0, 300);
+
+    const detailsEl = document.createElement('div');
+    detailsEl.className = 'community-post-body';
+    if (report.details) {
+      const detailsLabel = document.createElement('strong');
+      detailsLabel.textContent = 'Reporter details: ';
+      detailsEl.appendChild(detailsLabel);
+      const detailsText = document.createElement('span');
+      detailsText.textContent = report.details;
+      detailsEl.appendChild(detailsText);
+    }
+
+    const badges = document.createElement('div');
+    badges.className = 'badge-row';
+    const statusBadge = document.createElement('span');
+    statusBadge.className = 'badge status-' + report.status;
+    statusBadge.textContent = report.status;
+    badges.appendChild(statusBadge);
+
+    const actionRow = document.createElement('div');
+    actionRow.className = 'action-row';
+    if (report.status === 'open') {
+      const resolveBtn = document.createElement('button');
+      resolveBtn.type = 'button';
+      resolveBtn.className = 'btn btn-outline';
+      resolveBtn.textContent = 'Resolve';
+      resolveBtn.addEventListener('click', () => runReportModeration(report, 'resolve'));
+      actionRow.appendChild(resolveBtn);
+
+      const dismissBtn = document.createElement('button');
+      dismissBtn.type = 'button';
+      dismissBtn.className = 'btn btn-outline';
+      dismissBtn.textContent = 'Dismiss';
+      dismissBtn.addEventListener('click', () => runReportModeration(report, 'dismiss'));
+      actionRow.appendChild(dismissBtn);
+    }
+    // resolved/dismissed: read-only, no re-opening from this UI, no delete.
+
+    card.appendChild(top);
+    card.appendChild(targetPreview);
+    if (report.details) card.appendChild(detailsEl);
+    card.appendChild(badges);
+    if (actionRow.children.length) card.appendChild(actionRow);
+
+    return card;
+  }
+
+  function renderReportsList(){
+    const visible = reportsActiveFilter === 'all' ? communityReports : communityReports.filter(r => r.status === reportsActiveFilter);
+    els.reportsList.innerHTML = '';
+    els.reportsEmptyState.hidden = visible.length !== 0;
+    visible.forEach(report => els.reportsList.appendChild(buildReportCard(report)));
+  }
+
+  async function loadReports(){
+    // Read-only. community_reports_select (using is_admin()) is what
+    // actually allows this to return every row for an admin session.
+    // Member email is intentionally never fetched or shown here —
+    // there is no safe existing admin path for it in this schema, and
+    // the spec defaults to not showing it.
+    const { data, error } = await client
+      .from('community_reports')
+      .select('id, reporter_user_id, post_id, comment_id, reason, details, status, created_at, reviewed_at, reviewed_by')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      els.reportsRefreshNote.textContent = 'Could not load reports: ' + error.message;
+      communityReports = [];
+      renderReportsFilters();
+      renderReportsList();
+      return;
+    }
+
+    communityReports = data || [];
+    const userIds = Array.from(new Set(communityReports.map(r => r.reporter_user_id).filter(Boolean)));
+    const displayNameById = await resolveDisplayNames(userIds);
+    communityReports = communityReports.map(r => Object.assign({}, r, {
+      reporter_display_name: (r.reporter_user_id && displayNameById[r.reporter_user_id]) || 'a member',
+    }));
+
+    els.reportsRefreshNote.textContent = communityReports.length + ' total · loaded ' + new Date().toLocaleTimeString();
+    reportsLoaded = true;
+    renderReportsFilters();
+    renderReportsList();
+  }
+
   function showPorchTab(){
     els.tabPorch.classList.add('active'); els.tabPorch.setAttribute('aria-selected', 'true');
-    els.tabCommunity.classList.remove('active'); els.tabCommunity.setAttribute('aria-selected', 'false');
+    [els.tabCommunity, els.tabCommunityComments, els.tabReports].forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
     els.porchDashboard.hidden = false;
     els.communityDashboard.hidden = true;
+    els.communityCommentsDashboard.hidden = true;
+    els.reportsDashboard.hidden = true;
   }
   function showCommunityTab(){
     els.tabCommunity.classList.add('active'); els.tabCommunity.setAttribute('aria-selected', 'true');
-    els.tabPorch.classList.remove('active'); els.tabPorch.setAttribute('aria-selected', 'false');
+    [els.tabPorch, els.tabCommunityComments, els.tabReports].forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
     els.communityDashboard.hidden = false;
     els.porchDashboard.hidden = true;
+    els.communityCommentsDashboard.hidden = true;
+    els.reportsDashboard.hidden = true;
+  }
+  function showCommunityCommentsTab(){
+    els.tabCommunityComments.classList.add('active'); els.tabCommunityComments.setAttribute('aria-selected', 'true');
+    [els.tabPorch, els.tabCommunity, els.tabReports].forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+    els.communityCommentsDashboard.hidden = false;
+    els.porchDashboard.hidden = true;
+    els.communityDashboard.hidden = true;
+    els.reportsDashboard.hidden = true;
+    if (!communityCommentsLoaded) loadCommunityComments();
+  }
+  function showReportsTab(){
+    els.tabReports.classList.add('active'); els.tabReports.setAttribute('aria-selected', 'true');
+    [els.tabPorch, els.tabCommunity, els.tabCommunityComments].forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+    els.reportsDashboard.hidden = false;
+    els.porchDashboard.hidden = true;
+    els.communityDashboard.hidden = true;
+    els.communityCommentsDashboard.hidden = true;
+    // Reports reference comments by id for preview text, so make sure
+    // comments are loaded at least once before showing reports — same
+    // lazy, load-once-per-session pattern as everything else here.
+    if (!communityCommentsLoaded) loadCommunityComments();
+    if (!reportsLoaded) loadReports();
   }
   els.tabPorch.addEventListener('click', showPorchTab);
   els.tabCommunity.addEventListener('click', showCommunityTab);
+  els.tabCommunityComments.addEventListener('click', showCommunityCommentsTab);
+  els.tabReports.addEventListener('click', showReportsTab);
 
   async function showDashboard(session){
     els.sessionInfo.hidden = false;

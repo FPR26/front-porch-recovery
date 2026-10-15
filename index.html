@@ -9038,8 +9038,15 @@ const FPRBadge = (function(){
   let feedLoaded = false;
   let feedLoading = false;
   let myPostIds = new Set();
+  let myCommentIds = new Set();
   let currentSession = null;
   let editingPostId = null;
+  // Phase 6B: comments/replies/reports. One entry per post whose
+  // "Comments" section has ever been opened — { post, listEl, notice,
+  // empty, loaded, composeSigninNotice, composeTextarea, composeBtn }.
+  // Comments are loaded lazily, per post, only once that post's
+  // "Comments" toggle is opened — never for every post on page load.
+  const commentUI = new Map();
 
   function setStatus(el, kind, text){
     el.className = 'status-msg' + (text ? ' show' : '') + (kind ? ' status-' + kind : '');
@@ -9101,19 +9108,561 @@ const FPRBadge = (function(){
     bodyEl.textContent = post.body || ''; // plain text only — no linkification, no markup parsing
     card.appendChild(bodyEl);
 
+    const actionsRow = document.createElement('div');
+    actionsRow.style.display = 'flex';
+    actionsRow.style.gap = '10px';
+    actionsRow.style.flexWrap = 'wrap';
+    actionsRow.style.marginTop = '4px';
+
     if (myPostIds.has(post.id)) {
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
       editBtn.className = 'btn btn-outline';
-      editBtn.style.alignSelf = 'flex-start';
       editBtn.style.padding = '6px 16px';
       editBtn.style.fontSize = '.85rem';
       editBtn.textContent = 'Edit';
       editBtn.addEventListener('click', function(){ openEditForm(post); });
-      card.appendChild(editBtn);
+      actionsRow.appendChild(editBtn);
     }
 
+    const reportBtn = document.createElement('button');
+    reportBtn.type = 'button';
+    reportBtn.className = 'btn-link';
+    reportBtn.style.fontSize = '.85rem';
+    reportBtn.textContent = 'Report';
+    let postReportFormEl = null;
+    reportBtn.addEventListener('click', function(){
+      if (!client || !currentSession){
+        openInlineNotice(card, 'Please sign in to report content.');
+        return;
+      }
+      if (postReportFormEl) { postReportFormEl.remove(); postReportFormEl = null; return; }
+      postReportFormEl = buildReportForm('post', post.id);
+      card.appendChild(postReportFormEl);
+    });
+    actionsRow.appendChild(reportBtn);
+
+    if (actionsRow.children.length) card.appendChild(actionsRow);
+
+    card.appendChild(buildCommentsSection(post));
+
     return card;
+  }
+
+  // A short-lived, non-blocking inline message appended to a card —
+  // used for "please sign in" prompts on Reply/Report when there's no
+  // dedicated status element nearby. Reuses one <p> per container
+  // rather than stacking duplicates on repeated clicks.
+  function openInlineNotice(container, text){
+    let note = container.querySelector(':scope > .fpr-inline-notice');
+    if (!note) {
+      note = document.createElement('p');
+      note.className = 'fpr-inline-notice status-msg status-info show';
+      note.style.marginTop = '6px';
+      container.appendChild(note);
+    }
+    note.textContent = text;
+  }
+
+  // ---------- Reporting (posts and comments) ----------
+  // A small inline form, built fresh each time Report is clicked and
+  // removed on cancel/success rather than kept hidden in the DOM — so
+  // there's never a stray, previously-filled report form left behind.
+  function buildReportForm(targetType, targetId){
+    const wrap = document.createElement('div');
+    wrap.className = 'form-card';
+    wrap.style.marginTop = '10px';
+    wrap.style.padding = '12px';
+
+    const label = document.createElement('label');
+    label.textContent = 'Report this ' + (targetType === 'post' ? 'post' : 'comment');
+    label.style.fontSize = '.85rem';
+    label.style.fontWeight = '600';
+    wrap.appendChild(label);
+
+    const select = document.createElement('select');
+    select.style.width = '100%';
+    select.style.margin = '6px 0 8px';
+    [
+      ['harassment', 'Harassment'],
+      ['hate_or_abuse', 'Hate or abuse'],
+      ['dangerous_content', 'Dangerous content'],
+      ['spam', 'Spam'],
+      ['privacy', 'Privacy concern'],
+      ['other', 'Other'],
+    ].forEach(function(opt){
+      const o = document.createElement('option');
+      o.value = opt[0];
+      o.textContent = opt[1];
+      select.appendChild(o);
+    });
+    wrap.appendChild(select);
+
+    const details = document.createElement('textarea');
+    details.maxLength = 500;
+    details.style.minHeight = '60px';
+    details.style.width = '100%';
+    details.placeholder = 'Optional details (max 500 characters)';
+    wrap.appendChild(details);
+
+    const errEl = document.createElement('p');
+    errEl.className = 'field-error';
+    wrap.appendChild(errEl);
+
+    const statusEl = document.createElement('p');
+    statusEl.className = 'status-msg';
+    statusEl.setAttribute('role', 'status');
+    wrap.appendChild(statusEl);
+
+    const btnRow = document.createElement('div');
+    btnRow.style.display = 'flex';
+    btnRow.style.gap = '8px';
+    btnRow.style.marginTop = '8px';
+
+    const submitBtn = document.createElement('button');
+    submitBtn.type = 'button';
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.textContent = 'Submit report';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn btn-outline';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', function(){ wrap.remove(); });
+
+    btnRow.appendChild(submitBtn);
+    btnRow.appendChild(cancelBtn);
+    wrap.appendChild(btnRow);
+
+    let submitting = false;
+    submitBtn.addEventListener('click', async function(){
+      if (submitting) return;
+      errEl.textContent = '';
+      const detailsVal = details.value.trim();
+      if (detailsVal.length > 500){
+        errEl.textContent = 'Details must be 500 characters or fewer.';
+        return;
+      }
+      if (!client || !currentSession){
+        setStatus(statusEl, 'error', 'Please sign in to report content.');
+        return;
+      }
+      submitting = true;
+      submitBtn.disabled = true;
+      setStatus(statusEl, 'info', 'Submitting report...');
+      try {
+        const params = { p_reason: select.value, p_details: detailsVal || null };
+        if (targetType === 'post') params.p_post_id = targetId; else params.p_comment_id = targetId;
+        const { error } = await client.rpc('report_community_content', params);
+        if (error) throw error;
+        setStatus(statusEl, 'success', 'Thanks — this has been reported for review.');
+        select.disabled = true;
+        details.disabled = true;
+        submitBtn.style.display = 'none';
+        cancelBtn.textContent = 'Close';
+      } catch(err){
+        submitting = false;
+        submitBtn.disabled = false;
+        setStatus(statusEl, 'error', (err && err.message) ? err.message : 'Something went wrong submitting that report.');
+      }
+    });
+
+    return wrap;
+  }
+
+  // ---------- Comments and one-level replies ----------
+  // A comment/reply is rendered via the exact same textContent-only
+  // approach as a post body — never innerHTML — so the same
+  // script-tag-looking input renders as plain, inert text here too.
+  function buildCommentCard(comment, opts){
+    const row = document.createElement('div');
+    row.className = 'card';
+    row.setAttribute('data-comment-id', comment.id);
+    row.style.marginLeft = opts.isReply ? '22px' : '0';
+    row.style.borderLeft = opts.isReply ? '2px solid rgba(0,0,0,.12)' : 'none';
+    row.style.padding = '10px 14px';
+
+    const meta = document.createElement('p');
+    meta.style.margin = '0';
+    meta.style.fontWeight = '600';
+    meta.style.fontSize = '.88rem';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = comment.display_name || 'Community member';
+    meta.appendChild(nameSpan);
+
+    const dateSpan = document.createElement('span');
+    dateSpan.style.fontWeight = '400';
+    dateSpan.style.marginLeft = '8px';
+    dateSpan.style.fontSize = '.78rem';
+    dateSpan.style.opacity = '.75';
+    dateSpan.textContent = formatDate(comment.created_at);
+    meta.appendChild(dateSpan);
+
+    if (comment.edited_at) {
+      const editedSpan = document.createElement('span');
+      editedSpan.style.fontWeight = '400';
+      editedSpan.style.marginLeft = '8px';
+      editedSpan.style.fontSize = '.75rem';
+      editedSpan.style.opacity = '.6';
+      editedSpan.style.fontStyle = 'italic';
+      editedSpan.textContent = '(edited)';
+      meta.appendChild(editedSpan);
+    }
+    row.appendChild(meta);
+
+    const bodyEl = document.createElement('p');
+    bodyEl.style.whiteSpace = 'pre-wrap';
+    bodyEl.style.margin = '4px 0 0';
+    bodyEl.style.fontSize = '.9rem';
+    bodyEl.textContent = comment.body || ''; // plain text only — no linkification
+    row.appendChild(bodyEl);
+
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '12px';
+    actions.style.marginTop = '6px';
+
+    if (!opts.isReply) {
+      const replyBtn = document.createElement('button');
+      replyBtn.type = 'button';
+      replyBtn.className = 'btn-link';
+      replyBtn.style.fontSize = '.8rem';
+      replyBtn.textContent = 'Reply';
+      replyBtn.addEventListener('click', function(){
+        if (!client || !currentSession){
+          openInlineNotice(row, 'Please sign in to reply.');
+          return;
+        }
+        openReplyForm(comment, opts.post, row);
+      });
+      actions.appendChild(replyBtn);
+    }
+
+    if (myCommentIds.has(comment.id) && comment.status !== 'hidden' && comment.status !== 'removed') {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'btn-link';
+      editBtn.style.fontSize = '.8rem';
+      editBtn.textContent = 'Edit';
+      editBtn.addEventListener('click', function(){ openCommentEditForm(comment, opts.post, row); });
+      actions.appendChild(editBtn);
+    }
+
+    const reportBtn = document.createElement('button');
+    reportBtn.type = 'button';
+    reportBtn.className = 'btn-link';
+    reportBtn.style.fontSize = '.8rem';
+    reportBtn.textContent = 'Report';
+    let commentReportFormEl = null;
+    reportBtn.addEventListener('click', function(){
+      if (!client || !currentSession){
+        openInlineNotice(row, 'Please sign in to report content.');
+        return;
+      }
+      if (commentReportFormEl) { commentReportFormEl.remove(); commentReportFormEl = null; return; }
+      commentReportFormEl = buildReportForm('comment', comment.id);
+      row.appendChild(commentReportFormEl);
+    });
+    actions.appendChild(reportBtn);
+
+    row.appendChild(actions);
+    return row;
+  }
+
+  function openReplyForm(parentComment, post, afterEl){
+    const existing = afterEl.querySelector(':scope > .fpr-reply-form');
+    if (existing) { existing.remove(); return; }
+    const wrap = document.createElement('div');
+    wrap.className = 'form-card fpr-reply-form';
+    wrap.style.marginTop = '8px';
+    wrap.style.marginLeft = '22px';
+
+    const textarea = document.createElement('textarea');
+    textarea.maxLength = 1000;
+    textarea.style.minHeight = '64px';
+    textarea.style.width = '100%';
+    textarea.placeholder = 'Write a reply...';
+    wrap.appendChild(textarea);
+
+    const errEl = document.createElement('p');
+    errEl.className = 'field-error';
+    wrap.appendChild(errEl);
+
+    const btnRow = document.createElement('div');
+    btnRow.style.display = 'flex';
+    btnRow.style.gap = '8px';
+    btnRow.style.marginTop = '6px';
+
+    const submitBtn = document.createElement('button');
+    submitBtn.type = 'button';
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.textContent = 'Reply';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn btn-outline';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', function(){ wrap.remove(); });
+
+    btnRow.appendChild(submitBtn);
+    btnRow.appendChild(cancelBtn);
+    wrap.appendChild(btnRow);
+
+    let submitting = false;
+    submitBtn.addEventListener('click', async function(){
+      if (submitting) return;
+      errEl.textContent = '';
+      const val = textarea.value.trim();
+      if (!val){ errEl.textContent = 'Please write something before replying.'; return; }
+      if (val.length > 1000){ errEl.textContent = 'Replies must be 1,000 characters or fewer.'; return; }
+      if (!client || !currentSession){ errEl.textContent = 'Please sign in to reply.'; return; }
+      submitting = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Replying...';
+      try {
+        const { error } = await client.rpc('create_community_reply', {
+          p_post_id: post.id, p_parent_comment_id: parentComment.id, p_body: val,
+        });
+        if (error) throw error;
+        wrap.remove();
+        invalidateAndReloadComments(post.id);
+      } catch(err){
+        submitting = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Reply';
+        errEl.textContent = (err && err.message) ? err.message : 'Something went wrong posting that reply.';
+      }
+    });
+
+    afterEl.appendChild(wrap);
+    textarea.focus();
+  }
+
+  function openCommentEditForm(comment, post, rowEl){
+    const existing = rowEl.querySelector(':scope > .fpr-comment-edit-form');
+    if (existing) { existing.remove(); return; }
+    const wrap = document.createElement('div');
+    wrap.className = 'form-card fpr-comment-edit-form';
+    wrap.style.marginTop = '8px';
+
+    const textarea = document.createElement('textarea');
+    textarea.maxLength = 1000;
+    textarea.style.minHeight = '64px';
+    textarea.style.width = '100%';
+    textarea.value = comment.body || '';
+    wrap.appendChild(textarea);
+
+    const errEl = document.createElement('p');
+    errEl.className = 'field-error';
+    wrap.appendChild(errEl);
+
+    const btnRow = document.createElement('div');
+    btnRow.style.display = 'flex';
+    btnRow.style.gap = '8px';
+    btnRow.style.marginTop = '6px';
+
+    const submitBtn = document.createElement('button');
+    submitBtn.type = 'button';
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.textContent = 'Save changes';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn btn-outline';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', function(){ wrap.remove(); });
+
+    btnRow.appendChild(submitBtn);
+    btnRow.appendChild(cancelBtn);
+    wrap.appendChild(btnRow);
+
+    let submitting = false;
+    submitBtn.addEventListener('click', async function(){
+      if (submitting) return;
+      errEl.textContent = '';
+      const val = textarea.value.trim();
+      if (!val){ errEl.textContent = 'Please write something before saving.'; return; }
+      if (val.length > 1000){ errEl.textContent = 'Comments must be 1,000 characters or fewer.'; return; }
+      submitting = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+      try {
+        const { error } = await client.rpc('edit_community_comment', { p_comment_id: comment.id, p_body: val });
+        if (error) throw error;
+        wrap.remove();
+        invalidateAndReloadComments(post.id);
+      } catch(err){
+        submitting = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save changes';
+        errEl.textContent = (err && err.message) ? err.message : 'Something went wrong saving that comment.';
+      }
+    });
+
+    rowEl.appendChild(wrap);
+    textarea.focus();
+  }
+
+  // Lazy, per-post comment loading: nothing is fetched for a post's
+  // comments until that post's own "Comments" toggle is opened, and a
+  // post with its toggle never opened never issues a comments query at
+  // all — not at page load, not for every post on the feed.
+  function buildCommentsSection(post){
+    const section = document.createElement('div');
+    section.className = 'fpr-comments-section';
+    section.style.marginTop = '4px';
+    section.style.borderTop = '1px solid rgba(0,0,0,.08)';
+    section.style.paddingTop = '8px';
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'btn-link';
+    toggleBtn.style.fontSize = '.85rem';
+    toggleBtn.textContent = 'Comments';
+    section.appendChild(toggleBtn);
+
+    const body = document.createElement('div');
+    body.style.display = 'none';
+    body.style.marginTop = '10px';
+    section.appendChild(body);
+
+    const listEl = document.createElement('div');
+    listEl.style.display = 'flex';
+    listEl.style.flexDirection = 'column';
+    listEl.style.gap = '10px';
+    body.appendChild(listEl);
+
+    const notice = document.createElement('p');
+    notice.className = 'status-msg status-info';
+    notice.style.display = 'none';
+    notice.textContent = "Comments couldn't be loaded right now. The rest of this post still works — please try again in a moment.";
+    body.appendChild(notice);
+
+    const empty = document.createElement('p');
+    empty.style.display = 'none';
+    empty.style.color = 'var(--charcoal-soft)';
+    empty.style.fontSize = '.85rem';
+    empty.textContent = 'No comments yet. Be the first to reply.';
+    body.appendChild(empty);
+
+    const composeWrap = document.createElement('div');
+    composeWrap.style.marginTop = '12px';
+
+    const composeSigninNotice = document.createElement('p');
+    composeSigninNotice.className = 'status-msg status-info';
+    composeSigninNotice.textContent = 'Sign in to comment.';
+    composeSigninNotice.style.display = currentSession ? 'none' : 'block';
+    composeWrap.appendChild(composeSigninNotice);
+
+    const composeTextarea = document.createElement('textarea');
+    composeTextarea.maxLength = 1000;
+    composeTextarea.style.minHeight = '60px';
+    composeTextarea.style.width = '100%';
+    composeTextarea.placeholder = 'Add a comment...';
+    composeTextarea.style.display = currentSession ? 'block' : 'none';
+    composeWrap.appendChild(composeTextarea);
+
+    const composeErr = document.createElement('p');
+    composeErr.className = 'field-error';
+    composeWrap.appendChild(composeErr);
+
+    const composeBtn = document.createElement('button');
+    composeBtn.type = 'button';
+    composeBtn.className = 'btn btn-primary';
+    composeBtn.style.marginTop = '6px';
+    composeBtn.textContent = 'Comment';
+    composeBtn.style.display = currentSession ? 'inline-flex' : 'none';
+    composeWrap.appendChild(composeBtn);
+
+    body.appendChild(composeWrap);
+
+    let composeSubmitting = false;
+    composeBtn.addEventListener('click', async function(){
+      if (composeSubmitting) return;
+      composeErr.textContent = '';
+      const val = composeTextarea.value.trim();
+      if (!val){ composeErr.textContent = 'Please write something before commenting.'; return; }
+      if (val.length > 1000){ composeErr.textContent = 'Comments must be 1,000 characters or fewer.'; return; }
+      if (!client || !currentSession){ composeErr.textContent = 'Please sign in to comment.'; return; }
+      composeSubmitting = true;
+      composeBtn.disabled = true;
+      composeBtn.textContent = 'Posting...';
+      try {
+        const { error } = await client.rpc('create_community_comment', { p_post_id: post.id, p_body: val });
+        if (error) throw error;
+        composeTextarea.value = '';
+        invalidateAndReloadComments(post.id);
+      } catch(err){
+        composeErr.textContent = (err && err.message) ? err.message : 'Something went wrong posting that comment.';
+      } finally {
+        composeSubmitting = false;
+        composeBtn.disabled = false;
+        composeBtn.textContent = 'Comment';
+      }
+    });
+
+    const ui = {
+      post, listEl, notice, empty, loaded: false,
+      composeSigninNotice, composeTextarea, composeBtn,
+    };
+    commentUI.set(post.id, ui);
+
+    let opened = false;
+    toggleBtn.addEventListener('click', function(){
+      opened = !opened;
+      body.style.display = opened ? 'block' : 'none';
+      toggleBtn.textContent = opened ? 'Hide comments' : 'Comments';
+      if (opened) { ui.loaded = true; loadCommentsForPost(ui); }
+    });
+
+    return section;
+  }
+
+  async function loadCommentsForPost(ui){
+    ui.listEl.innerHTML = '';
+    ui.notice.style.display = 'none';
+    ui.empty.style.display = 'none';
+    try {
+      if (!readClient) throw new Error('Comments client unavailable');
+      const { data, error } = await readClient
+        .from('community_comments_public')
+        .select('id, post_id, parent_comment_id, body, created_at, updated_at, edited_at, display_name')
+        .eq('post_id', ui.post.id)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      const comments = data || [];
+      if (comments.length === 0) { ui.empty.style.display = 'block'; return; }
+      const topLevel = comments.filter(function(c){ return !c.parent_comment_id; });
+      const repliesByParent = {};
+      comments.filter(function(c){ return c.parent_comment_id; }).forEach(function(r){
+        (repliesByParent[r.parent_comment_id] = repliesByParent[r.parent_comment_id] || []).push(r);
+      });
+      topLevel.forEach(function(c){
+        ui.listEl.appendChild(buildCommentCard(c, { isReply: false, post: ui.post }));
+        (repliesByParent[c.id] || []).forEach(function(r){
+          ui.listEl.appendChild(buildCommentCard(r, { isReply: true, post: ui.post }));
+        });
+      });
+    } catch(err){
+      ui.notice.style.display = 'block';
+    }
+  }
+
+  function invalidateAndReloadComments(postId){
+    const ui = commentUI.get(postId);
+    if (ui) loadCommentsForPost(ui);
+  }
+
+  async function refreshMyComments(){
+    myCommentIds = new Set();
+    if (!client || !currentSession) return;
+    try {
+      const { data, error } = await client.rpc('list_my_community_comments');
+      if (!error && Array.isArray(data)) {
+        data.forEach(function(c){ myCommentIds.add(c.id); });
+      }
+    } catch(err){ /* best-effort only — Edit buttons simply won't show */ }
   }
 
   function renderFeed(posts){
@@ -9182,12 +9731,25 @@ const FPRBadge = (function(){
     const signedIn = !!currentSession;
     signedOutNotice.style.display = signedIn ? 'none' : 'block';
     postForm.style.display = signedIn ? 'block' : 'none';
+    commentUI.forEach(function(ui){
+      ui.composeSigninNotice.style.display = signedIn ? 'none' : 'block';
+      ui.composeTextarea.style.display = signedIn ? 'block' : 'none';
+      ui.composeBtn.style.display = signedIn ? 'inline-flex' : 'none';
+    });
+    function reloadOpenComments(){
+      commentUI.forEach(function(ui){ if (ui.loaded) loadCommentsForPost(ui); });
+    }
     if (!signedIn) {
       closeEditForm();
       myPostIds = new Set();
+      myCommentIds = new Set();
       if (feedLoaded) loadFeed();
+      reloadOpenComments();
     } else {
-      refreshMyPosts().then(function(){ if (feedLoaded) loadFeed(); });
+      Promise.all([refreshMyPosts(), refreshMyComments()]).then(function(){
+        if (feedLoaded) loadFeed();
+        reloadOpenComments();
+      });
     }
   }
 
