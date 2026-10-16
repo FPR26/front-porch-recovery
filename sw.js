@@ -26,9 +26,19 @@
      in IndexedDB ('fpr-local' → 'notify'), present only while notifications
      are on.
 
+   - auth-callback.html (the Supabase magic-link callback page) and
+     admin.html are deliberately NOT treated as "the page" below. Each
+     Supabase sign-in link is single-use, so auth-callback.html must always
+     reach the real network and must never be answered from (or saved into)
+     the cached copy of index.html — see isAuthCallbackRequest() and its use
+     in the fetch handler. admin.html is likewise excluded from the
+     home-page cache logic so it can never be served or saved as index.html
+     either; it was never added to CORE_FILES, so it simply goes straight to
+     the network, uncontrolled, same as any other page not listed here.
+
    If you ever change this file, bump CACHE_VERSION so old copies are
    cleared out. */
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CORE_CACHE = 'fpr-core-' + CACHE_VERSION;
 const FONT_CACHE = 'fpr-fonts-' + CACHE_VERSION;
 const CORE_FILES = [
@@ -72,9 +82,27 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+/* True only for the real home page: the site root ('./') or './index.html',
+   on this origin, regardless of any query string or hash fragment (neither
+   affects url.pathname). This intentionally does NOT also match on
+   request.mode === 'navigate' the way an earlier version of this file did —
+   that broader check matched every navigation on the site, which meant a
+   navigation to auth-callback.html or admin.html was being treated as a
+   request for the home page too (and could be answered from, or saved
+   into, the cached './index.html' entry). Checking only the actual
+   pathname fixes that while leaving ordinary home-page navigation —
+   including one that lands with a magic-link hash or query string already
+   on it — unaffected. */
 function isPageRequest(request, url) {
-  return request.mode === 'navigate' ||
-    (url.origin === self.location.origin && /\/(index\.html)?$/.test(url.pathname));
+  return url.origin === self.location.origin && /\/(index\.html)?$/.test(url.pathname);
+}
+
+/* True for the Supabase magic-link callback page, on this origin, by path
+   alone — never by request.mode — so it's never swept into isPageRequest()
+   above. Matches regardless of any ?code=..., #access_token=..., or other
+   callback parameters on the URL, since those never appear in url.pathname. */
+function isAuthCallbackRequest(url) {
+  return url.origin === self.location.origin && /\/auth-callback\.html$/.test(url.pathname);
 }
 
 /* Network first for the page: fresh when online, saved copy when not. */
@@ -93,6 +121,17 @@ async function pageResponse(request) {
   const saved = await cache.match('./index.html');
   if (saved) return saved;
   return network; // nothing saved yet: let the browser show its normal error
+}
+
+/* Auth callback: always go straight to the network, every time. No cache
+   is opened, read, or written here in any way — a single-use magic-link
+   code or token must never be served from (or end up saved into) a cached
+   response, and a slow/offline load must never silently fall back to the
+   cached index.html, which would just show "Sign In" again. If the
+   network request fails, it fails openly (the browser's normal offline
+   error) rather than masking the failure with stale content. */
+async function authCallbackResponse(request) {
+  return fetch(request);
 }
 
 /* Saved copy first for icons and the manifest. */
@@ -131,6 +170,13 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return; // contact form posts go straight to Formspree
   const url = new URL(request.url);
 
+  // Checked first, and ahead of isPageRequest(), so a navigation to
+  // auth-callback.html (request.mode === 'navigate') can never be caught
+  // by the home-page logic below — see isAuthCallbackRequest() above.
+  if (isAuthCallbackRequest(url)) {
+    event.respondWith(authCallbackResponse(request));
+    return;
+  }
   if (isPageRequest(request, url)) {
     event.respondWith(pageResponse(request));
     return;
@@ -142,6 +188,11 @@ self.addEventListener('fetch', (event) => {
     } else if (/^\.\/badge-[a-z-]+\.jpg$/.test(name)) {
       event.respondWith(badgeImageResponse(request));
     }
+    // admin.html (and anything else on this origin not listed in
+    // CORE_FILES and not a badge image) falls through here untouched: no
+    // respondWith() is called, so the browser makes its normal network
+    // request. It is never answered from, or saved into, the cached
+    // './index.html' entry.
     return;
   }
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
