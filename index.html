@@ -1417,6 +1417,20 @@
         <p style="margin-top:6px; font-weight:400;">Anyone can read the community feed below. <button type="button" class="btn btn-outline" id="community-signin-link" data-account-action="open" style="padding:4px 14px; font-size:.85rem; display:inline-flex; width:auto; margin-left:4px;">Sign in</button> to share your own post.</p>
       </div>
 
+      <!-- Signed-in: in-app notifications (Phase 6C). Hidden until a session is confirmed. -->
+      <div id="community-notif-wrap" style="display:none; margin-bottom:16px;">
+        <button type="button" class="btn btn-outline" id="community-notif-toggle" aria-expanded="false" aria-controls="community-notif-panel" style="padding:6px 16px; font-size:.85rem; display:inline-flex; align-items:center; width:auto;">Notifications<span id="community-notif-badge" aria-hidden="true" style="display:none; margin-left:8px; min-width:20px; padding:1px 7px; border-radius:999px; background:var(--amber); color:var(--charcoal); font-size:.75rem; font-weight:700; text-align:center;"></span></button>
+        <div class="form-card" id="community-notif-panel" style="display:none; margin-top:10px; padding:14px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <strong style="font-size:.95rem;">Notifications</strong>
+            <button type="button" class="btn-link" id="community-notif-markall" style="font-size:.85rem;">Mark all as read</button>
+          </div>
+          <p id="community-notif-status" class="status-msg" role="status" aria-live="polite" style="margin-top:8px;"></p>
+          <p id="community-notif-empty" style="display:none; color:var(--charcoal-soft); font-size:.85rem; margin-top:8px;">No notifications yet. Replies to your comments and reactions to your posts and comments will show up here.</p>
+          <div id="community-notif-list" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;"></div>
+        </div>
+      </div>
+
       <!-- Signed-in: post form (hidden until a session is confirmed). -->
       <form class="form-card" id="community-post-form" style="display:none;" novalidate>
         <div class="field">
@@ -1448,6 +1462,13 @@
 
   <section class="block bg-cream">
     <div class="wrap" style="max-width:680px;">
+      <!-- Phase 6C: search published community posts (posts only, never comments). -->
+      <form id="community-search-form" role="search" novalidate style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+        <input type="text" id="community-search-input" maxlength="100" placeholder="Search community posts" aria-label="Search community posts" autocomplete="off" enterkeyhint="search" style="flex:1 1 200px; width:auto; padding:10px 12px;">
+        <button type="submit" class="btn btn-primary" id="community-search-submit" style="padding:8px 18px; font-size:.85rem; width:auto;">Search</button>
+        <button type="button" class="btn btn-outline" id="community-search-clear" style="display:none; padding:8px 18px; font-size:.85rem; width:auto;">Clear</button>
+      </form>
+      <p id="community-search-status" class="status-msg" role="status" aria-live="polite" style="margin-bottom:12px;"></p>
       <p id="community-feed-notice" class="status-msg status-info" style="display:none; margin-bottom:14px;" role="status">The community feed couldn't be loaded right now. The rest of the site still works — please try this page again later.</p>
       <p id="community-feed-empty" style="display:none; color:var(--charcoal-soft);">No posts yet. Be the first to say hello.</p>
       <div id="community-feed" style="display:flex; flex-direction:column; gap:16px;"></div>
@@ -9135,7 +9156,10 @@ const FPRBadge = (function(){
   }
 
   let feedLoaded = false;
-  let feedLoading = false;
+  // Each loadFeed() call takes a sequence number; only the newest one's
+  // result is rendered, so a slow earlier load can never overwrite a
+  // newer feed/search result.
+  let feedReqSeq = 0;
   let myPostIds = new Set();
   let myCommentIds = new Set();
   let currentSession = null;
@@ -9146,6 +9170,41 @@ const FPRBadge = (function(){
   // Comments are loaded lazily, per post, only once that post's
   // "Comments" toggle is opened — never for every post on page load.
   const commentUI = new Map();
+
+  // Phase 6C: reactions, notifications, post search.
+  const searchForm = document.getElementById('community-search-form');
+  const searchInput = document.getElementById('community-search-input');
+  const searchClearBtn = document.getElementById('community-search-clear');
+  const searchStatus = document.getElementById('community-search-status');
+  const SEARCH_MIN_LENGTH = 2;
+  const SEARCH_RESULT_LIMIT = 50;
+  let activeSearch = null; // trimmed query while a search is shown, else null
+
+  const notifWrap = document.getElementById('community-notif-wrap');
+  const notifToggle = document.getElementById('community-notif-toggle');
+  const notifBadge = document.getElementById('community-notif-badge');
+  const notifPanel = document.getElementById('community-notif-panel');
+  const notifMarkAllBtn = document.getElementById('community-notif-markall');
+  const notifStatus = document.getElementById('community-notif-status');
+  const notifEmpty = document.getElementById('community-notif-empty');
+  const notifList = document.getElementById('community-notif-list');
+  let notifOpen = false;
+  let notifReqSeq = 0;
+
+  const REACTIONS = [
+    { key: 'support', label: 'Support', icon: '\u{1F91D}' },
+    { key: 'heart', label: 'Heart', icon: '❤️' },
+    { key: 'celebrate', label: 'Celebrate', icon: '\u{1F389}' },
+  ];
+  const REACTION_COUNT_BATCH = 100; // post ids per counts request (keeps the URL short)
+  // Keyed 'p:<post id>' or 'c:<comment id>'. Counts come only from the
+  // public aggregate view; myReactions holds only the signed-in member's
+  // own reaction per target. Neither ever holds another member's identity.
+  let reactionCounts = new Map();
+  let myReactions = new Map();
+  let reactionBars = new Map(); // key -> repaint function for that target's bar
+  const reactionPending = new Set();
+  let reactionReqSeq = 0;
 
   function setStatus(el, kind, text){
     el.className = 'status-msg' + (text ? ' show' : '') + (kind ? ' status-' + kind : '');
@@ -9207,6 +9266,8 @@ const FPRBadge = (function(){
     bodyEl.textContent = post.body || ''; // plain text only — no linkification, no markup parsing
     card.appendChild(bodyEl);
 
+    card.appendChild(buildReactionBar('post', post.id, card));
+
     const actionsRow = document.createElement('div');
     actionsRow.style.display = 'flex';
     actionsRow.style.gap = '10px';
@@ -9262,6 +9323,366 @@ const FPRBadge = (function(){
     }
     note.textContent = text;
   }
+
+  // ---------- Reactions (Phase 6C) ----------
+  // One active reaction per member per target, enforced server-side by
+  // toggle_community_reaction(): same reaction again removes it, a
+  // different one switches it. Counts are read only from
+  // community_reaction_counts_public, which has no row at all for
+  // hidden/removed content. Nothing is shown optimistically — the bar
+  // repaints only from what the database confirms.
+  function reactionKey(targetType, targetId){
+    return (targetType === 'post' ? 'p:' : 'c:') + targetId;
+  }
+
+  function buildReactionBar(targetType, targetId, container){
+    const key = reactionKey(targetType, targetId);
+    const bar = document.createElement('div');
+    bar.className = 'fpr-reaction-bar';
+    bar.setAttribute('role', 'group');
+    bar.setAttribute('aria-label', targetType === 'post' ? 'Reactions to this post' : 'Reactions to this comment');
+    bar.style.display = 'flex';
+    bar.style.flexWrap = 'wrap';
+    bar.style.gap = '6px';
+    bar.style.marginTop = '6px';
+
+    const buttons = REACTIONS.map(function(r){
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'choice';
+      btn.style.padding = '4px 10px';
+      btn.style.fontSize = '.78rem';
+      btn.style.lineHeight = '1.4';
+      btn.addEventListener('click', function(){ onReactionClick(targetType, targetId, r.key, container); });
+      bar.appendChild(btn);
+      return { r: r, btn: btn };
+    });
+
+    function paint(){
+      const counts = reactionCounts.get(key) || {};
+      const mine = myReactions.get(key) || null;
+      const pending = reactionPending.has(key);
+      buttons.forEach(function(b){
+        const n = counts[b.r.key] || 0;
+        const selected = mine === b.r.key;
+        b.btn.classList.toggle('selected', selected);
+        b.btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        b.btn.disabled = pending;
+        b.btn.textContent = b.r.icon + ' ' + b.r.label + (n ? ' ' + n : '');
+        b.btn.setAttribute('aria-label', b.r.label + (n ? ', ' + n : '') + (selected ? ', your reaction' : ''));
+        b.btn.title = selected ? 'Your reaction. Click again to remove it.' : b.r.label;
+      });
+    }
+    reactionBars.set(key, paint);
+    paint();
+    return bar;
+  }
+
+  function repaintReactions(){
+    reactionBars.forEach(function(paint){ paint(); });
+  }
+
+  // Loads counts for every post on screen and every comment/reply under
+  // them in one batched view query per REACTION_COUNT_BATCH posts (never
+  // one query per card), plus the signed-in member's own reactions in a
+  // single RPC call.
+  async function loadReactionState(postIds){
+    const reqId = ++reactionReqSeq;
+    const counts = new Map();
+    const mine = new Map();
+    if (postIds.length && readClient) {
+      try {
+        for (let i = 0; i < postIds.length; i += REACTION_COUNT_BATCH) {
+          const { data, error } = await readClient
+            .from('community_reaction_counts_public')
+            .select('target_type, post_id, comment_id, support_count, heart_count, celebrate_count')
+            .in('post_id', postIds.slice(i, i + REACTION_COUNT_BATCH));
+          if (error) throw error;
+          (data || []).forEach(function(row){
+            const key = row.target_type === 'post' ? reactionKey('post', row.post_id) : reactionKey('comment', row.comment_id);
+            counts.set(key, { support: row.support_count, heart: row.heart_count, celebrate: row.celebrate_count });
+          });
+        }
+      } catch(err){ /* best-effort only — bars simply show no counts */ }
+      if (client && currentSession) {
+        try {
+          const { data, error } = await client.rpc('list_my_community_reactions', { p_post_ids: postIds });
+          if (!error && Array.isArray(data)) {
+            data.forEach(function(r){
+              mine.set(r.comment_id ? reactionKey('comment', r.comment_id) : reactionKey('post', r.post_id), r.reaction);
+            });
+          }
+        } catch(err){ /* best-effort only — no selected state shown */ }
+      }
+    }
+    if (reqId !== reactionReqSeq) return; // a newer load superseded this one
+    reactionCounts = counts;
+    myReactions = mine;
+    repaintReactions();
+  }
+
+  async function refreshTargetCounts(targetType, targetId){
+    if (!readClient) return;
+    let query = readClient
+      .from('community_reaction_counts_public')
+      .select('support_count, heart_count, celebrate_count');
+    query = targetType === 'post'
+      ? query.eq('target_type', 'post').eq('post_id', targetId)
+      : query.eq('target_type', 'comment').eq('comment_id', targetId);
+    const { data, error } = await query;
+    if (error) throw error;
+    const key = reactionKey(targetType, targetId);
+    const row = data && data[0];
+    if (row) reactionCounts.set(key, { support: row.support_count, heart: row.heart_count, celebrate: row.celebrate_count });
+    else reactionCounts.delete(key);
+  }
+
+  async function onReactionClick(targetType, targetId, reaction, container){
+    const key = reactionKey(targetType, targetId);
+    if (!client || !currentSession){
+      openInlineNotice(container, 'Please sign in to react.');
+      return;
+    }
+    if (reactionPending.has(key)) return;
+    reactionPending.add(key);
+    const paintNow = reactionBars.get(key);
+    if (paintNow) paintNow();
+    try {
+      const params = { p_reaction: reaction };
+      if (targetType === 'post') params.p_post_id = targetId; else params.p_comment_id = targetId;
+      const { data, error } = await client.rpc('toggle_community_reaction', params);
+      if (error) throw error;
+      const result = Array.isArray(data) ? data[0] : data;
+      if (result && result.result_reaction) myReactions.set(key, result.result_reaction);
+      else myReactions.delete(key);
+      try { await refreshTargetCounts(targetType, targetId); } catch(err){ /* counts refresh on next load */ }
+    } catch(err){
+      openInlineNotice(container, (err && err.message) ? err.message : 'Something went wrong saving that reaction. Please try again.');
+    } finally {
+      reactionPending.delete(key);
+      const paint = reactionBars.get(key);
+      if (paint) paint();
+    }
+  }
+
+  // ---------- Notifications (Phase 6C) ----------
+  // Signed-in members only, in-app only. Every read/write goes through
+  // the member's own SECURITY DEFINER RPCs; the list never carries a
+  // user id or email, and content that has since been hidden/removed
+  // comes back with target_available = false and no ids/excerpt.
+  function setUnreadBadge(count){
+    const n = Number(count) || 0;
+    if (n > 0) {
+      notifBadge.textContent = n > 99 ? '99+' : String(n);
+      notifBadge.style.display = 'inline-block';
+      notifToggle.setAttribute('aria-label', 'Notifications, ' + n + ' unread');
+    } else {
+      notifBadge.textContent = '';
+      notifBadge.style.display = 'none';
+      notifToggle.setAttribute('aria-label', 'Notifications');
+    }
+    notifMarkAllBtn.disabled = n === 0;
+  }
+
+  async function refreshUnreadCount(){
+    if (!client || !currentSession) { setUnreadBadge(0); return; }
+    try {
+      const { data, error } = await client.rpc('count_my_unread_community_notifications');
+      if (!error) setUnreadBadge(data);
+    } catch(err){ /* best-effort only — badge just stays as it was */ }
+  }
+
+  function notificationText(n){
+    const name = n.actor_display_name || 'A member';
+    if (n.notification_type === 'comment_reply') return name + ' replied to your comment';
+    if (n.notification_type === 'post_reaction') return name + ' reacted to your post';
+    if (n.notification_type === 'comment_reaction') return name + ' reacted to your comment';
+    return name + ' responded to something you shared';
+  }
+
+  function buildNotificationItem(n){
+    const unread = !n.read_at;
+    const item = document.createElement('div');
+    item.style.padding = '10px 12px';
+    item.style.borderRadius = '10px';
+    item.style.border = '1px solid rgba(0,0,0,.08)';
+    item.style.borderLeft = unread ? '4px solid var(--amber)' : '1px solid rgba(0,0,0,.08)';
+    item.style.background = unread ? 'var(--white)' : 'transparent';
+
+    const title = document.createElement('p');
+    title.style.margin = '0';
+    title.style.fontSize = '.88rem';
+    title.style.fontWeight = unread ? '600' : '400';
+    title.textContent = notificationText(n);
+    item.appendChild(title);
+
+    const dateEl = document.createElement('p');
+    dateEl.style.margin = '2px 0 0';
+    dateEl.style.fontSize = '.75rem';
+    dateEl.style.opacity = '.7';
+    dateEl.textContent = formatDate(n.created_at) + (unread ? ' · New' : '');
+    item.appendChild(dateEl);
+
+    const detail = document.createElement('p');
+    detail.style.margin = '6px 0 0';
+    detail.style.fontSize = '.82rem';
+    detail.style.whiteSpace = 'pre-wrap';
+    detail.style.color = 'var(--charcoal-soft)';
+    if (n.target_available && n.excerpt) {
+      detail.style.fontStyle = 'italic';
+      detail.textContent = '“' + n.excerpt + (n.excerpt.length >= 140 ? '…' : '') + '”';
+    } else if (!n.target_available) {
+      detail.textContent = 'This content is no longer available.';
+    }
+    if (detail.textContent) item.appendChild(detail);
+
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '12px';
+    actions.style.marginTop = '6px';
+
+    if (n.target_available && n.post_id) {
+      const viewBtn = document.createElement('button');
+      viewBtn.type = 'button';
+      viewBtn.className = 'btn-link';
+      viewBtn.style.fontSize = '.8rem';
+      viewBtn.textContent = 'View';
+      viewBtn.addEventListener('click', async function(){
+        if (unread) await markNotificationRead(n.id);
+        focusPostCard(n.post_id, !!n.comment_id);
+      });
+      actions.appendChild(viewBtn);
+    }
+    if (unread) {
+      const readBtn = document.createElement('button');
+      readBtn.type = 'button';
+      readBtn.className = 'btn-link';
+      readBtn.style.fontSize = '.8rem';
+      readBtn.textContent = 'Mark as read';
+      readBtn.addEventListener('click', function(){
+        readBtn.disabled = true;
+        markNotificationRead(n.id).then(function(){ readBtn.disabled = false; });
+      });
+      actions.appendChild(readBtn);
+    }
+    if (actions.children.length) item.appendChild(actions);
+    return item;
+  }
+
+  async function loadNotifications(){
+    if (!client || !currentSession) return;
+    const reqId = ++notifReqSeq;
+    setStatus(notifStatus, 'info', 'Loading notifications...');
+    try {
+      const { data, error } = await client.rpc('list_my_community_notifications', { p_limit: 30 });
+      if (reqId !== notifReqSeq) return;
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      notifList.innerHTML = ''; // clearing only; every item below is built via createElement/textContent
+      notifEmpty.style.display = rows.length ? 'none' : 'block';
+      rows.forEach(function(n){ notifList.appendChild(buildNotificationItem(n)); });
+      setStatus(notifStatus, '', '');
+    } catch(err){
+      if (reqId !== notifReqSeq) return;
+      setStatus(notifStatus, 'error', "Notifications couldn't be loaded right now. Please try again in a moment.");
+    }
+    refreshUnreadCount();
+  }
+
+  async function markNotificationRead(notificationId){
+    try {
+      const { error } = await client.rpc('mark_community_notification_read', { p_notification_id: notificationId });
+      if (error) throw error;
+    } catch(err){
+      setStatus(notifStatus, 'error', (err && err.message) ? err.message : 'Something went wrong marking that as read.');
+      return;
+    }
+    await loadNotifications();
+  }
+
+  // Scrolls to a post already on screen, opening its comments when the
+  // notification was about a comment/reply. Never fetches anything new.
+  function focusPostCard(postId, openComments){
+    const card = Array.prototype.find.call(feedEl.querySelectorAll('[data-post-id]'), function(el){
+      return el.getAttribute('data-post-id') === postId;
+    });
+    if (!card) {
+      setStatus(notifStatus, 'info', activeSearch
+        ? "That post isn't in your current search results. Clear the search to see the full feed."
+        : "That post isn't in the feed right now. Please refresh the page and try again.");
+      return;
+    }
+    if (openComments) {
+      const toggle = card.querySelector(':scope > .fpr-comments-section > button');
+      if (toggle && toggle.textContent === 'Comments') toggle.click();
+    }
+    try { card.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); } catch(err){}
+  }
+
+  function resetNotifications(){
+    notifReqSeq++; // drop any in-flight load
+    notifOpen = false;
+    notifPanel.style.display = 'none';
+    notifToggle.setAttribute('aria-expanded', 'false');
+    notifList.innerHTML = '';
+    notifEmpty.style.display = 'none';
+    setStatus(notifStatus, '', '');
+    setUnreadBadge(0);
+  }
+
+  notifToggle.addEventListener('click', function(){
+    notifOpen = !notifOpen;
+    notifPanel.style.display = notifOpen ? 'block' : 'none';
+    notifToggle.setAttribute('aria-expanded', notifOpen ? 'true' : 'false');
+    if (notifOpen) loadNotifications();
+  });
+
+  let markingAll = false;
+  notifMarkAllBtn.addEventListener('click', async function(){
+    if (markingAll || !client || !currentSession) return;
+    markingAll = true;
+    notifMarkAllBtn.disabled = true;
+    try {
+      const { error } = await client.rpc('mark_all_community_notifications_read');
+      if (error) throw error;
+      await loadNotifications();
+    } catch(err){
+      setStatus(notifStatus, 'error', (err && err.message) ? err.message : 'Something went wrong marking those as read.');
+      refreshUnreadCount();
+    } finally {
+      markingAll = false;
+    }
+  });
+
+  // ---------- Post search (Phase 6C) ----------
+  // Searches community_posts_public only — published posts, never
+  // comments — via a case-insensitive substring match. The query is
+  // sent as a single filter value (never inside an .or() expression),
+  // with LIKE wildcards escaped so they're matched literally.
+  function escapeLikePattern(text){
+    return text.replace(/[\\%_]/g, '\\$&').replace(/\*/g, ' ');
+  }
+
+  searchForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    const q = searchInput.value.trim();
+    if (q.length < SEARCH_MIN_LENGTH) {
+      setStatus(searchStatus, 'error', 'Type at least ' + SEARCH_MIN_LENGTH + ' characters to search posts.');
+      return;
+    }
+    activeSearch = q;
+    searchClearBtn.style.display = 'inline-flex';
+    setStatus(searchStatus, 'info', 'Searching...');
+    loadFeed();
+  });
+
+  searchClearBtn.addEventListener('click', function(){
+    activeSearch = null;
+    searchInput.value = '';
+    searchClearBtn.style.display = 'none';
+    setStatus(searchStatus, '', '');
+    loadFeed();
+  });
 
   // ---------- Reporting (posts and comments) ----------
   // A small inline form, built fresh each time Report is clicked and
@@ -9416,6 +9837,8 @@ const FPRBadge = (function(){
     bodyEl.style.fontSize = '.9rem';
     bodyEl.textContent = comment.body || ''; // plain text only — no linkification
     row.appendChild(bodyEl);
+
+    row.appendChild(buildReactionBar('comment', comment.id, row));
 
     const actions = document.createElement('div');
     actions.style.display = 'flex';
@@ -9774,7 +10197,11 @@ const FPRBadge = (function(){
 
   function renderFeed(posts){
     feedEl.innerHTML = ''; // clearing only; every node re-added below is built via createElement/textContent
+    reactionBars = new Map(); // the old cards (and their bars) are gone
     if (!posts || posts.length === 0){
+      feedEmpty.textContent = activeSearch
+        ? 'No published posts match your search.'
+        : 'No posts yet. Be the first to say hello.';
       feedEmpty.style.display = 'block';
       return;
     }
@@ -9783,24 +10210,38 @@ const FPRBadge = (function(){
   }
 
   async function loadFeed(){
-    if (feedLoading) return;
-    feedLoading = true;
+    const reqId = ++feedReqSeq;
+    const query = activeSearch;
     try {
       if (!readClient) throw new Error('Community feed client unavailable');
-      const { data, error } = await readClient
+      let request = readClient
         .from('community_posts_public')
         .select('id, body, created_at, updated_at, edited_at, display_name')
         .order('created_at', { ascending: false });
+      if (query) {
+        request = request
+          .ilike('body', '%' + escapeLikePattern(query) + '%')
+          .limit(SEARCH_RESULT_LIMIT);
+      }
+      const { data, error } = await request;
+      if (reqId !== feedReqSeq) return; // a newer feed/search load superseded this one
       if (error) throw error;
+      const posts = data || [];
       feedNotice.style.display = 'none';
-      renderFeed(data || []);
+      renderFeed(posts);
       feedLoaded = true;
+      if (query) {
+        setStatus(searchStatus, 'info', posts.length
+          ? 'Showing ' + posts.length + (posts.length === 1 ? ' post' : ' posts') + ' matching “' + query + '”.'
+          : 'No published posts match “' + query + '”.');
+      }
+      loadReactionState(posts.map(p => p.id));
     } catch(err){
+      if (reqId !== feedReqSeq) return;
       // Failure here never breaks the rest of the site — just this
       // one page's feed shows a subtle message instead.
-      feedNotice.style.display = 'block';
-    } finally {
-      feedLoading = false;
+      if (query) setStatus(searchStatus, 'error', "Search couldn't be completed right now. Please try again in a moment.");
+      else feedNotice.style.display = 'block';
     }
   }
 
@@ -9838,6 +10279,13 @@ const FPRBadge = (function(){
     const signedIn = !!currentSession;
     signedOutNotice.style.display = signedIn ? 'none' : 'block';
     postForm.style.display = signedIn ? 'block' : 'none';
+    notifWrap.style.display = signedIn ? 'block' : 'none';
+    if (signedIn) {
+      refreshUnreadCount();
+      if (notifOpen) loadNotifications();
+    } else {
+      resetNotifications();
+    }
     commentUI.forEach(function(ui){
       ui.composeSigninNotice.style.display = signedIn ? 'none' : 'block';
       ui.composeTextarea.style.display = signedIn ? 'block' : 'none';
@@ -9954,6 +10402,10 @@ const FPRBadge = (function(){
   document.addEventListener('fpr:pagechange', function(e){
     if (e && e.detail && e.detail.page === 'community' && !feedLoaded){
       loadFeed();
+    }
+    // Unread badge refreshes on each visit — no polling in the background.
+    if (e && e.detail && e.detail.page === 'community' && currentSession){
+      refreshUnreadCount();
     }
   });
   // A direct link/bookmark to #community fires goTo() before this
