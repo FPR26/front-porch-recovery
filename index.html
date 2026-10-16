@@ -9525,6 +9525,10 @@ const FPRBadge = (function(){
         });
         if (error) throw error;
         wrap.remove();
+        // The new reply belongs to the signed-in user, so myCommentIds must
+        // include its id before the comment list is rebuilt, or its Edit
+        // button won't show up until the next unrelated refresh.
+        await refreshMyComments();
         invalidateAndReloadComments(post.id);
       } catch(err){
         submitting = false;
@@ -9691,6 +9695,10 @@ const FPRBadge = (function(){
         const { error } = await client.rpc('create_community_comment', { p_post_id: post.id, p_body: val });
         if (error) throw error;
         composeTextarea.value = '';
+        // Refresh myCommentIds before rebuilding the comment cards, so the
+        // newly-created, owned top-level comment shows its Edit button
+        // immediately instead of only after some later, unrelated refresh.
+        await refreshMyComments();
         invalidateAndReloadComments(post.id);
       } catch(err){
         composeErr.textContent = (err && err.message) ? err.message : 'Something went wrong posting that comment.';
