@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Signing you in — Front Porch Recovery</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#F6F5F2">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<style>
+  :root { color-scheme: light; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F6F5F2;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #2B2A28;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  .card {
+    max-width: 420px;
+    width: 100%;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 18px rgba(0,0,0,0.08);
+    padding: 32px 28px;
+    text-align: center;
+  }
+  .spinner {
+    width: 36px;
+    height: 36px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    border: 3px solid #e4e1d9;
+    border-top-color: #8a5a3c;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  h1 { font-size: 1.15rem; margin: 0 0 8px; }
+  p { font-size: 0.95rem; line-height: 1.5; margin: 0 0 6px; color: #4a4843; }
+  .error-box { display: none; }
+  .error-box.show { display: block; }
+  .error-box .spinner { display: none; }
+  .error-icon {
+    display: none;
+    width: 36px; height: 36px; margin: 0 auto 18px;
+    border-radius: 50%; background: #c0392b; color: #fff;
+    font-size: 1.25rem; line-height: 36px; font-weight: 700;
+  }
+  .error-box .error-icon { display: block; }
+  .btn {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: #8a5a3c;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  .status { display: none; }
+  .status.show { display: block; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div id="pending-view" class="status show">
+      <div class="spinner" aria-hidden="true"></div>
+      <h1>Signing you in…</h1>
+      <p>Hang on while we finish verifying your sign-in link.</p>
+    </div>
+    <div id="error-view" class="error-box" role="alert">
+      <div class="error-icon" aria-hidden="true">!</div>
+      <h1>We couldn't sign you in</h1>
+      <p id="error-message">That sign-in link could not be verified. It may have expired or already been used.</p>
+      <p>You can close this tab and request a new sign-in link from the site.</p>
+      <a class="btn" id="home-link" href="./">Return to Front Porch Recovery</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+  /* Dedicated Supabase magic-link callback handler.
+     Why this page exists: index.html creates several Supabase clients for
+     different purposes, and letting more than one of them auto-detect a
+     callback in the URL (detectSessionInUrl) created a race that could
+     silently drop the session. This page's whole job is to be the single
+     place a sign-in link is ever processed, for BOTH callback shapes
+     Supabase can send:
+       - PKCE flow:     ?code=...                 -> exchangeCodeForSession()
+       - implicit flow: #access_token=...&refresh_token=...&type=magiclink
+                                                    -> setSession()
+     Once the session is established and persisted (same localStorage,
+     same browser origin as index.html/admin.html — no custom storageKey
+     is set here, matching every other Supabase client in this project),
+     this page redirects back to the normal home page, which immediately
+     shows the signed-in header via its own getSession()/onAuthStateChange
+     wiring. On any failure, this page shows a clear, visible error instead
+     of silently bouncing back to a signed-out home page.
+
+     IMPORTANT (one-time setup, not something this file can do on its
+     own): this page's URL must be added to Supabase's dashboard, under
+     Auth -> URL Configuration -> Redirect URLs, e.g.
+       https://fpr26.github.io/front-porch-recovery/auth-callback.html
+     Until that's added, Supabase will reject redirecting here. */
+  (function(){
+    const pendingView = document.getElementById('pending-view');
+    const errorView = document.getElementById('error-view');
+    const errorMessage = document.getElementById('error-message');
+    const homeLink = document.getElementById('home-link');
+
+    function homeUrl(){
+      return window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+    }
+    homeLink.href = homeUrl();
+
+    function showError(message){
+      pendingView.classList.remove('show');
+      errorView.classList.add('show');
+      if (message) errorMessage.textContent = message;
+    }
+
+    // Supabase project config — same publishable (anon) key already used
+    // throughout this site. Never the service_role key.
+    const SUPABASE_URL = 'https://ptmazxslypzslhhcqudn.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_1_TI_W8Zuk9319d-akZYrw_uAEVBtz8';
+
+    if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+      showError('This page could not load the sign-in library. Please try again in a moment.');
+      return;
+    }
+
+    // persistSession/autoRefreshToken: true so the session this page
+    // establishes is the one index.html and admin.html see afterward.
+    // detectSessionInUrl: false — this page parses and consumes the
+    // callback itself, explicitly and exactly once, below.
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+    });
+
+    async function run(){
+      const searchParams = new URLSearchParams(window.location.search || '');
+      const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+
+      const code = searchParams.get('code');
+      const callbackError = searchParams.get('error_description') || searchParams.get('error')
+        || hashParams.get('error_description') || hashParams.get('error');
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+
+      // Scrub the callback params from the address bar immediately so a
+      // refresh of this page never resubmits a single-use code/token,
+      // regardless of how this attempt turns out.
+      try { window.history.replaceState(null, '', window.location.origin + window.location.pathname); }
+      catch(err){}
+
+      if (callbackError) {
+        showError('That sign-in link is no longer valid (' + callbackError + '). It may have expired or already been used.');
+        return;
+      }
+
+      try {
+        let result;
+        if (code) {
+          result = await client.auth.exchangeCodeForSession(code);
+        } else if (accessToken && refreshToken) {
+          result = await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        } else {
+          showError('This page was opened without a valid sign-in link. Please use the link from your email, or request a new one.');
+          return;
+        }
+        if (result && result.error) throw result.error;
+        if (!result || !result.data || !result.data.session) throw new Error('No session was returned.');
+
+        // Success — send the user back to the normal site, already
+        // signed in. A brief delay only so "Signing you in..." doesn't
+        // flash-and-vanish instantly.
+        setTimeout(function(){ window.location.replace(homeUrl()); }, 400);
+      } catch(err){
+        showError('Your sign-in link could not be verified. It may have expired or already been used. Please request a new one.');
+      }
+    }
+
+    run();
+  })();
+  </script>
+</body>
+</html>
