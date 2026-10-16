@@ -6794,7 +6794,15 @@ async function loadDbStories(){
       if (notice) notice.style.display = 'block';
       return;
     }
-    const dbClient = window.supabase.createClient(url, key, { auth: { persistSession: false } });
+    // detectSessionInUrl explicitly disabled: this is a throwaway,
+    // session-less client, and only ONE client in this whole file (the
+    // shared sign-in client created later, in window.__fprSupabaseClient)
+    // is allowed to look at/consume a Supabase auth callback in the URL.
+    // Multiple clients independently racing to auto-consume the same
+    // single-use magic-link code/tokens is the reason sign-in could
+    // silently fail — see the callback-handling block near the shared
+    // client for the real fix.
+    const dbClient = window.supabase.createClient(url, key, { auth: { persistSession: false, detectSessionInUrl: false } });
 
     const { data, error } = await dbClient
       .from('porch_stories_public')
@@ -7149,17 +7157,29 @@ document.body.addEventListener('click', (e) => {
 })();
 
 let initial = 'home';
-/* Phase 1: a Supabase magic-link redirect also arrives as a URL hash
-   (#access_token=...&type=magiclink...), not a page id. Route those to
-   the home view without letting goTo() rewrite location.hash, so the
-   Supabase client — created later in this script — can still read and
-   consume the tokens once it initializes. */
+/* A Supabase magic-link redirect can arrive two different ways:
+   - implicit flow: #access_token=...&refresh_token=...&type=magiclink
+   - PKCE flow: ?code=...  (and either flow can carry an error instead:
+     error=...&error_description=...)
+   Neither is a page id. The hash case must not let goTo() below rewrite
+   location.hash before the shared Supabase client (created later in
+   this script, in the account sign-in block) gets a chance to read and
+   consume it — history.replaceState('#'+pageId) would otherwise destroy
+   single-use tokens before they're ever processed. window.__fprAuthCallback
+   records what kind of callback (if any) is present so that later block
+   can process it explicitly via exchangeCodeForSession()/setSession()
+   instead of relying on the SDK's own detectSessionInUrl (which is now
+   disabled on every client precisely so only that one block ever touches
+   these params). */
 let isAuthCallbackHash = false;
 try {
   const rawHash = location.hash || '';
+  const rawSearch = location.search || '';
   isAuthCallbackHash = /access_token=|error_description=|type=(magiclink|signup|recovery|invite|email_change)/.test(rawHash);
+  const isAuthCallbackSearch = /(^|[?&])code=|error_description=|(^|[&])error=/.test(rawSearch);
+  window.__fprAuthCallback = (isAuthCallbackHash || isAuthCallbackSearch);
   initial = isAuthCallbackHash ? 'home' : rawHash.replace('#','') || 'home';
-} catch(err){ initial = 'home'; }
+} catch(err){ initial = 'home'; window.__fprAuthCallback = false; }
 const DETAIL_PARENT = { resource: 'toolbox', story: 'stories', porchtopic: 'porch' };
 if(DETAIL_PARENT[initial]) initial = DETAIL_PARENT[initial];
 if(document.getElementById('page-' + initial)){ goTo(initial, { skipHashUpdate: isAuthCallbackHash }); } else { goTo('home', { skipHashUpdate: isAuthCallbackHash }); }
@@ -8865,8 +8885,18 @@ const FPRBadge = (function(){
   let client = null;
   if (supabaseUrl && supabaseAnonKey && window.supabase && typeof window.supabase.createClient === 'function') {
     try {
+      // detectSessionInUrl is explicitly OFF. This is the one shared
+      // Supabase auth client for the whole site (window.__fprSupabaseClient)
+      // and the ONLY place a magic-link callback is ever processed — but
+      // it does that processing explicitly, below, via
+      // exchangeCodeForSession()/setSession(), not by relying on the SDK's
+      // own automatic URL detection. Letting the SDK auto-detect here too
+      // would mean this client and the two other (detectSessionInUrl:false)
+      // clients in this file could all race to consume the same single-use
+      // code/tokens on page load; disabling it everywhere and handling the
+      // callback once, explicitly, removes that race entirely.
       client = window.supabase.createClient(supabaseUrl, supabaseAnonKey, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
       });
     } catch(err){ client = null; }
   }
@@ -8920,9 +8950,68 @@ const FPRBadge = (function(){
     if (signedIn) emailDisplay.textContent = session.user.email || '';
   }
 
+  /* Explicit magic-link callback handling. Supabase can send a user back
+     here two different ways, and both must be supported without relying
+     on detectSessionInUrl (now disabled on every client in this file):
+       - PKCE:     ?code=...
+       - implicit: #access_token=...&refresh_token=...&type=magiclink
+     This runs once, only when window.__fprAuthCallback (set during the
+     very first routing pass, before this script could overwrite the URL)
+     says a callback is present. On success the session is established on
+     this one shared client, the URL is scrubbed of the callback params so
+     a page refresh can never resubmit a single-use code/token, and the
+     user lands on the normal signed-in home page. On failure, a visible
+     error is shown in the account modal instead of silently leaving the
+     user looking signed-out with no explanation. */
+  async function handleAuthCallback(){
+    if (!window.__fprAuthCallback) return;
+    window.__fprAuthCallback = false; // only ever attempt this once per load
+    const search = window.location.search || '';
+    const hash = (window.location.hash || '').replace(/^#/, '');
+    const searchParams = new URLSearchParams(search);
+    const hashParams = new URLSearchParams(hash);
+    const code = searchParams.get('code');
+    const callbackError = searchParams.get('error_description') || searchParams.get('error')
+      || hashParams.get('error_description') || hashParams.get('error');
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+
+    function cleanUrl(){
+      try { window.history.replaceState(null, '', window.location.origin + window.location.pathname); }
+      catch(err){}
+    }
+
+    if (callbackError) {
+      cleanUrl();
+      openModal();
+      setStatus('error', 'That sign-in link is no longer valid (' + callbackError + '). Please request a new one below.');
+      return;
+    }
+    try {
+      let result;
+      if (code) {
+        result = await client.auth.exchangeCodeForSession(code);
+      } else if (accessToken && refreshToken) {
+        result = await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      } else {
+        // Hash/search matched the callback pattern but didn't carry a
+        // usable code or token pair — nothing to process.
+        return;
+      }
+      cleanUrl();
+      if (result && result.error) throw result.error;
+      renderSession(result && result.data && result.data.session);
+    } catch(err){
+      cleanUrl();
+      openModal();
+      setStatus('error', 'Your sign-in link could not be verified. Please request a new one below.');
+    }
+  }
+
   if (client) {
     client.auth.getSession().then(({ data }) => renderSession(data.session));
     client.auth.onAuthStateChange((_event, session) => renderSession(session));
+    handleAuthCallback();
 
     form.addEventListener('submit', async function(e){
       e.preventDefault();
@@ -8957,7 +9046,14 @@ const FPRBadge = (function(){
         // on insert only. It has no effect, and is not re-sent, on a
         // returning user's sign-in link. Leaving it blank keeps the
         // trigger's own "New member" default.
-        const otpOptions = { emailRedirectTo: window.location.origin + window.location.pathname };
+        // Routed through the dedicated auth-callback.html page (same
+        // origin), which processes the sign-in link exactly once and then
+        // returns the user here already signed in. That page's URL must
+        // be added to Supabase's Auth → URL Configuration → Redirect URLs
+        // allow list for this to work (see the project README/notes).
+        const callbackUrl = window.location.origin +
+          window.location.pathname.replace(/[^/]*$/, '') + 'auth-callback.html';
+        const otpOptions = { emailRedirectTo: callbackUrl };
         if (displayName) otpOptions.data = { display_name: displayName };
         const { error } = await client.auth.signInWithOtp({
           email,
@@ -9031,7 +9127,10 @@ const FPRBadge = (function(){
   let readClient = null;
   if (supabaseUrl && supabaseAnonKey && window.supabase && typeof window.supabase.createClient === 'function') {
     try {
-      readClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false } });
+      // detectSessionInUrl explicitly disabled — same reason as the
+      // dbClient above: only the one shared sign-in client is allowed to
+      // process an auth callback from the URL.
+      readClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false, detectSessionInUrl: false } });
     } catch(err){ readClient = null; }
   }
 

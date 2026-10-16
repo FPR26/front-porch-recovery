@@ -575,8 +575,15 @@
   let client = null;
   if (CONFIG.supabaseUrl && CONFIG.supabaseAnonKey && window.supabase && typeof window.supabase.createClient === 'function') {
     try {
+      // detectSessionInUrl explicitly OFF: the magic-link callback this
+      // page's sign-in form triggers is always sent to auth-callback.html
+      // (see callbackUrl() below), never back to admin.html
+      // itself, so this client never needs to parse a callback from its
+      // own URL. Disabling it here too keeps this in line with every
+      // other Supabase client across the site (index.html), all of which
+      // leave callback processing to that one dedicated page.
       client = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
       });
     } catch(err){ client = null; }
   }
@@ -588,18 +595,20 @@
     return;
   }
 
-  // The main site (index.html) is the only URL currently allow-listed in
-  // Supabase's Auth → URL Configuration. Sending the admin straight back
-  // to this page would require adding admin.html there too — a Supabase
-  // dashboard change this file does not make on its own. Instead, the
-  // magic link returns to the main site (where the session is saved to
-  // the same browser storage this page reads), and the admin re-opens
-  // this page afterward. If admin.html is later added to the Redirect
-  // URLs allow list, this can point at window.location instead.
-  function mainSiteUrl(){
+  // admin.html itself is not allow-listed in Supabase's Auth → URL
+  // Configuration, so the magic link this form sends must not point back
+  // here directly. It's routed to auth-callback.html instead — the one
+  // page on this site that processes a Supabase sign-in callback — which
+  // establishes the session and then redirects to the main site's root.
+  // Because Supabase session storage is scoped to the browser origin (not
+  // the page path), that session is already visible here the moment the
+  // admin re-opens this page. If admin.html is ever added to the Redirect
+  // URLs allow list, this could point straight back at window.location
+  // instead, but going through auth-callback.html would still work fine.
+  function callbackUrl(){
     // Same path this file lives next to, minus its own filename.
     const path = window.location.pathname.replace(/admin\.html$/, '');
-    return window.location.origin + path;
+    return window.location.origin + path + 'auth-callback.html';
   }
 
   els.signinForm.addEventListener('submit', async function(e){
@@ -619,7 +628,7 @@
     try {
       const { error } = await client.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: mainSiteUrl() }
+        options: { emailRedirectTo: callbackUrl() }
       });
       if (error) {
         setSigninStatus('error', 'Could not send a sign-in link right now. Please try again in a moment.');
