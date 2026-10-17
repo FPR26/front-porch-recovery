@@ -727,6 +727,15 @@
   .account-following-item .member-avatar-sm{width:32px; height:32px; font-size:.85rem;}
   .account-following-name{font-weight:600; font-size:.92rem;}
   .account-following-since{display:block; font-size:.75rem; font-weight:400; color:var(--charcoal-soft);}
+  /* Phase 8B-2: handle field + profile panel @handle */
+  .account-handle-row{display:flex; align-items:center; gap:6px;}
+  .account-handle-at{font-weight:700; color:var(--charcoal-soft);}
+  .account-handle-row input{flex:1 1 auto; min-width:0;}
+  .account-handle-row .btn{padding:8px 14px; font-size:.85rem; width:auto; flex:none;}
+  .account-handle-check{font-size:.82rem; margin-top:4px; min-height:1em; color:var(--charcoal-soft);}
+  .account-handle-check.ok{color:var(--sage-text); font-weight:600;}
+  .account-handle-check.bad{color:#7A2E24;}
+  .member-profile-handle{font-size:.92rem; color:var(--charcoal-soft); margin-top:2px;}
 </style>
 <!-- Supabase client (Phase 1): optional member accounts only. Loaded from
      jsdelivr's CDN mirror of the published npm package; nothing here can
@@ -2020,6 +2029,7 @@
     <img id="member-profile-avatar" class="member-profile-avatar" alt="" hidden>
     <span id="member-profile-avatar-fallback" class="member-profile-avatar member-profile-avatar-fallback" aria-hidden="true"></span>
     <h2 id="member-profile-name" class="ms-modal-title" style="margin-top:12px;"></h2>
+    <p id="member-profile-handle" class="member-profile-handle" hidden></p>
     <p id="member-profile-joined" class="member-profile-meta"></p>
     <p id="member-profile-recovery" class="member-profile-meta" hidden></p>
     <div id="member-profile-follow" class="member-profile-follow" hidden>
@@ -2085,6 +2095,19 @@
           </div>
         </div>
         <p class="status-msg" id="account-avatar-status" role="status" aria-live="polite"></p>
+
+        <!-- Phase 8B-2: public handle. Saved on its own via set_my_handle
+             (separate cooldown), never through the profile Save button. -->
+        <div class="field">
+          <label for="account-profile-handle">Handle (optional)</label>
+          <div class="account-handle-row">
+            <span class="account-handle-at" aria-hidden="true">@</span>
+            <input type="text" id="account-profile-handle" maxlength="24" autocomplete="off" autocapitalize="none" spellcheck="false" inputmode="text" aria-describedby="account-profile-handle-hint account-profile-handle-check">
+            <button type="button" class="btn btn-outline" id="account-handle-save">Save handle</button>
+          </div>
+          <p class="hint" id="account-profile-handle-hint">Your public Community handle. Example: @porchfriend. Letters, numbers and single underscores; you can change it once every 30 days.</p>
+          <p class="account-handle-check" id="account-profile-handle-check" aria-live="polite"></p>
+        </div>
 
         <div class="field">
           <label for="account-profile-name">Display name</label>
@@ -9228,6 +9251,7 @@ const FPRBadge = (function(){
     setMsg(avatarStatus, '', '');
     renderAvatar();
     setProfileControlsEnabled(false);
+    resetHandleState();
   }
   function notifyProfileChanged(){
     try { document.dispatchEvent(new CustomEvent('fpr:profilechange')); } catch(err){}
@@ -9248,11 +9272,132 @@ const FPRBadge = (function(){
       fillProfileForm(p);
       setMsg(profileLoadStatus, '', '');
       setProfileControlsEnabled(true);
+      loadMyHandle(seq);
     } catch(err){
       if (seq !== profileLoadSeq) return;
       setMsg(profileLoadStatus, 'error', "Your profile couldn't be loaded right now. Please close this window and try again in a moment.");
     }
   }
+
+  /* ---------- Own handle (Phase 8B-2) ----------
+     Read from community_member_profiles_public (the viewer's own row is
+     always visible there; no auth id involved). Availability uses
+     check_handle_availability (debounced, never for input that fails the
+     local format check); saving uses set_my_handle only. */
+  const HANDLE_RE = /^[a-z][a-z0-9_]{2,23}$/;
+  const handleInput = document.getElementById('account-profile-handle');
+  const handleSaveBtn = document.getElementById('account-handle-save');
+  const handleCheck = document.getElementById('account-profile-handle-check');
+  let myHandle = null;        // the handle the database has for this member
+  let handleCheckSeq = 0;
+  let handleCheckTimer = null;
+  let handleBusy = false;
+
+  function resetHandleState(){
+    clearTimeout(handleCheckTimer);
+    handleCheckSeq++;
+    myHandle = null;
+    handleBusy = false;
+    handleInput.value = '';
+    setHandleCheck('', '');
+  }
+  function isValidHandleLocal(h){
+    return HANDLE_RE.test(h) && h.indexOf('__') === -1 && h.charAt(h.length - 1) !== '_';
+  }
+  function setHandleCheck(kind, text){
+    handleCheck.className = 'account-handle-check' + (kind ? ' ' + kind : '');
+    handleCheck.textContent = text || '';
+  }
+  const HANDLE_STATUS_TEXT = {
+    available: ['ok', 'Available'],
+    taken: ['bad', 'Taken'],
+    invalid: ['bad', 'Invalid: 3 to 24 letters, numbers or single underscores, starting with a letter.'],
+    reserved: ['bad', 'Reserved: please choose another.'],
+    cooldown: ['bad', 'Cooldown: you can change your handle once every 30 days.'],
+  };
+
+  async function loadMyHandle(seq){
+    myHandle = null;
+    handleInput.value = '';
+    setHandleCheck('', '');
+    if (!client || !myProfile || !myProfile.public_id) return;
+    try {
+      const { data, error } = await client
+        .from('community_member_profiles_public')
+        .select('handle')
+        .eq('public_id', myProfile.public_id)
+        .maybeSingle();
+      if (seq !== profileLoadSeq) return;
+      if (error) throw error;
+      myHandle = (data && data.handle) || null;
+      handleInput.value = myHandle || '';
+    } catch(err){
+      if (seq !== profileLoadSeq) return;
+      setHandleCheck('bad', "Your handle couldn't be loaded right now.");
+    }
+  }
+
+  function scheduleHandleCheck(){
+    clearTimeout(handleCheckTimer);
+    const seq = ++handleCheckSeq;
+    const h = handleInput.value;
+    if (!h) { setHandleCheck('', myHandle ? 'Handles can be changed but not removed.' : ''); return; }
+    if (h === myHandle) { setHandleCheck('ok', 'This is your current handle.'); return; }
+    if (!isValidHandleLocal(h)) { setHandleCheck('bad', HANDLE_STATUS_TEXT.invalid[1]); return; }
+    setHandleCheck('', 'Checking...');
+    handleCheckTimer = setTimeout(async function(){
+      try {
+        const { data, error } = await client.rpc('check_handle_availability', { p_handle: h });
+        if (seq !== handleCheckSeq) return;
+        if (error) throw error;
+        const s = HANDLE_STATUS_TEXT[data] || ['', ''];
+        setHandleCheck(s[0], s[1]);
+      } catch(err){
+        if (seq !== handleCheckSeq) return;
+        setHandleCheck('', '');
+      }
+    }, 450);
+  }
+
+  handleInput.addEventListener('input', function(){
+    // Lowercase as typed and drop characters a handle can never contain.
+    const cleaned = handleInput.value.toLowerCase().replace(/^@+/, '').replace(/[^a-z0-9_]/g, '').slice(0, 24);
+    if (cleaned !== handleInput.value) handleInput.value = cleaned;
+    scheduleHandleCheck();
+  });
+  handleInput.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') { e.preventDefault(); handleSaveBtn.click(); } // never submits the profile form
+  });
+
+  handleSaveBtn.addEventListener('click', async function(){
+    if (handleBusy || !client || !profileUserId || !myProfile) return;
+    clearTimeout(handleCheckTimer);
+    handleCheckSeq++;
+    const h = handleInput.value;
+    if (!h) {
+      setHandleCheck('bad', myHandle ? 'Handles can be changed but not removed.' : 'Type a handle to save one, or leave it blank.');
+      return;
+    }
+    if (!isValidHandleLocal(h)) { setHandleCheck('bad', HANDLE_STATUS_TEXT.invalid[1]); return; }
+    if (h === myHandle) { setHandleCheck('ok', 'This is your current handle.'); return; }
+    handleBusy = true;
+    handleSaveBtn.disabled = true;
+    setHandleCheck('', 'Saving...');
+    try {
+      const { data, error } = await client.rpc('set_my_handle', { p_handle: h });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      myHandle = (row && row.handle) || h;
+      handleInput.value = myHandle;
+      setHandleCheck('ok', 'Saved: @' + myHandle);
+      notifyProfileChanged();
+    } catch(err){
+      setHandleCheck('bad', (err && err.message) ? err.message : "That handle couldn't be saved. Please try again.");
+    } finally {
+      handleBusy = false;
+      handleSaveBtn.disabled = false;
+    }
+  });
 
   profileBioInput.addEventListener('input', function(){
     profileBioCount.textContent = String(profileBioInput.value.length);
@@ -9893,6 +10038,7 @@ const FPRBadge = (function(){
   const memberAvatar = document.getElementById('member-profile-avatar');
   const memberAvatarFallback = document.getElementById('member-profile-avatar-fallback');
   const memberName = document.getElementById('member-profile-name');
+  const memberHandle = document.getElementById('member-profile-handle');
   const memberJoined = document.getElementById('member-profile-joined');
   const memberRecovery = document.getElementById('member-profile-recovery');
   const memberBio = document.getElementById('member-profile-bio');
@@ -9912,6 +10058,7 @@ const FPRBadge = (function(){
   // Only public_id + avatar_path are read, from the same safe view.
   const AUTHOR_AVATAR_BATCH = 100;
   const authorAvatarCache = new Map();   // public_id -> avatar_path ('' = none)
+  const authorHandleCache = new Map();   // public_id -> handle ('' = none); Phase 8B-2, used by 8B-3
   const authorAvatarPending = new Set();
   let authorAvatarEls = new Map();       // public_id -> fallback <span>s on screen
 
@@ -9954,11 +10101,13 @@ const FPRBadge = (function(){
         const chunk = need.slice(i, i + AUTHOR_AVATAR_BATCH);
         const { data, error } = await readClient
           .from('community_member_profiles_public')
-          .select('public_id, avatar_path')
+          .select('public_id, avatar_path, handle')
           .in('public_id', chunk);
         if (error) throw error;
         const found = new Map((data || []).map(function(r){ return [r.public_id, r.avatar_path || '']; }));
         chunk.forEach(function(id){ authorAvatarCache.set(id, found.get(id) || ''); });
+        // Phase 8B-2: keep author handles from the same batched lookup for 8B-3.
+        (data || []).forEach(function(r){ authorHandleCache.set(r.public_id, r.handle || ''); });
       }
     } catch(err){ /* best-effort only — initials stay */ }
     need.forEach(function(id){
@@ -10156,6 +10305,8 @@ const FPRBadge = (function(){
     memberAvatarFallback.hidden = false;
     memberAvatarFallback.textContent = '';
     memberName.textContent = '';
+    memberHandle.textContent = '';
+    memberHandle.hidden = true;
     memberJoined.textContent = '';
     memberRecovery.hidden = true;
     memberRecovery.textContent = '';
@@ -10170,6 +10321,8 @@ const FPRBadge = (function(){
   function renderMemberProfile(p){
     const name = p.display_name || 'Community member';
     memberName.textContent = name;
+    memberHandle.textContent = p.handle ? '@' + p.handle : '';
+    memberHandle.hidden = !p.handle;
     memberAvatarFallback.textContent = name.trim().charAt(0).toUpperCase() || '?';
     let url = '';
     if (p.avatar_path) {
@@ -10220,7 +10373,7 @@ const FPRBadge = (function(){
       if (!db) throw new Error('Profiles unavailable');
       const { data, error } = await db
         .from('community_member_profiles_public')
-        .select('public_id, display_name, bio, avatar_path, joined_at, recovery_date')
+        .select('public_id, display_name, bio, avatar_path, joined_at, recovery_date, handle')
         .eq('public_id', publicId)
         .maybeSingle();
       if (seq !== memberProfileSeq) return;
@@ -11348,6 +11501,7 @@ const FPRBadge = (function(){
   // show the new name.
   document.addEventListener('fpr:profilechange', function(){
     authorAvatarCache.clear(); // their photo may have changed (Phase 7D)
+    authorHandleCache.clear(); // or their handle (Phase 8B-2)
     if (feedLoaded) loadFeed();
     commentUI.forEach(function(ui){ if (ui.loaded) loadCommentsForPost(ui); });
   });

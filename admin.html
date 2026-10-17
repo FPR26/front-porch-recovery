@@ -1757,10 +1757,11 @@
   let profilesActiveFilter = 'content';
   let profilesBusy = false;
   const PROFILE_FILTERS = [
-    { key: 'content', label: 'Has bio, photo or shared date' },
+    { key: 'content', label: 'Has handle, bio, photo or shared date' },
     { key: 'all', label: 'All' },
   ];
   const PROFILE_ACTIONS = {
+    reset_handle: { button: 'Reset handle', confirm: 'Remove this member’s handle? They will be able to choose a new one. Admins can’t assign handles.', done: 'Handle reset.' },
     reset_display_name: { button: 'Reset name', confirm: 'Reset this member’s display name to “Community member”?', done: 'Display name reset.' },
     clear_bio: { button: 'Clear bio', confirm: 'Clear this member’s bio? This can’t be undone.', done: 'Bio cleared.' },
     clear_avatar: { button: 'Remove photo', confirm: 'Remove this member’s profile photo? The image file will be deleted.', done: 'Photo removed.' },
@@ -1769,7 +1770,7 @@
   const VISIBILITY_LABELS = { private: 'only them', members: 'signed-in members', public: 'everyone' };
 
   function profileHasContent(p){
-    return !!(p.bio || p.avatar_path || (p.recovery_date && p.recovery_visibility !== 'private') || (p.display_name && p.display_name !== 'New member' && p.display_name !== 'Community member'));
+    return !!(p.handle || p.bio || p.avatar_path || (p.recovery_date && p.recovery_visibility !== 'private') || (p.display_name && p.display_name !== 'New member' && p.display_name !== 'Community member'));
   }
 
   function setProfilesStatus(kind, text){
@@ -1862,6 +1863,13 @@
     meta.className = 'story-meta';
     meta.textContent = 'joined ' + fmtDate(p.created_at) + (p.profile_updated_at ? ' · profile updated ' + fmtDate(p.profile_updated_at) : '') + ' · profile id ' + String(p.public_id || '').slice(0, 8);
     heading.appendChild(title);
+    if (p.handle) {
+      const handleEl = document.createElement('div');
+      handleEl.className = 'story-meta';
+      handleEl.style.fontWeight = '600';
+      handleEl.textContent = '@' + p.handle;
+      heading.appendChild(handleEl);
+    }
     heading.appendChild(meta);
     top.appendChild(heading);
     card.appendChild(top);
@@ -1883,6 +1891,7 @@
     const actionRow = document.createElement('div');
     actionRow.className = 'action-row';
     const available = [];
+    if (p.handle) available.push('reset_handle');
     if (p.display_name && p.display_name !== 'Community member') available.push('reset_display_name');
     if (p.bio) available.push('clear_bio');
     if (p.avatar_path) available.push('clear_avatar');
@@ -1909,7 +1918,7 @@
   async function loadMemberProfiles(){
     const { data, error } = await client
       .from('profiles')
-      .select('public_id, display_name, bio, avatar_path, recovery_date, recovery_visibility, created_at, profile_updated_at')
+      .select('public_id, display_name, bio, avatar_path, recovery_date, recovery_visibility, created_at, profile_updated_at, handle')
       .order('created_at', { ascending: false });
     if (error) {
       els.profilesRefreshNote.textContent = 'Could not load member profiles: ' + error.message;
