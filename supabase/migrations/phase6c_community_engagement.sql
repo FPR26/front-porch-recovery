@@ -2,7 +2,10 @@
 -- Phase 6C: Community engagement — reactions, in-app
 -- notifications, and public reaction counts
 -- ============================================================
--- DRAFT FOR REVIEW. Not yet applied to the live project.
+-- APPLIED to production on 2026-10-16 as migration
+-- "phase6c_community_engagement" (version 20261016204446), after a
+-- rollback-only validation run. Only this header comment changed after
+-- apply; every executable statement below is exactly what was applied.
 --
 -- Builds on phase6a_community_posts_foundation and
 -- phase6b_comments_replies_reports (+ phase6b_reports_open_unique_fix).
