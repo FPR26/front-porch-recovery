@@ -276,6 +276,7 @@
         <button type="button" class="tab-btn" id="tab-community" role="tab" aria-selected="false">Community Posts</button>
         <button type="button" class="tab-btn" id="tab-community-comments" role="tab" aria-selected="false">Community Comments</button>
         <button type="button" class="tab-btn" id="tab-reports" role="tab" aria-selected="false">Reports</button>
+        <button type="button" class="tab-btn" id="tab-profiles" role="tab" aria-selected="false">Member Profiles</button>
       </div>
 
       <!-- Porch Stories moderation (unchanged from Phase 2/4) -->
@@ -324,6 +325,19 @@
         <div class="story-list" id="reports-list"></div>
         <div class="empty-state" id="reports-empty-state" hidden>No reports in this view yet.</div>
         <p class="mod-status-msg" id="reports-status-msg" role="status" aria-live="polite"></p>
+      </div>
+
+      <!-- Member Profiles moderation (Phase 7D) — fixed actions only via
+           moderate_member_profile(): reset name, clear bio, clear photo,
+           hide recovery date. No free-form editing of member text. -->
+      <div id="profiles-dashboard" hidden>
+        <div class="dash-toolbar">
+          <div class="filters" id="profiles-filters" role="tablist" aria-label="Filter member profiles"></div>
+          <span class="refresh-note" id="profiles-refresh-note"></span>
+        </div>
+        <p class="mod-status-msg" id="profiles-status-msg" role="status" aria-live="polite"></p>
+        <div class="story-list" id="profiles-list"></div>
+        <div class="empty-state" id="profiles-empty-state" hidden>No member profiles in this view.</div>
       </div>
     </div>
 
@@ -471,6 +485,11 @@
    Front Porch Recovery — Porch Stories admin dashboard
    (Phase 2: read-only. Phase 4: moderation added.)
 
+   Phase 7D adds a Member Profiles tab: .from('profiles').select(...)
+   (read-only), rpc('moderate_member_profile', ...) for its four fixed
+   actions, and storage.from('avatars').remove([...]) to delete a
+   moderated avatar file. See the Member Profiles section below.
+
    Every Supabase call in this file is one of: auth.signInWithOtp,
    auth.getSession, auth.onAuthStateChange, auth.signOut,
    rpc('is_admin'), .from('porch_stories').select(...) (read-only),
@@ -558,6 +577,13 @@
     reportsList: document.getElementById('reports-list'),
     reportsEmptyState: document.getElementById('reports-empty-state'),
     reportsStatusMsg: document.getElementById('reports-status-msg'),
+    tabProfiles: document.getElementById('tab-profiles'),
+    profilesDashboard: document.getElementById('profiles-dashboard'),
+    profilesFilters: document.getElementById('profiles-filters'),
+    profilesRefreshNote: document.getElementById('profiles-refresh-note'),
+    profilesList: document.getElementById('profiles-list'),
+    profilesEmptyState: document.getElementById('profiles-empty-state'),
+    profilesStatusMsg: document.getElementById('profiles-status-msg'),
   };
 
   function showOnly(stateEl){
@@ -1715,11 +1741,213 @@
   els.tabCommunityComments.addEventListener('click', showCommunityCommentsTab);
   els.tabReports.addEventListener('click', showReportsTab);
 
+  /* ---------- Member Profiles moderation (Phase 7D) ----------
+     Read: .from('profiles').select(...) — allowed for an admin session by
+     the profiles_select_admin RLS policy. The auth user id is never
+     selected or shown; members are identified by display name, joined
+     date and the opaque public profile id.
+     Write: rpc('moderate_member_profile', { p_public_id, p_action }) with
+     only its four fixed actions. For 'clear_avatar' the image file is
+     then removed with storage.from('avatars').remove([...]) (allowed for
+     admins by the avatars_admin_select/avatars_admin_delete policies),
+     so a moderated photo isn't left reachable at its public URL.
+     All member-supplied text is placed with textContent only. */
+  let memberProfiles = [];
+  let profilesLoaded = false;
+  let profilesActiveFilter = 'content';
+  let profilesBusy = false;
+  const PROFILE_FILTERS = [
+    { key: 'content', label: 'Has bio, photo or shared date' },
+    { key: 'all', label: 'All' },
+  ];
+  const PROFILE_ACTIONS = {
+    reset_display_name: { button: 'Reset name', confirm: 'Reset this member’s display name to “Community member”?', done: 'Display name reset.' },
+    clear_bio: { button: 'Clear bio', confirm: 'Clear this member’s bio? This can’t be undone.', done: 'Bio cleared.' },
+    clear_avatar: { button: 'Remove photo', confirm: 'Remove this member’s profile photo? The image file will be deleted.', done: 'Photo removed.' },
+    hide_recovery: { button: 'Hide recovery date', confirm: 'Make this member’s recovery date private (only they will see it)? The date itself is kept.', done: 'Recovery date set to private.' },
+  };
+  const VISIBILITY_LABELS = { private: 'only them', members: 'signed-in members', public: 'everyone' };
+
+  function profileHasContent(p){
+    return !!(p.bio || p.avatar_path || (p.recovery_date && p.recovery_visibility !== 'private') || (p.display_name && p.display_name !== 'New member' && p.display_name !== 'Community member'));
+  }
+
+  function setProfilesStatus(kind, text){
+    els.profilesStatusMsg.className = 'mod-status-msg' + (text ? ' show' : '') + (kind ? ' status-' + kind : '');
+    els.profilesStatusMsg.textContent = text || '';
+  }
+
+  function renderProfilesFilters(){
+    els.profilesFilters.replaceChildren();
+    PROFILE_FILTERS.forEach(f => {
+      const count = f.key === 'all' ? memberProfiles.length : memberProfiles.filter(profileHasContent).length;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'filter-btn' + (profilesActiveFilter === f.key ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(profilesActiveFilter === f.key));
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = f.label + ' ';
+      const countSpan = document.createElement('span');
+      countSpan.className = 'count';
+      countSpan.textContent = '(' + count + ')';
+      btn.appendChild(labelSpan);
+      btn.appendChild(countSpan);
+      btn.addEventListener('click', () => { profilesActiveFilter = f.key; renderProfilesFilters(); renderProfilesList(); });
+      els.profilesFilters.appendChild(btn);
+    });
+  }
+
+  async function runProfileModeration(profile, action){
+    const spec = PROFILE_ACTIONS[action];
+    if (!spec || profilesBusy) return;
+    if (!window.confirm(spec.confirm + '\n\nMember: ' + (profile.display_name || 'Community member'))) return;
+    profilesBusy = true;
+    setProfilesStatus('info', 'Saving...');
+    try {
+      const { error } = await client.rpc('moderate_member_profile', { p_public_id: profile.public_id, p_action: action });
+      if (error) {
+        setProfilesStatus('error', 'Could not save that change: ' + error.message);
+        return;
+      }
+      let note = '';
+      if (action === 'clear_avatar' && profile.avatar_path) {
+        try {
+          const { data: removed, error: rmErr } = await client.storage.from('avatars').remove([profile.avatar_path]);
+          if (rmErr) note = ' The photo is off the profile, but its file could not be deleted: ' + rmErr.message;
+          else if (Array.isArray(removed) && removed.length === 0) note = ' The photo is off the profile; no image file was found to delete.';
+        } catch(err) {
+          note = ' The photo is off the profile, but its file could not be deleted.';
+        }
+      }
+      await loadMemberProfiles();
+      setProfilesStatus(note ? 'info' : 'success', spec.done + note);
+    } catch(err) {
+      setProfilesStatus('error', 'Could not save that change. Please try again.');
+    } finally {
+      profilesBusy = false;
+    }
+  }
+
+  function buildProfileCard(p){
+    const card = document.createElement('div');
+    card.className = 'story-card';
+    card.style.cursor = 'default';
+
+    const top = document.createElement('div');
+    top.className = 'story-top';
+    top.style.display = 'flex';
+    top.style.gap = '12px';
+    top.style.alignItems = 'center';
+    if (p.avatar_path) {
+      let url = '';
+      try { url = client.storage.from('avatars').getPublicUrl(p.avatar_path).data.publicUrl || ''; } catch(err) {}
+      if (url) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = 'Profile photo';
+        img.style.width = '48px';
+        img.style.height = '48px';
+        img.style.borderRadius = '999px';
+        img.style.objectFit = 'cover';
+        img.style.flex = 'none';
+        top.appendChild(img);
+      }
+    }
+    const heading = document.createElement('div');
+    const title = document.createElement('div');
+    title.className = 'story-title';
+    title.textContent = p.display_name || 'Community member';
+    const meta = document.createElement('div');
+    meta.className = 'story-meta';
+    meta.textContent = 'joined ' + fmtDate(p.created_at) + (p.profile_updated_at ? ' · profile updated ' + fmtDate(p.profile_updated_at) : '') + ' · profile id ' + String(p.public_id || '').slice(0, 8);
+    heading.appendChild(title);
+    heading.appendChild(meta);
+    top.appendChild(heading);
+    card.appendChild(top);
+
+    if (p.bio) {
+      const bio = document.createElement('div');
+      bio.className = 'community-post-body';
+      bio.textContent = p.bio;
+      card.appendChild(bio);
+    }
+    const facts = document.createElement('div');
+    facts.className = 'story-meta';
+    facts.style.marginTop = '6px';
+    facts.textContent = p.recovery_date
+      ? 'Recovery date: ' + p.recovery_date + ' (visible to ' + (VISIBILITY_LABELS[p.recovery_visibility] || p.recovery_visibility) + ')'
+      : 'No recovery date';
+    card.appendChild(facts);
+
+    const actionRow = document.createElement('div');
+    actionRow.className = 'action-row';
+    const available = [];
+    if (p.display_name && p.display_name !== 'Community member') available.push('reset_display_name');
+    if (p.bio) available.push('clear_bio');
+    if (p.avatar_path) available.push('clear_avatar');
+    if (p.recovery_date && p.recovery_visibility !== 'private') available.push('hide_recovery');
+    available.forEach(action => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-outline';
+      btn.textContent = PROFILE_ACTIONS[action].button;
+      btn.addEventListener('click', () => runProfileModeration(p, action));
+      actionRow.appendChild(btn);
+    });
+    if (actionRow.children.length) card.appendChild(actionRow);
+    return card;
+  }
+
+  function renderProfilesList(){
+    const visible = profilesActiveFilter === 'all' ? memberProfiles : memberProfiles.filter(profileHasContent);
+    els.profilesList.replaceChildren();
+    els.profilesEmptyState.hidden = visible.length !== 0;
+    visible.forEach(p => els.profilesList.appendChild(buildProfileCard(p)));
+  }
+
+  async function loadMemberProfiles(){
+    const { data, error } = await client
+      .from('profiles')
+      .select('public_id, display_name, bio, avatar_path, recovery_date, recovery_visibility, created_at, profile_updated_at')
+      .order('created_at', { ascending: false });
+    if (error) {
+      els.profilesRefreshNote.textContent = 'Could not load member profiles: ' + error.message;
+      memberProfiles = [];
+    } else {
+      memberProfiles = data || [];
+      els.profilesRefreshNote.textContent = memberProfiles.length + ' total · loaded ' + new Date().toLocaleTimeString();
+      profilesLoaded = true;
+    }
+    renderProfilesFilters();
+    renderProfilesList();
+  }
+
+  function hideProfilesTab(){
+    els.tabProfiles.classList.remove('active');
+    els.tabProfiles.setAttribute('aria-selected', 'false');
+    els.profilesDashboard.hidden = true;
+  }
+  function showProfilesTab(){
+    els.tabProfiles.classList.add('active');
+    els.tabProfiles.setAttribute('aria-selected', 'true');
+    [els.tabPorch, els.tabCommunity, els.tabCommunityComments, els.tabReports].forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+    els.profilesDashboard.hidden = false;
+    els.porchDashboard.hidden = true;
+    els.communityDashboard.hidden = true;
+    els.communityCommentsDashboard.hidden = true;
+    els.reportsDashboard.hidden = true;
+    if (!profilesLoaded) loadMemberProfiles();
+  }
+  els.tabProfiles.addEventListener('click', showProfilesTab);
+  [els.tabPorch, els.tabCommunity, els.tabCommunityComments, els.tabReports].forEach(t => t.addEventListener('click', hideProfilesTab));
+
   async function showDashboard(session){
     els.sessionInfo.hidden = false;
     els.sessionEmail.textContent = session.user.email || '';
     currentAdminId = session.user.id || null;
     showOnly(els.stateDashboard);
+    hideProfilesTab();
     showPorchTab();
     await loadStories();
     await loadCommunityPosts();

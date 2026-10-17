@@ -704,6 +704,18 @@
   .member-profile-avatar[hidden]{display:none !important;}
   .member-profile-bio{white-space:pre-wrap; word-break:break-word; text-align:left;}
   .member-profile-meta{font-size:.85rem; color:var(--charcoal-soft); margin-top:6px;}
+  /* Phase 7D: small author avatars + recent posts in the profile panel */
+  .member-author{display:inline-flex; align-items:center; gap:6px; vertical-align:middle; max-width:100%;}
+  .member-author .member-author-link{display:inline-flex; align-items:center; gap:6px;}
+  .member-avatar-sm{width:24px; height:24px; border-radius:999px; object-fit:cover; flex:none; background:var(--sage); display:inline-flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:700; color:var(--charcoal); text-decoration:none;}
+  .member-profile-posts{text-align:left; margin-top:16px; padding-top:12px; border-top:1px solid var(--line);}
+  .member-profile-posts-title{font-size:.95rem; color:var(--charcoal); margin-bottom:6px;}
+  .member-profile-posts-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  .member-recent-post{display:block; width:100%; text-align:left; background:var(--white); border:1px solid var(--line); border-radius:10px; padding:8px 10px; font:inherit; color:var(--charcoal);}
+  button.member-recent-post{cursor:pointer;}
+  button.member-recent-post:hover{border-color:var(--charcoal-soft);}
+  .member-recent-post-body{display:block; font-size:.88rem; white-space:pre-wrap; word-break:break-word;}
+  .member-recent-post-date{display:block; font-size:.75rem; color:var(--charcoal-soft); margin-top:3px;}
 </style>
 <!-- Supabase client (Phase 1): optional member accounts only. Loaded from
      jsdelivr's CDN mirror of the published npm package; nothing here can
@@ -1720,9 +1732,9 @@
       <div class="legal-summary">
         <p><strong>The short version</strong></p>
         <ul>
-          <li>Front Porch Recovery has no accounts, no ads, no analytics, and no tracking pixels, and it does not set its own cookies.</li>
+          <li>Front Porch Recovery has no ads, no analytics, and no tracking pixels, and it does not set its own cookies. Signing in is optional.</li>
           <li>The Daily Check-In and Recovery Counter save a small amount of information <strong>in your own browser</strong>. It is never sent to Front Porch Recovery, and we can't see it.</li>
-          <li>If you sign in and choose to add a recovery date to your Community profile, that date is saved with your profile and shown only as your visibility setting allows (only you, signed-in members, or everyone). It is separate from the Recovery Counter.</li>
+          <li>If you sign in, your account and Community profile are saved on our servers: your display name and anything you choose to add — a short bio, a profile photo, and a recovery date with who can see it. The profile recovery date is separate from the Recovery Counter.</li>
           <li>If you use the Contact form, your message is delivered to us through a service called Formspree.</li>
           <li>We don't sell or rent your information, and we don't share it for advertising.</li>
           <li>Our web host and a few outside services receive basic technical information when the site loads.</li>
@@ -1743,6 +1755,17 @@
       <p>What you type in the “honest thing” and “grateful for” boxes is <strong>not</strong> saved. It is shown back to you on the screen and disappears when you leave or reload the page.</p>
       <p><strong>Recovery Counter.</strong> If you enter a recovery start date, your browser saves that date so the counter still works the next time you visit.</p>
       <p><strong>A note about shared devices.</strong> Anyone who uses the same device and browser could open these tools and see your saved check-in totals, streak, or start date. To remove this information, clear this site's data in your browser settings (sometimes called “site data” or “cookies and site data”), or use a private/incognito window, which doesn't keep it after you close it.</p>
+
+      <h2>Your account and Community profile (saved on our servers)</h2>
+      <p>Signing in is optional. If you do, these are saved with your account using our database provider, Supabase:</p>
+      <ul>
+        <li>your email address, used only to send you sign-in links (it is never shown to other members);</li>
+        <li>your display name, shown next to your Community posts and comments;</li>
+        <li>if you add them: a short bio and a profile photo, both shown on your Community profile;</li>
+        <li>if you add one: a recovery date, plus who can see it — only you (the default), signed-in members, or everyone; and</li>
+        <li>what you share in the Community: your posts, comments, replies, reactions, reports, and the notifications about them.</li>
+      </ul>
+      <p>The Recovery Counter and Daily Check-In are not part of your account. They stay in your browser as described above, even when you're signed in. You can change or remove your bio, photo, and recovery date at any time from your profile.</p>
 
       <h2>Information you send us: the Contact form</h2>
       <p>If you use the Contact form, it collects your <strong>name, email address, the reason you picked, and your message</strong>. The form is processed by <a class="legal-link" href="https://formspree.io/" target="_blank" rel="noopener noreferrer">Formspree ↗</a>, a third-party form service, which receives, stores, and delivers the message to us under its own <a class="legal-link" href="https://formspree.io/legal/privacy-policy/" target="_blank" rel="noopener noreferrer">privacy policy ↗</a>.</p>
@@ -1785,6 +1808,7 @@
       <h2>Your choices</h2>
       <ul>
         <li>You can use the Check-In, Daily Porch, Toolbox, and Recovery Counter without giving us any personal information.</li>
+        <li>If you sign in, you can edit or remove your profile's bio, photo, and recovery date, or change who can see the date, at any time.</li>
         <li>You can clear anything saved in your browser at any time, as described above.</li>
         <li>You can ask us to delete a message you sent through the Contact form by emailing us. We'll delete it from our email, and we'll delete it from Formspree where our account allows it.</li>
       </ul>
@@ -1988,6 +2012,11 @@
     <p id="member-profile-recovery" class="member-profile-meta" hidden></p>
     <p id="member-profile-bio" class="ms-modal-text member-profile-bio" hidden></p>
     <p id="member-profile-status" class="status-msg" role="status" aria-live="polite"></p>
+    <div id="member-profile-posts" class="member-profile-posts" hidden>
+      <h3 class="member-profile-posts-title">Recent posts</h3>
+      <ul id="member-profile-posts-list" class="member-profile-posts-list"></ul>
+      <p id="member-profile-posts-empty" class="member-profile-meta" hidden>No recent posts yet.</p>
+    </div>
   </div>
 </div>
 
@@ -2228,7 +2257,7 @@ const CONFIG = {
      (otherwise the pages point visitors to the Contact form). Change
      lastUpdated whenever any of those pages' wording changes. */
   legal: {
-    lastUpdated: 'October 12, 2026',
+    lastUpdated: 'October 17, 2026',
     ownerName: 'Justin Whetstone',
     contactEmail: 'frontporchrecovery@gmail.com',
     siteUrl: 'https://fpr26.github.io/front-porch-recovery/'
@@ -9750,21 +9779,165 @@ const FPRBadge = (function(){
   const memberStatus = document.getElementById('member-profile-status');
   let memberProfileSeq = 0;
   let memberReturnFocus = null;
+  const memberPostsWrap = document.getElementById('member-profile-posts');
+  const memberPostsList = document.getElementById('member-profile-posts-list');
+  const memberPostsEmpty = document.getElementById('member-profile-posts-empty');
+  const MEMBER_RECENT_POSTS_LIMIT = 5;
+
+  // ---------- Author avatars (Phase 7D) ----------
+  // Every author name gets a small avatar: an initial right away, swapped
+  // for the photo once it's known. Photos are resolved in one batched
+  // query per feed render (and per opened comment section) for the
+  // authors on screen that aren't cached yet — never one query per card.
+  // Only public_id + avatar_path are read, from the same safe view.
+  const AUTHOR_AVATAR_BATCH = 100;
+  const authorAvatarCache = new Map();   // public_id -> avatar_path ('' = none)
+  const authorAvatarPending = new Set();
+  let authorAvatarEls = new Map();       // public_id -> fallback <span>s on screen
+
+  function initialOf(name){ return (name || '').trim().charAt(0).toUpperCase() || '?'; }
+
+  function avatarUrlFor(path){
+    if (!path) return '';
+    try { return (readClient || client).storage.from('avatars').getPublicUrl(path).data.publicUrl || ''; }
+    catch(err){ return ''; }
+  }
+
+  function paintAuthorAvatar(fallbackEl, path){
+    const url = avatarUrlFor(path);
+    if (!url || !fallbackEl.isConnected || fallbackEl.dataset.photo === url) return;
+    fallbackEl.dataset.photo = url;
+    const img = document.createElement('img');
+    img.className = 'member-avatar-sm';
+    img.alt = '';
+    img.setAttribute('aria-hidden', 'true');
+    img.decoding = 'async';
+    img.onerror = function(){ if (img.isConnected) img.replaceWith(fallbackEl); }; // broken image -> initial again
+    img.src = url;
+    fallbackEl.replaceWith(img);
+  }
+
+  function registerAuthorAvatar(publicId, fallbackEl){
+    const list = authorAvatarEls.get(publicId) || [];
+    list.push(fallbackEl);
+    authorAvatarEls.set(publicId, list);
+    if (authorAvatarCache.has(publicId)) paintAuthorAvatar(fallbackEl, authorAvatarCache.get(publicId));
+  }
+
+  async function loadAuthorAvatars(publicIds){
+    const need = Array.from(new Set((publicIds || []).filter(Boolean)))
+      .filter(function(id){ return !authorAvatarCache.has(id) && !authorAvatarPending.has(id); });
+    if (!need.length || !readClient) return;
+    need.forEach(function(id){ authorAvatarPending.add(id); });
+    try {
+      for (let i = 0; i < need.length; i += AUTHOR_AVATAR_BATCH) {
+        const chunk = need.slice(i, i + AUTHOR_AVATAR_BATCH);
+        const { data, error } = await readClient
+          .from('community_member_profiles_public')
+          .select('public_id, avatar_path')
+          .in('public_id', chunk);
+        if (error) throw error;
+        const found = new Map((data || []).map(function(r){ return [r.public_id, r.avatar_path || '']; }));
+        chunk.forEach(function(id){ authorAvatarCache.set(id, found.get(id) || ''); });
+      }
+    } catch(err){ /* best-effort only — initials stay */ }
+    need.forEach(function(id){
+      authorAvatarPending.delete(id);
+      (authorAvatarEls.get(id) || []).forEach(function(el){ paintAuthorAvatar(el, authorAvatarCache.get(id)); });
+    });
+  }
 
   function buildAuthorName(displayName, authorPublicId){
     const name = displayName || 'Community member';
+    const wrap = document.createElement('span');
+    wrap.className = 'member-author';
+    const avatar = document.createElement('span');
+    avatar.className = 'member-avatar-sm';
+    avatar.setAttribute('aria-hidden', 'true');
+    avatar.textContent = initialOf(name);
     if (!authorPublicId || !memberModal) {
       const span = document.createElement('span');
       span.textContent = name;
-      return span;
+      wrap.appendChild(avatar);
+      wrap.appendChild(span);
+      return wrap;
     }
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'member-author-link';
-    btn.textContent = name;
     btn.setAttribute('aria-label', 'View profile: ' + name);
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = name;
+    btn.appendChild(avatar);
+    btn.appendChild(nameSpan);
     btn.addEventListener('click', function(){ openMemberProfile(authorPublicId, btn); });
-    return btn;
+    registerAuthorAvatar(authorPublicId, avatar);
+    wrap.appendChild(btn);
+    return wrap;
+  }
+
+  // ---------- Recent posts in the profile panel (Phase 7D) ----------
+  // Published posts only (community_posts_public), newest first, at most
+  // MEMBER_RECENT_POSTS_LIMIT. A post is clickable only when it's already
+  // on screen in the feed, using the same scroll-to-post helper as
+  // notifications — no new route or hash.
+  function feedHasPost(postId){
+    return Array.prototype.some.call(feedEl.querySelectorAll('[data-post-id]'), function(el){
+      return el.getAttribute('data-post-id') === postId;
+    });
+  }
+
+  function buildRecentPostItem(p){
+    const li = document.createElement('li');
+    const onScreen = feedHasPost(p.id);
+    const item = document.createElement(onScreen ? 'button' : 'div');
+    item.className = 'member-recent-post';
+    const bodyEl = document.createElement('span');
+    bodyEl.className = 'member-recent-post-body';
+    const text = (p.body || '').replace(/\s+/g, ' ').trim();
+    bodyEl.textContent = text.length > 140 ? text.slice(0, 140) + '…' : text;
+    const dateEl = document.createElement('span');
+    dateEl.className = 'member-recent-post-date';
+    dateEl.textContent = formatDate(p.created_at);
+    item.appendChild(bodyEl);
+    item.appendChild(dateEl);
+    if (onScreen) {
+      item.type = 'button';
+      item.setAttribute('aria-label', 'Show this post in the feed');
+      item.addEventListener('click', function(){
+        memberReturnFocus = null; // we're moving focus to the post instead
+        closeMemberProfile();
+        focusPostCard(p.id, false);
+      });
+    }
+    li.appendChild(item);
+    return li;
+  }
+
+  async function loadMemberRecentPosts(publicId, seq){
+    memberPostsWrap.hidden = false;
+    memberPostsList.replaceChildren();
+    memberPostsEmpty.hidden = true;
+    memberPostsEmpty.textContent = 'No recent posts yet.';
+    try {
+      const db = readClient || client;
+      if (!db) throw new Error('Posts unavailable');
+      const { data, error } = await db
+        .from('community_posts_public')
+        .select('id, body, created_at')
+        .eq('author_public_id', publicId)
+        .order('created_at', { ascending: false })
+        .limit(MEMBER_RECENT_POSTS_LIMIT);
+      if (seq !== memberProfileSeq) return;
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      if (!rows.length) { memberPostsEmpty.hidden = false; return; }
+      rows.forEach(function(p){ memberPostsList.appendChild(buildRecentPostItem(p)); });
+    } catch(err){
+      if (seq !== memberProfileSeq) return;
+      memberPostsEmpty.textContent = "Recent posts couldn't be loaded right now.";
+      memberPostsEmpty.hidden = false;
+    }
   }
 
   function formatMonthYear(iso){
@@ -9795,6 +9968,9 @@ const FPRBadge = (function(){
     memberBio.hidden = true;
     memberBio.textContent = '';
     setStatus(memberStatus, '', '');
+    memberPostsWrap.hidden = true;
+    memberPostsList.replaceChildren();
+    memberPostsEmpty.hidden = true;
   }
 
   function renderMemberProfile(p){
@@ -9861,6 +10037,7 @@ const FPRBadge = (function(){
       }
       setStatus(memberStatus, '', '');
       renderMemberProfile(data);
+      loadMemberRecentPosts(publicId, seq);
     } catch(err){
       if (seq !== memberProfileSeq) return;
       setStatus(memberStatus, 'error', "This profile couldn't be loaded right now. Please try again in a moment.");
@@ -10723,6 +10900,7 @@ const FPRBadge = (function(){
           ui.listEl.appendChild(buildCommentCard(r, { isReply: true, post: ui.post }));
         });
       });
+      loadAuthorAvatars(comments.map(function(c){ return c.author_public_id; }));
     } catch(err){
       ui.notice.style.display = 'block';
     }
@@ -10747,6 +10925,7 @@ const FPRBadge = (function(){
   function renderFeed(posts){
     feedEl.innerHTML = ''; // clearing only; every node re-added below is built via createElement/textContent
     reactionBars = new Map(); // the old cards (and their bars) are gone
+    authorAvatarEls = new Map(); // and their author avatars
     if (!posts || posts.length === 0){
       feedEmpty.textContent = activeSearch
         ? 'No published posts match your search.'
@@ -10785,6 +10964,7 @@ const FPRBadge = (function(){
           : 'No published posts match “' + query + '”.');
       }
       loadReactionState(posts.map(p => p.id));
+      loadAuthorAvatars(posts.map(p => p.author_public_id));
     } catch(err){
       if (reqId !== feedReqSeq) return;
       // Failure here never breaks the rest of the site — just this
@@ -10965,6 +11145,7 @@ const FPRBadge = (function(){
   // account modal — re-read what's on screen so their posts/comments
   // show the new name.
   document.addEventListener('fpr:profilechange', function(){
+    authorAvatarCache.clear(); // their photo may have changed (Phase 7D)
     if (feedLoaded) loadFeed();
     commentUI.forEach(function(ui){ if (ui.loaded) loadCommentsForPost(ui); });
   });

@@ -1,6 +1,6 @@
 # Front Porch Recovery — Supabase backend
 
-The Supabase backend for the live site (https://fpr26.github.io/front-porch-recovery/). Phases 0 through 6C are complete and deployed: Porch Story submission and moderation, optional magic-link member accounts, and the member Community (posts, comments and one-level replies, reactions, in-app notifications, post search, member reporting, and admin moderation). See "What's next" at the end for the per-phase status.
+The Supabase backend for the live site (https://fpr26.github.io/front-porch-recovery/). Phases 0 through 7 are complete and deployed: Porch Story submission and moderation, optional magic-link member accounts, the member Community (posts, comments and one-level replies, reactions, in-app notifications, post search, member reporting, and admin moderation), and member profiles. See "What's next" at the end for the per-phase status.
 
 See the architecture doc for the full plan, the phased migration, and the reasoning behind each design choice. This file covers how each phase's database layer works and how it was verified, starting with Phase 0.
 
@@ -369,6 +369,42 @@ Applied to production on 2026-10-16 as migration `phase6c_community_engagement` 
 - **Post search** needs no database object: `index.html` searches `community_posts_public` (published posts only, never comments) with a case-insensitive substring match.
 - **Verification** — signed-out browser checks plus member actions run as two temporary test users: add/switch/remove, comment/reply reactions, reply and first-reaction notifications, self-action suppression, unread count, mark one/all read, privacy between members and `anon`, moderation fallbacks, search, and comment/edit/report regressions. All passed, and every test row and both test users were removed by exact ID afterwards.
 
+## Phase 7: member profiles
+
+### 7A — profile backend foundation
+
+Migration `phase7a_member_profiles_foundation`. `profiles` gained:
+- **`public_id`**: an opaque random UUID used everywhere a member is identified publicly. It has no relationship to the auth user id, never changes, and the auth id and email never appear in any public view.
+- **`bio`**: optional, at most 300 characters.
+- **`avatar_path`**: optional.
+- **`recovery_date`**: optional and entered only by the member. Nothing reads or copies the on-device Recovery Counter.
+- **`recovery_visibility`**: `private` (the default), `members`, or `public`.
+- **`profile_updated_at`**.
+
+`display_name` is now required to be 1–80 characters after trimming, and `handle_new_user()` trims and caps the sign-up name to match.
+
+- **`community_member_profiles_public`** (view) — `public_id`, `display_name`, `bio`, `avatar_path`, `joined_at`, and `recovery_date` only when the viewer may see it: the owner always; `members` only for signed-in viewers; `public` for everyone. It lists only members with published Community content (plus the viewer's own row), so it is not a directory of every account.
+- **`author_public_id`** was appended to `community_posts_public` and `community_comments_public` so posts and comments can link to profiles without exposing `user_id`.
+- **RPCs** (all `security definer`, members only): `get_my_profile`, `update_my_profile`, `set_my_avatar`, `clear_my_avatar`, plus admin-only `moderate_member_profile` (`reset_display_name`, `clear_bio`, `clear_avatar`, `hide_recovery`).
+- **`avatars` storage bucket** — public read; 1 MB maximum; JPEG/PNG/WebP only. Members can write, list and delete only inside their own `public_id/` folder, and `set_my_avatar` accepts only a path in that folder that has actually been uploaded.
+
+### 7B — own-profile editor + avatar upload
+
+The signed-in account modal in `index.html` edits display name, bio, recovery date and its visibility, and the profile photo — all through the RPCs above, never by writing the table. Photos are cropped to a square, resized to at most 512×512, and re-encoded in the browser before upload (which strips EXIF/GPS metadata), then kept under 1 MB.
+
+Once that path was live and verified, migration `phase7b_revoke_direct_profile_update` revoked the old direct `UPDATE` privilege on `profiles(display_name, notification_prefs)`. Members can no longer write their profile row directly at all; `notification_prefs` had no writer.
+
+### 7C — member profile panel
+
+Clicking a post, comment or reply author in the Community opens an in-page profile panel (no new route) that reads `community_member_profiles_public` by `author_public_id`: photo or initial, display name, bio, joined date, and the recovery date only when the view returns one for that viewer.
+
+### 7D — recent posts, author avatars, admin moderation
+
+- **Recent posts:** the profile panel lists the member's five most recent published posts, from `community_posts_public` filtered by `author_public_id`.
+- **Author avatars:** small avatars appear beside Community authors. They are resolved in one batched query per feed render or per opened comment section, never one query per card.
+- **Admin moderation:** `admin.html` has a Member Profiles tab for the four fixed `moderate_member_profile` actions, each with a confirmation.
+- **Avatar file removal:** migration `phase7d_admin_avatar_removal` adds admin-only `SELECT`/`DELETE` policies on the `avatars` bucket. After clearing a photo from a profile, the admin page deletes the image file through the Storage API, so a moderated photo is not left reachable at its public URL.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -391,6 +427,8 @@ Applied to production on 2026-10-16 as migration `phase6c_community_engagement` 
 
 **Phase 6C is complete and deployed** — support/heart/celebrate reactions (one active reaction per member per target), aggregate reaction counts, in-app notifications with unread/read handling, and posts-only Community search. See the "Phase 6C" section above.
 
-**Still not built:** DMs, follows, anonymous posting, uploads, groups, push/email/SMS notifications, and payments.
+**Phase 7 is complete and deployed** — member profiles: opaque `public_id`, optional bio, photo, and recovery date with private/members/public visibility, the own-profile editor, the Community profile panel with recent posts, author avatars, and admin profile moderation. See the "Phase 7" section above.
 
-Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
+**Still not built:** DMs, follows, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and payments.
+
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
