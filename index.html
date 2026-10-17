@@ -710,6 +710,10 @@
   /* Phase 8B-3: stored @mentions inside post/comment text */
   .member-mention-link{background:none; border:none; padding:0; margin:0; font:inherit; color:var(--sage-text); font-weight:600; cursor:pointer; white-space:inherit; text-decoration:underline; text-decoration-color:rgba(26,26,26,.2); text-underline-offset:3px;}
   .member-mention-link:hover{text-decoration-color:currentColor;}
+  /* Phase 8C-2: notification rows + focused comment */
+  .fpr-notif-head{display:flex; align-items:center; gap:8px;}
+  .fpr-notif-head p{flex:1 1 auto; min-width:0;}
+  .fpr-notif-target{outline:2px solid var(--amber); outline-offset:3px; border-radius:8px; transition:outline-color .3s;}
   /* Phase 8B-4: @mention autocomplete under composers */
   .fpr-mention-ac{list-style:none; margin:4px 0 0; padding:4px; background:#fff; border:1px solid rgba(0,0,0,.14); border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.08); max-height:240px; overflow-y:auto;}
   .fpr-mention-ac li{display:flex; align-items:center; gap:8px; padding:7px 8px; border-radius:8px; cursor:pointer; font-size:.9rem;}
@@ -1485,7 +1489,7 @@
             <button type="button" class="btn-link" id="community-notif-markall" style="font-size:.85rem;">Mark all as read</button>
           </div>
           <p id="community-notif-status" class="status-msg" role="status" aria-live="polite" style="margin-top:8px;"></p>
-          <p id="community-notif-empty" style="display:none; color:var(--charcoal-soft); font-size:.85rem; margin-top:8px;">No notifications yet. Replies to your comments and reactions to your posts and comments will show up here.</p>
+          <p id="community-notif-empty" style="display:none; color:var(--charcoal-soft); font-size:.85rem; margin-top:8px;">No notifications yet. Replies to your comments, reactions to your posts and comments, and @mentions of you will show up here.</p>
           <div id="community-notif-list" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;"></div>
         </div>
       </div>
@@ -10845,7 +10849,17 @@ const FPRBadge = (function(){
     if (n.notification_type === 'comment_reply') return name + ' replied to your comment';
     if (n.notification_type === 'post_reaction') return name + ' reacted to your post';
     if (n.notification_type === 'comment_reaction') return name + ' reacted to your comment';
+    if (n.notification_type === 'mention_post') return name + ' mentioned you in a post';
+    if (n.notification_type === 'mention_comment') return name + ' mentioned you in a comment';
+    if (n.notification_type === 'mention_reply') return name + ' mentioned you in a reply';
     return name + ' responded to something you shared';
+  }
+
+  // The comment/reply a notification points at (Phase 8C-2), if any.
+  function notificationTargetCommentId(n){
+    if (n.notification_type === 'mention_reply' || n.notification_type === 'comment_reply') return n.reply_comment_id || n.comment_id || null;
+    if (n.notification_type === 'mention_comment' || n.notification_type === 'comment_reaction') return n.comment_id || null;
+    return null;
   }
 
   function buildNotificationItem(n){
@@ -10857,12 +10871,26 @@ const FPRBadge = (function(){
     item.style.borderLeft = unread ? '4px solid var(--amber)' : '1px solid rgba(0,0,0,.08)';
     item.style.background = unread ? 'var(--white)' : 'transparent';
 
+    // Actor avatar (Phase 8C-2): photo only for listed actors; otherwise
+    // their initial, or "?" when the actor is gone. Painted once the item
+    // is on screen (see loadNotifications).
+    const head = document.createElement('div');
+    head.className = 'fpr-notif-head';
+    const avatar = document.createElement('span');
+    avatar.className = 'member-avatar-sm';
+    avatar.setAttribute('aria-hidden', 'true');
+    const actorName = n.actor_display_name || '';
+    avatar.textContent = (actorName && actorName !== 'A member') ? initialOf(actorName) : '?';
+    if (n.actor_public_id && n.actor_avatar_path) item._paintAvatar = function(){ paintAuthorAvatar(avatar, n.actor_avatar_path); };
+    head.appendChild(avatar);
+
     const title = document.createElement('p');
     title.style.margin = '0';
     title.style.fontSize = '.88rem';
     title.style.fontWeight = unread ? '600' : '400';
     title.textContent = notificationText(n);
-    item.appendChild(title);
+    head.appendChild(title);
+    item.appendChild(head);
 
     const dateEl = document.createElement('p');
     dateEl.style.margin = '2px 0 0';
@@ -10897,7 +10925,7 @@ const FPRBadge = (function(){
       viewBtn.textContent = 'View';
       viewBtn.addEventListener('click', async function(){
         if (unread) await markNotificationRead(n.id);
-        focusPostCard(n.post_id, !!n.comment_id);
+        focusPostCard(n.post_id, !!n.comment_id, notificationTargetCommentId(n));
       });
       actions.appendChild(viewBtn);
     }
@@ -10928,7 +10956,11 @@ const FPRBadge = (function(){
       const rows = Array.isArray(data) ? data : [];
       notifList.innerHTML = ''; // clearing only; every item below is built via createElement/textContent
       notifEmpty.style.display = rows.length ? 'none' : 'block';
-      rows.forEach(function(n){ notifList.appendChild(buildNotificationItem(n)); });
+      rows.forEach(function(n){
+        const item = buildNotificationItem(n);
+        notifList.appendChild(item);
+        if (item._paintAvatar) item._paintAvatar(); // broken image falls back to the initial
+      });
       setStatus(notifStatus, '', '');
     } catch(err){
       if (reqId !== notifReqSeq) return;
@@ -10948,9 +10980,32 @@ const FPRBadge = (function(){
     await loadNotifications();
   }
 
+  // Phase 8C-2: after the post is focused, waits briefly for its comments
+  // to render, then scrolls to and highlights the exact comment/reply.
+  // If it never appears, the post/comments focus already done stands.
+  const NOTIF_TARGET_WAIT_MS = 4000;
+  let notifTargetSeq = 0;
+  function focusCommentInCard(card, commentId){
+    const seq = ++notifTargetSeq;
+    const started = Date.now();
+    (function look(){
+      if (seq !== notifTargetSeq || !card.isConnected) return;
+      const row = Array.prototype.find.call(card.querySelectorAll('[data-comment-id]'), function(el){
+        return el.getAttribute('data-comment-id') === commentId;
+      });
+      if (!row) {
+        if (Date.now() - started < NOTIF_TARGET_WAIT_MS) setTimeout(look, 120);
+        return;
+      }
+      try { row.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'center' }); } catch(err){}
+      row.classList.add('fpr-notif-target');
+      setTimeout(function(){ row.classList.remove('fpr-notif-target'); }, 2200);
+    })();
+  }
+
   // Scrolls to a post already on screen, opening its comments when the
   // notification was about a comment/reply. Never fetches anything new.
-  function focusPostCard(postId, openComments){
+  function focusPostCard(postId, openComments, targetCommentId){
     const card = Array.prototype.find.call(feedEl.querySelectorAll('[data-post-id]'), function(el){
       return el.getAttribute('data-post-id') === postId;
     });
@@ -10965,6 +11020,7 @@ const FPRBadge = (function(){
       if (toggle && toggle.textContent === 'Comments') toggle.click();
     }
     try { card.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); } catch(err){}
+    if (openComments && targetCommentId) focusCommentInCard(card, targetCommentId);
   }
 
   function resetNotifications(){
