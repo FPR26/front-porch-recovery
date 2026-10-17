@@ -423,6 +423,32 @@ Migration `phase8a_member_follows`, applied directly in the Supabase SQL Editor 
   - **`get_my_following()`**: the caller's list, newest first, with `public_id`, `display_name`, `avatar_path` and `followed_at` — never auth ids, email or recovery data.
 - **Privacy:** follows are private to the follower. There are no counts, no public followers/following lists, and no notifications in 8A. Deleting either account removes the follow.
 
+## Phase 8B: handles and @mentions
+
+Migration `phase8b1_handles_mentions_foundation`, applied directly in the Supabase SQL Editor (not in the migration history). 8B-2 to 8B-4 are frontend only; no other migration was needed.
+
+### Handles
+
+- **Columns:** `profiles.handle` (nullable, unique via `profiles_handle_key`) and `profiles.handle_changed_at`. A `CHECK` constraint enforces the format: `^[a-z][a-z0-9_]{2,23}$`, no `__`, no trailing `_`. `is_reserved_handle()` blocks reserved names (admin, support and similar).
+- **`set_my_handle(p_handle)`** (`authenticated` only) is the only write path. It lowercases the value and allows one change every 30 days. Saving the same value again is a no-op, and a taken handle gets `23505`. Handles are optional and can't be cleared by the member.
+- **`check_handle_availability(p_handle)`** returns `available`, `taken`, `invalid`, `reserved` or `cooldown` for the caller.
+- **`search_member_handles(p_prefix)`** (`authenticated` only) does a prefix search over listed Community members. It needs at least 2 characters and returns at most 8 rows of `public_id`, `handle`, `display_name` and `avatar_path`.
+- **Public view:** `community_member_profiles_public` includes `handle`.
+- **Admin:** `moderate_member_profile(public_id, 'reset_handle')` clears a handle (the member can pick a new one). Admins can't assign handles.
+- Direct `UPDATE` on `profiles` stays revoked for `anon`/`authenticated` (Phase 7B). Every profile and handle change goes through these RPCs.
+
+### Mentions
+
+- **`community_mentions`** stores `post_id` or `comment_id` (exactly one), `mentioned_user_id` and `handle_at_write`. There's one row per member per source and at most 10 per source. RLS is on and `anon`/`authenticated` have no table privileges.
+- **Parsing:** insert/update triggers on posts and comments call `sync_community_mentions`. It extracts tokens with `(?<![A-Za-z0-9_.@])@([A-Za-z][A-Za-z0-9_]{2,23})(?![A-Za-z0-9_])`, so `me@site.com`, `x@name` and `.@name` are not mentions. It then binds each token to the member who holds that handle at write time. Unknown handles create nothing.
+- **`community_mentions_public`** (view, `select` for `anon`/`authenticated`) exposes only `post_id` (the parent post for comment/reply mentions), `comment_id`, `handle` (the handle at write time) and `mentioned_public_id`. It never exposes auth ids, and it only shows mentions inside content the public post/comment views already show.
+- **Frontend:**
+  - Bodies render as plain text first. One batched view query per feed render or search (posts containing "@") and one per opened comment section then turn only the stored, boundary-matched tokens into buttons that open the profile panel. Everything is built with text nodes and `createElement`.
+  - Composer autocomplete calls `search_member_handles` after a 300 ms pause, and only for signed-in members typing `@` plus 2 or more characters at a valid boundary. It only inserts text; the trigger decides the stored mentions.
+- **Old text keeps its binding:** a mention stays bound to the member's identity (`mentioned_public_id`). If they later change handle, unedited text still shows `@oldname` and still opens their profile.
+- **Known behaviour:** if a post or comment that says `@oldname` is *edited* after that member changed handle, the re-sync resolves only current handles, so that old mention is dropped and `@oldname` becomes plain text. This is accepted for Phase 8B; handle aliases/history are out of scope.
+- **Notifications:** none for mentions in 8B (planned for Phase 8C).
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.

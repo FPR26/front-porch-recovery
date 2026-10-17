@@ -710,6 +710,12 @@
   /* Phase 8B-3: stored @mentions inside post/comment text */
   .member-mention-link{background:none; border:none; padding:0; margin:0; font:inherit; color:var(--sage-text); font-weight:600; cursor:pointer; white-space:inherit; text-decoration:underline; text-decoration-color:rgba(26,26,26,.2); text-underline-offset:3px;}
   .member-mention-link:hover{text-decoration-color:currentColor;}
+  /* Phase 8B-4: @mention autocomplete under composers */
+  .fpr-mention-ac{list-style:none; margin:4px 0 0; padding:4px; background:#fff; border:1px solid rgba(0,0,0,.14); border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.08); max-height:240px; overflow-y:auto;}
+  .fpr-mention-ac li{display:flex; align-items:center; gap:8px; padding:7px 8px; border-radius:8px; cursor:pointer; font-size:.9rem;}
+  .fpr-mention-ac li[aria-selected="true"], .fpr-mention-ac li:hover{background:rgba(0,0,0,.06);}
+  .fpr-mention-ac-name{font-weight:600; color:var(--charcoal);}
+  .fpr-mention-ac-handle{color:var(--charcoal-soft); font-size:.85rem;}
   .member-avatar-sm{width:24px; height:24px; border-radius:999px; object-fit:cover; flex:none; background:var(--sage); display:inline-flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:700; color:var(--charcoal); text-decoration:none;}
   .member-profile-posts{text-align:left; margin-top:16px; padding-top:12px; border-top:1px solid var(--line);}
   .member-profile-posts-title{font-size:.95rem; color:var(--charcoal); margin-bottom:6px;}
@@ -1785,6 +1791,7 @@
         <li>your email address, used only to send you sign-in links (it is never shown to other members);</li>
         <li>your display name, shown next to your Community posts and comments;</li>
         <li>if you add them: a short bio and a profile photo, both shown on your Community profile;</li>
+        <li>if you choose one: a public handle (like @porchfriend), shown on your Community profile and wherever someone mentions you. If you're mentioned in a public post, comment, or reply, that mention is public along with the rest of that content;</li>
         <li>if you add one: a recovery date, plus who can see it — only you (the default), signed-in members, or everyone;</li>
         <li>what you share in the Community: your posts, comments, replies, reactions, reports, and the notifications about them; and</li>
         <li>who you follow. Your Following list is visible only to you; follows aren't shown publicly, and there are no follower counts.</li>
@@ -10231,6 +10238,179 @@ const FPRBadge = (function(){
     });
   }
 
+  // ---------- @mention autocomplete in composers (Phase 8B-4) ----------
+  // One helper serves the post, edit, comment and reply textareas. When a
+  // signed-in member types @ + 2 or more handle characters at a valid
+  // mention boundary (same rules as the database parser), it asks
+  // search_member_handles after a short pause and lists up to 8 members.
+  // Picking one replaces only the partial token with "@handle ". It only
+  // fills in text: the database trigger decides the stored mentions.
+  const MENTION_AC_DEBOUNCE = 300;
+  const MENTION_AC_TOKEN_RE = /(^|[^A-Za-z0-9_.@])@([A-Za-z][A-Za-z0-9_]{1,23})$/;
+  let mentionAcCount = 0;
+
+  function attachMentionAutocomplete(textarea){
+    if (!textarea || textarea.dataset.mentionAc) return;
+    textarea.dataset.mentionAc = '1';
+    const listId = 'fpr-mention-ac-' + (++mentionAcCount);
+    const list = document.createElement('ul');
+    list.className = 'fpr-mention-ac';
+    list.id = listId;
+    list.setAttribute('role', 'listbox');
+    list.setAttribute('aria-label', 'Members to mention');
+    list.hidden = true;
+    textarea.insertAdjacentElement('afterend', list);
+    textarea.setAttribute('aria-autocomplete', 'list');
+    textarea.setAttribute('aria-controls', listId);
+
+    let token = null;      // { start, end, prefix } of the partial @token at the caret
+    let results = [];
+    let active = -1;
+    let timer = null;
+    let seq = 0;
+    let shownPrefix = null;   // prefix the open list belongs to
+    let pendingPrefix = null; // prefix of the request in flight
+
+    function close(){
+      clearTimeout(timer);
+      seq++;
+      token = null; results = []; active = -1; shownPrefix = null; pendingPrefix = null;
+      list.hidden = true;
+      list.textContent = '';
+      textarea.removeAttribute('aria-activedescendant');
+    }
+
+    function findToken(){
+      if (textarea.selectionStart !== textarea.selectionEnd) return null;
+      const caret = textarea.selectionStart;
+      const value = textarea.value;
+      const m = MENTION_AC_TOKEN_RE.exec(value.slice(0, caret));
+      if (!m) return null;
+      const tail = /^[A-Za-z0-9_]*/.exec(value.slice(caret))[0];
+      if (m[2].length + tail.length > 24) return null;
+      return { start: caret - m[2].length - 1, end: caret + tail.length, prefix: m[2].toLowerCase() };
+    }
+
+    function setActive(i){
+      active = i;
+      Array.prototype.forEach.call(list.children, function(li, idx){
+        li.setAttribute('aria-selected', idx === i ? 'true' : 'false');
+      });
+      if (i >= 0 && list.children[i]) {
+        textarea.setAttribute('aria-activedescendant', list.children[i].id);
+        try { list.children[i].scrollIntoView({ block: 'nearest' }); } catch(err){}
+      } else {
+        textarea.removeAttribute('aria-activedescendant');
+      }
+    }
+
+    function buildOption(r, idx){
+      const li = document.createElement('li');
+      li.id = listId + '-opt-' + idx;
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', 'false');
+      const name = r.display_name || 'Community member';
+      const avatar = document.createElement('span');
+      avatar.className = 'member-avatar-sm';
+      avatar.setAttribute('aria-hidden', 'true');
+      avatar.textContent = initialOf(name);
+      li.appendChild(avatar);
+      li._avatar = avatar;
+      const nameEl = document.createElement('span');
+      nameEl.className = 'fpr-mention-ac-name';
+      nameEl.textContent = name;
+      const handleEl = document.createElement('span');
+      handleEl.className = 'fpr-mention-ac-handle';
+      handleEl.textContent = '@' + r.handle;
+      li.appendChild(nameEl);
+      li.appendChild(handleEl);
+      li.addEventListener('mousedown', function(e){ e.preventDefault(); }); // keep the textarea focused
+      li.addEventListener('click', function(){ choose(idx); });
+      return li;
+    }
+
+    function show(prefix, rows){
+      results = rows.slice(0, 8);
+      shownPrefix = prefix;
+      list.textContent = '';
+      if (!results.length) { list.hidden = true; active = -1; textarea.removeAttribute('aria-activedescendant'); return; }
+      results.forEach(function(r, idx){
+        const li = buildOption(r, idx);
+        list.appendChild(li);
+        if (r.avatar_path) paintAuthorAvatar(li._avatar, r.avatar_path); // broken image falls back to the initial
+      });
+      list.hidden = false;
+      setActive(0);
+    }
+
+    function choose(idx){
+      const r = results[idx];
+      const t = findToken() || token;
+      if (!r || !t) { close(); return; }
+      const value = textarea.value;
+      const after = value.slice(t.end);
+      const insert = '@' + r.handle + (/^\s/.test(after) ? '' : ' ');
+      const next = value.slice(0, t.start) + insert + after;
+      if (textarea.maxLength > 0 && next.length > textarea.maxLength) { close(); return; }
+      textarea.value = next;
+      let caret = t.start + insert.length;
+      if (/^\s/.test(after)) caret += 1; // step past the existing space
+      close();
+      textarea.focus();
+      textarea.setSelectionRange(caret, caret);
+      textarea.dispatchEvent(new Event('input', { bubbles: true })); // counters/validation see the change
+    }
+
+    function update(){
+      if (!client || !currentSession) { close(); return; }
+      const t = findToken();
+      if (!t) { close(); return; }
+      token = t;
+      if (t.prefix === shownPrefix || t.prefix === pendingPrefix) return;
+      if (shownPrefix !== null) { // the open list belongs to an older prefix
+        shownPrefix = null; results = []; active = -1;
+        list.hidden = true; list.textContent = '';
+        textarea.removeAttribute('aria-activedescendant');
+      }
+      pendingPrefix = null; // any request still in flight is now stale (seq below)
+      clearTimeout(timer);
+      const mySeq = ++seq;
+      timer = setTimeout(async function(){
+        if (mySeq !== seq) return;
+        pendingPrefix = t.prefix;
+        try {
+          const { data, error } = await client.rpc('search_member_handles', { p_prefix: t.prefix });
+          if (mySeq !== seq) return; // a newer token (or close) superseded this one
+          pendingPrefix = null;
+          if (error) throw error;
+          const current = findToken();
+          if (!current || current.prefix !== t.prefix || document.activeElement !== textarea) { list.hidden = true; return; }
+          show(t.prefix, Array.isArray(data) ? data.filter(function(r){ return r && r.handle; }) : []);
+        } catch(err){
+          if (mySeq === seq) { pendingPrefix = null; list.hidden = true; }
+        }
+      }, MENTION_AC_DEBOUNCE);
+    }
+
+    textarea.addEventListener('input', update);
+    textarea.addEventListener('click', update);
+    textarea.addEventListener('keyup', function(e){
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') update();
+    });
+    textarea.addEventListener('keydown', function(e){
+      if (list.hidden || !results.length) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); setActive((active + 1) % results.length); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((active - 1 + results.length) % results.length); }
+      else if (e.key === 'Enter' && !e.shiftKey && active >= 0) { e.preventDefault(); choose(active); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+      else if (e.key === 'Tab') { close(); }
+    });
+    textarea.addEventListener('blur', function(){ setTimeout(function(){ if (document.activeElement !== textarea) close(); }, 150); });
+  }
+
+  attachMentionAutocomplete(postBody);
+  attachMentionAutocomplete(editBody);
+
   // ---------- Recent posts in the profile panel (Phase 7D) ----------
   // Published posts only (community_posts_public), newest first, at most
   // MEMBER_RECENT_POSTS_LIMIT. A post is clickable only when it's already
@@ -11073,6 +11253,7 @@ const FPRBadge = (function(){
     textarea.style.width = '100%';
     textarea.placeholder = 'Write a reply...';
     wrap.appendChild(textarea);
+    attachMentionAutocomplete(textarea);
 
     const errEl = document.createElement('p');
     errEl.className = 'field-error';
@@ -11145,6 +11326,7 @@ const FPRBadge = (function(){
     textarea.style.width = '100%';
     textarea.value = comment.body || '';
     wrap.appendChild(textarea);
+    attachMentionAutocomplete(textarea);
 
     const errEl = document.createElement('p');
     errEl.className = 'field-error';
@@ -11255,6 +11437,7 @@ const FPRBadge = (function(){
     composeTextarea.placeholder = 'Add a comment...';
     composeTextarea.style.display = currentSession ? 'block' : 'none';
     composeWrap.appendChild(composeTextarea);
+    attachMentionAutocomplete(composeTextarea);
 
     const composeErr = document.createElement('p');
     composeErr.className = 'field-error';
