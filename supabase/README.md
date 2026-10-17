@@ -1,8 +1,8 @@
-# Front Porch Recovery — Supabase Phase 0
+# Front Porch Recovery — Supabase backend
 
-This is the backend foundation only. **Nothing in the live site changes yet** — `index.html`, `sw.js`, and all existing public functionality are untouched. This is schema, policies, and functions in a new (or dedicated) Supabase project, for your review before anything runs.
+The Supabase backend for the live site (https://fpr26.github.io/front-porch-recovery/). Phases 0 through 6C are complete and deployed: Porch Story submission and moderation, optional magic-link member accounts, and the member Community (posts, comments and one-level replies, reactions, in-app notifications, post search, member reporting, and admin moderation). See "What's next" at the end for the per-phase status.
 
-See the architecture doc for the full plan, the phased migration, and the reasoning behind each design choice. This file covers what you need to actually run Phase 0 and what comes next.
+See the architecture doc for the full plan, the phased migration, and the reasoning behind each design choice. This file covers how each phase's database layer works and how it was verified, starting with Phase 0.
 
 ## What `schema.sql` creates
 
@@ -12,7 +12,7 @@ See the architecture doc for the full plan, the phased migration, and the reason
 - RLS policies, column-level and function-level grants/revokes, and `CHECK` constraints for all of the above
 - An `on_auth_user_created` trigger that creates a `profiles` row automatically on sign-up
 
-As of Phase 6A, `community_posts`, `community_posts_public`, and their three RPCs exist too (see the "Phase 6A" section below). Comments, replies, DMs, reactions, follows, notifications, anonymous posting, uploads, and groups are still **not** created — they're documented in the architecture doc for a later phase.
+That list is the Phase 0 base schema, recorded in the live project's migration history as `phase0_fpr_schema`. Later phases added the Community: posts (Phase 6A), comments, replies and reports (Phase 6B), and reactions and notifications (Phase 6C) — see those sections below and the files in `migrations/`. Note that the repository's `schema.sql` currently contains only the Phase 6A member-read fix (identical to `migrations/phase6a_community_posts_member_read_fix.sql`), not the Phase 0 base schema. DMs, follows, anonymous posting, uploads, and groups are still **not** created.
 
 ## Running the migration
 
@@ -346,7 +346,28 @@ Nine `community_posts` rows, all body-prefixed `"Community Test: ..."` and owned
 
 **A tool-level duplication issue, for the record.** The very first `create_community_post` call (test 5) was executed 9 times by the SQL-execution tool/transport for a single logical tool call (all 9 rows share the identical microsecond-precision `created_at`), producing 9 rows instead of 1. This is the same class of issue noted in Phase 3/4 (`DELETE` statements there repeatedly returned `{"status":"cancelled"}` rather than running) — some mutating calls in this sandbox don't execute exactly once, and the only reliable way to know what actually happened is a follow-up `SELECT`, never the call's own reported result. None of this reflects a flaw in `create_community_post()` itself (it has no idempotency key because two genuine posts in a row are supposed to both be stored; the bug is the tool sending the request more than once) — but it's recorded here plainly rather than quietly working around it, same as the `DELETE` issue before it.
 
-**Not deleted yet**, same as the still-unresolved Phase 3/4 cleanup: `DELETE` statements against these 9 `community_posts` rows, and against the 2 test `auth.users` rows, returned `{"status":"cancelled"}` when attempted — this sandbox appears to need an interactive confirmation for destructive statements that it cannot grant itself. All of it is clearly labeled and does not resemble real content; it can be removed via the Supabase SQL editor or table editor directly, or by asking for another delete attempt.
+**Since cleaned up.** The `DELETE` statements against these 9 `community_posts` rows and the 2 test `auth.users` rows originally returned `{"status":"cancelled"}` (this sandbox needs an interactive confirmation for destructive statements that it cannot grant itself). They have since been removed: as of 2026-10-16, neither test user nor any of the 9 posts exists.
+
+## Phase 6B: comments, one-level replies, and member reporting
+
+Recorded in `migrations/phase6b_comments_replies_reports.sql` (live migration `phase6b_comments_replies_reports`) plus `migrations/phase6b_reports_open_unique_fix.sql`, a follow-up that was applied directly and is kept in the repo as a record only. Same posture as 6A: base tables are admin-only `SELECT`, and every write goes through a `security definer` RPC that takes identity from `auth.uid()`.
+
+- **`community_comments`** — plain text, ≤1,000 characters, `published`/`hidden`/`removed`. `parent_comment_id` allows exactly one level of replies (a reply to a reply is rejected).
+- **`community_comments_public`** (view) — only published comments whose post is published, and only replies whose parent comment is also published. No `user_id`; `display_name` falls back to `'Community member'`.
+- **RPCs** — `create_community_comment`, `create_community_reply`, `edit_community_comment` (own, published comments only), `list_my_community_comments`, and admin-only `moderate_community_comment` (same transitions as posts: hide, restore, remove; nothing out of `removed`).
+- **`community_reports`** + **`report_community_content()`** — a member reports exactly one post or comment with a reason (`harassment`, `hate_or_abuse`, `dangerous_content`, `spam`, `privacy`, `other`) and optional details (≤500). Two unique partial indexes allow only one open report per reporter per target, race-safe. Admin-only **`moderate_community_report()`** resolves or dismisses open reports.
+- **`admin.html`** — separate tabs for Community Posts moderation, Community Comments moderation, and Reports (resolve/dismiss).
+
+## Phase 6C: reactions, in-app notifications, and post search
+
+Applied to production on 2026-10-16 as migration `phase6c_community_engagement` (version `20261016204446`); see `migrations/phase6c_community_engagement.sql`. It was first validated in a rollback-only transaction against the live database, then applied once and structurally verified, with every pre-existing object unchanged except `create_community_reply()`.
+
+- **`community_reactions`** — `support`, `heart`, or `celebrate` on exactly one post or comment/reply. Two unique partial indexes enforce one active reaction per member per target. **`toggle_community_reaction()`** adds a reaction, switches it in place (different reaction), or removes it (same reaction again). Only content that is publicly visible can be reacted to.
+- **`community_reaction_counts_public`** (view) — aggregate counts only, readable by `anon` and `authenticated`. It inner-joins the two public views, so hidden or removed content (or anything under it) never shows counts. **`list_my_community_reactions()`** returns only the caller's own reactions, so the UI can highlight them.
+- **`community_notifications`** — in-app only, never push, email, or SMS. Created for a reply to your comment (inside `create_community_reply()`, the one modified 6B function) and for the first reaction to your post or comment; switching a reaction never notifies, and removing then re-adding one may notify again. Self-notifications are blocked by a table constraint. `actor_user_id` is `ON DELETE SET NULL`, so the notification survives the actor's account deletion and shows "A member".
+- **Notification RPCs** — `list_my_community_notifications()` (newest first, no user IDs; content that has since been hidden or removed comes back with `target_available = false` and no IDs or excerpt), `count_my_unread_community_notifications()`, `mark_community_notification_read()` (own rows only; anyone else's ID gets the same "not found"), and `mark_all_community_notifications_read()`.
+- **Post search** needs no database object: `index.html` searches `community_posts_public` (published posts only, never comments) with a case-insensitive substring match.
+- **Verification** — signed-out browser checks plus member actions run as two temporary test users: add/switch/remove, comment/reply reactions, reply and first-reaction notifications, self-action suppression, unread count, mark one/all read, privacy between members and `anon`, moderation fallbacks, search, and comment/edit/report regressions. All passed, and every test row and both test users were removed by exact ID afterwards.
 
 ## What's next
 
@@ -362,8 +383,14 @@ Nine `community_posts` rows, all body-prefixed `"Community Test: ..."` and owned
 
 **Phase 4 is complete and verified** — secure Porch Story moderation (approve/reject/publish/edit) is live in `admin.html`, enforced at the database level by `moderate_porch_story()`. See the "Phase 4" section above.
 
-**Phase 5 is complete and verified locally** — published database Porch Stories now appear automatically on the public Porch Stories page in `index.html`, merged with the three built-in `CONFIG.stories`, rendered entirely via safe DOM construction. Not yet deployed to GitHub.
+**Phase 5 is complete and deployed** — published database Porch Stories now appear automatically on the public Porch Stories page in `index.html`, merged with the three built-in `CONFIG.stories`, rendered entirely via safe DOM construction.
 
-**Phase 6A is built and verified, not yet deployed to GitHub** — the Community Posts foundation described above (`community_posts`, its public view, its three RPCs, the Community page in `index.html`, and the Community Posts moderation tab in `admin.html`) is live in this Supabase project and verified against all 25 required tests. Comments, replies, DMs, reactions, follows, notifications, anonymous posting, uploads, groups, and anything else from "Phase 6B" are explicitly out of scope and not present. Stopping here for review, per instructions — no GitHub deploy.
+**Phase 6A is complete and deployed** — the Community Posts foundation described above (`community_posts`, its public view, its RPCs, the Community page in `index.html`, and the Community Posts moderation tab in `admin.html`) is live and was verified against all 25 required tests.
 
-**Phase 4 is complete and deployed** — `moderate_porch_story()` above is live, `authenticated`'s direct `UPDATE` on `porch_stories` is revoked, and `admin.html` now has Approve/Reject/Publish/Edit controls wired to it, gated by status exactly as described. See the "Phase 4" section above for the full contract and verification results. No community features or payment work were added — those remain future phases, unstarted. GitHub/the live site have not been touched; this is applied to the Supabase project and the local files only, pending explicit go-ahead to deploy.
+**Phase 6B is complete and deployed** — comments, one-level replies, own comment/reply editing, member reporting, and admin Community Posts, Community Comments, and Reports (resolve/dismiss) moderation. See the "Phase 6B" section above.
+
+**Phase 6C is complete and deployed** — support/heart/celebrate reactions (one active reaction per member per target), aggregate reaction counts, in-app notifications with unread/read handling, and posts-only Community search. See the "Phase 6C" section above.
+
+**Still not built:** DMs, follows, anonymous posting, uploads, groups, push/email/SMS notifications, and payments.
+
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
