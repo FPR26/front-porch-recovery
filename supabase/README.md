@@ -405,6 +405,24 @@ Clicking a post, comment or reply author in the Community opens an in-page profi
 - **Admin moderation:** `admin.html` has a Member Profiles tab for the four fixed `moderate_member_profile` actions, each with a confirmation.
 - **Avatar file removal:** migration `phase7d_admin_avatar_removal` adds admin-only `SELECT`/`DELETE` policies on the `avatars` bucket. After clearing a photo from a profile, the admin page deletes the image file through the Storage API, so a moderated photo is not left reachable at its public URL.
 
+## Phase 8A: private member follows
+
+Migration `phase8a_member_follows`, applied directly in the Supabase SQL Editor (not in the migration history).
+
+- **`member_follows` table:**
+  - `follower_user_id`, `followed_user_id` (both reference `auth.users`, `ON DELETE CASCADE`), and `created_at`;
+  - primary key `(follower_user_id, followed_user_id)`, so a pair can only appear once;
+  - a `CHECK` that you can't follow yourself, and an index on `followed_user_id`.
+
+  Auth user ids stay internal to the table. The frontend and RPCs use only `profiles.public_id`.
+- **Access:** RLS is on and `anon`/`authenticated` have no table privileges at all, so every read and write goes through the RPCs. There is no admin write path; admins can review follows from the SQL editor if ever needed.
+- **RPCs** (`security definer`, `search_path = public, pg_temp`, `authenticated` only):
+  - **`follow_member(target_public_id)`**: idempotent. It only follows members currently listed in `community_member_profiles_public`. Unknown and unlisted ids both get `P0002`, and following yourself gets `22023`.
+  - **`unfollow_member(target_public_id)`**: idempotent. It removes only the caller's own follow.
+  - **`get_follow_state(target_public_id)`**: returns `is_self`, `following` and `followed_at` for the caller only. An unknown id looks the same as "not following".
+  - **`get_my_following()`**: the caller's list, newest first, with `public_id`, `display_name`, `avatar_path` and `followed_at` — never auth ids, email or recovery data.
+- **Privacy:** follows are private to the follower. There are no counts, no public followers/following lists, and no notifications in 8A. Deleting either account removes the follow.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -429,6 +447,8 @@ Clicking a post, comment or reply author in the Community opens an in-page profi
 
 **Phase 7 is complete and deployed** — member profiles: opaque `public_id`, optional bio, photo, and recovery date with private/members/public visibility, the own-profile editor, the Community profile panel with recent posts, author avatars, and admin profile moderation. See the "Phase 7" section above.
 
-**Still not built:** DMs, follows, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and payments.
+**Phase 8A is complete** — private member follows (see "Phase 8A" above).
 
-Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
+**Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and payments.
+
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.

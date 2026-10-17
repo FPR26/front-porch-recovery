@@ -12,6 +12,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 6B** — complete: Community comments, one-level replies, and member reporting.
 - **Phase 6C** — complete and live: reactions, in-app notifications, and post search.
 - **Phase 7 — Member Profiles** — complete and live: display name, optional bio, profile photo, and recovery date with private / members / public visibility; profile panel with recent posts; author avatars; admin profile moderation.
+- **Phase 8A — Following** — private member follows: Follow / Unfollow from a member's profile panel and a Following list visible only to you. No public follower lists or counts.
 
 ## Community features
 

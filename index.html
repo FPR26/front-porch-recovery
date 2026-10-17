@@ -716,6 +716,17 @@
   button.member-recent-post:hover{border-color:var(--charcoal-soft);}
   .member-recent-post-body{display:block; font-size:.88rem; white-space:pre-wrap; word-break:break-word;}
   .member-recent-post-date{display:block; font-size:.75rem; color:var(--charcoal-soft); margin-top:3px;}
+  /* Phase 8A: follow control + own Following list */
+  .member-profile-follow{display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin-top:12px;}
+  .member-profile-follow[hidden]{display:none !important;}
+  .member-profile-follow .btn{padding:6px 18px; font-size:.85rem; width:auto;}
+  .member-profile-following-label{font-size:.85rem; font-weight:600; color:var(--sage-text);}
+  .account-following-list{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:6px;}
+  .account-following-item{display:flex; align-items:center; gap:10px; width:100%; background:var(--white); border:1px solid var(--line); border-radius:10px; padding:8px 10px; font:inherit; color:var(--charcoal); text-align:left; cursor:pointer;}
+  .account-following-item:hover{border-color:var(--charcoal-soft);}
+  .account-following-item .member-avatar-sm{width:32px; height:32px; font-size:.85rem;}
+  .account-following-name{font-weight:600; font-size:.92rem;}
+  .account-following-since{display:block; font-size:.75rem; font-weight:400; color:var(--charcoal-soft);}
 </style>
 <!-- Supabase client (Phase 1): optional member accounts only. Loaded from
      jsdelivr's CDN mirror of the published npm package; nothing here can
@@ -1762,8 +1773,9 @@
         <li>your email address, used only to send you sign-in links (it is never shown to other members);</li>
         <li>your display name, shown next to your Community posts and comments;</li>
         <li>if you add them: a short bio and a profile photo, both shown on your Community profile;</li>
-        <li>if you add one: a recovery date, plus who can see it — only you (the default), signed-in members, or everyone; and</li>
-        <li>what you share in the Community: your posts, comments, replies, reactions, reports, and the notifications about them.</li>
+        <li>if you add one: a recovery date, plus who can see it — only you (the default), signed-in members, or everyone;</li>
+        <li>what you share in the Community: your posts, comments, replies, reactions, reports, and the notifications about them; and</li>
+        <li>who you follow. Your Following list is visible only to you; follows aren't shown publicly, and there are no follower counts.</li>
       </ul>
       <p>The Recovery Counter and Daily Check-In are not part of your account. They stay in your browser as described above, even when you're signed in. You can change or remove your bio, photo, and recovery date at any time from your profile.</p>
 
@@ -2010,6 +2022,11 @@
     <h2 id="member-profile-name" class="ms-modal-title" style="margin-top:12px;"></h2>
     <p id="member-profile-joined" class="member-profile-meta"></p>
     <p id="member-profile-recovery" class="member-profile-meta" hidden></p>
+    <div id="member-profile-follow" class="member-profile-follow" hidden>
+      <span id="member-profile-following-label" class="member-profile-following-label" hidden>&#10003; Following</span>
+      <button type="button" class="btn btn-primary" id="member-profile-follow-btn">Follow</button>
+    </div>
+    <p id="member-profile-follow-status" class="status-msg" role="status" aria-live="polite"></p>
     <p id="member-profile-bio" class="ms-modal-text member-profile-bio" hidden></p>
     <p id="member-profile-status" class="status-msg" role="status" aria-live="polite"></p>
     <div id="member-profile-posts" class="member-profile-posts" hidden>
@@ -2099,6 +2116,15 @@
         <button type="submit" class="btn btn-primary btn-block" id="account-profile-save" style="margin-top:16px;">Save profile</button>
         <p class="status-msg" id="account-profile-status" role="status" aria-live="polite"></p>
       </form>
+
+      <!-- Phase 8A: the signed-in member's own, private Following list. -->
+      <section id="account-following" class="account-profile" aria-labelledby="account-following-title">
+        <h3 class="account-profile-title" id="account-following-title">Following</h3>
+        <p class="hint" style="font-size:.82rem; color:var(--charcoal-soft);">Only you can see who you follow.</p>
+        <p class="status-msg" id="account-following-status" role="status" aria-live="polite"></p>
+        <ul id="account-following-list" class="account-following-list"></ul>
+        <p id="account-following-empty" class="hint" style="font-size:.88rem; color:var(--charcoal-soft); margin-top:8px;" hidden>You're not following anyone yet.</p>
+      </section>
 
       <button type="button" class="btn btn-outline btn-block" style="margin-top:14px;" data-account-action="signout">Sign out</button>
     </div>
@@ -9053,6 +9079,7 @@ const FPRBadge = (function(){
     document.documentElement.classList.add('ms-modal-open');
     if (client) emailInput.focus();
     if (profileUserId) loadProfile(); // Phase 7B: always show the current saved profile
+    if (profileUserId) loadFollowing(); // Phase 8A
   }
   function closeModal(){
     modal.hidden = true;
@@ -9092,7 +9119,8 @@ const FPRBadge = (function(){
     if (userId !== profileUserId) {
       profileUserId = userId;
       resetProfile();
-      if (userId && !modal.hidden) loadProfile();
+      resetFollowing();
+      if (userId && !modal.hidden) { loadProfile(); loadFollowing(); }
     }
   }
 
@@ -9408,6 +9436,98 @@ const FPRBadge = (function(){
   });
 
   resetProfile();
+
+  /* ---------- Own Following list (Phase 8A) ----------
+     Private to the signed-in member: loaded only through
+     get_my_following() (public_id, display name, photo, followed date —
+     never an auth id). Clicking someone closes this modal and opens the
+     existing Community profile panel via the fpr:openmemberprofile
+     event. Refreshed when the modal opens and after any follow change. */
+  const followingSection = document.getElementById('account-following');
+  const followingList = document.getElementById('account-following-list');
+  const followingEmpty = document.getElementById('account-following-empty');
+  const followingStatus = document.getElementById('account-following-status');
+  let followingLoadSeq = 0;
+
+  function resetFollowing(){
+    followingLoadSeq++;
+    followingList.replaceChildren();
+    followingEmpty.hidden = true;
+    setMsg(followingStatus, '', '');
+    followingSection.hidden = !profileUserId;
+  }
+
+  function buildFollowingItem(m){
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'account-following-item';
+    const name = m.display_name || 'Community member';
+    btn.setAttribute('aria-label', 'View profile: ' + name);
+    const initial = document.createElement('span');
+    initial.className = 'member-avatar-sm';
+    initial.setAttribute('aria-hidden', 'true');
+    initial.textContent = name.trim().charAt(0).toUpperCase() || '?';
+    btn.appendChild(initial);
+    const url = m.avatar_path ? avatarPublicUrl(m.avatar_path) : '';
+    if (url) {
+      const img = document.createElement('img');
+      img.className = 'member-avatar-sm';
+      img.alt = '';
+      img.setAttribute('aria-hidden', 'true');
+      img.onerror = function(){ if (img.isConnected) img.replaceWith(initial); };
+      img.src = url;
+      initial.replaceWith(img);
+    }
+    const text = document.createElement('span');
+    const nameEl = document.createElement('span');
+    nameEl.className = 'account-following-name';
+    nameEl.textContent = name;
+    text.appendChild(nameEl);
+    if (m.followed_at) {
+      let since = '';
+      try { since = new Date(m.followed_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short' }); } catch(err){}
+      if (since) {
+        const sinceEl = document.createElement('span');
+        sinceEl.className = 'account-following-since';
+        sinceEl.textContent = 'Following since ' + since;
+        text.appendChild(sinceEl);
+      }
+    }
+    btn.appendChild(text);
+    btn.addEventListener('click', function(){
+      closeModal();
+      try { document.dispatchEvent(new CustomEvent('fpr:openmemberprofile', { detail: { publicId: m.public_id } })); } catch(err){}
+    });
+    li.appendChild(btn);
+    return li;
+  }
+
+  async function loadFollowing(){
+    if (!client || !profileUserId) { resetFollowing(); return; }
+    const seq = ++followingLoadSeq;
+    followingSection.hidden = false;
+    setMsg(followingStatus, 'info', 'Loading...');
+    try {
+      const { data, error } = await client.rpc('get_my_following');
+      if (seq !== followingLoadSeq) return;
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      followingList.replaceChildren();
+      rows.forEach(function(m){ followingList.appendChild(buildFollowingItem(m)); });
+      followingEmpty.hidden = rows.length !== 0;
+      setMsg(followingStatus, '', '');
+    } catch(err){
+      if (seq !== followingLoadSeq) return;
+      setMsg(followingStatus, 'error', "Your Following list couldn't be loaded right now.");
+    }
+  }
+
+  document.addEventListener('fpr:followchange', function(){
+    if (profileUserId) loadFollowing();
+  });
+
+  resetFollowing();
 
   /* Explicit magic-link callback handling. Supabase can send a user back
      here two different ways, and both must be supported without relying
@@ -9956,7 +10076,81 @@ const FPRBadge = (function(){
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   }
 
+  // ---------- Follow / Unfollow (Phase 8A) ----------
+  // Shown only to a signed-in viewer looking at someone else's profile.
+  // State comes from get_follow_state (is_self / following); writes go
+  // through follow_member / unfollow_member only. Follows are private:
+  // no counts, no lists of other people's follows.
+  const followWrap = document.getElementById('member-profile-follow');
+  const followBtn = document.getElementById('member-profile-follow-btn');
+  const followingLabel = document.getElementById('member-profile-following-label');
+  const followStatus = document.getElementById('member-profile-follow-status');
+  let followTargetId = null;
+  let followState = null;
+  let followBusy = false;
+
+  function renderFollowControl(){
+    if (!followState || followState.is_self || !currentSession) { followWrap.hidden = true; return; }
+    const following = !!followState.following;
+    followWrap.hidden = false;
+    followingLabel.hidden = !following;
+    followBtn.textContent = following ? 'Unfollow' : 'Follow';
+    followBtn.className = 'btn ' + (following ? 'btn-outline' : 'btn-primary');
+    followBtn.setAttribute('aria-label', (following ? 'Unfollow ' : 'Follow ') + (memberName.textContent || 'this member'));
+    followBtn.disabled = followBusy;
+  }
+
+  function resetFollowControl(){
+    followTargetId = null;
+    followState = null;
+    followBusy = false;
+    followWrap.hidden = true;
+    setStatus(followStatus, '', '');
+  }
+
+  async function loadFollowState(publicId, seq){
+    if (!client || !currentSession) return;
+    try {
+      const { data, error } = await client.rpc('get_follow_state', { target_public_id: publicId });
+      if (seq !== memberProfileSeq) return;
+      if (error) throw error;
+      followTargetId = publicId;
+      followState = (Array.isArray(data) ? data[0] : data) || null;
+      renderFollowControl();
+    } catch(err){
+      if (seq !== memberProfileSeq) return;
+      followWrap.hidden = true; // follow is optional; the profile itself still shows
+    }
+  }
+
+  if (followBtn) {
+    followBtn.addEventListener('click', async function(){
+      if (followBusy || !followTargetId || !followState || !client || !currentSession) return;
+      const targetId = followTargetId;
+      const wasFollowing = !!followState.following;
+      followBusy = true;
+      renderFollowControl();
+      setStatus(followStatus, '', '');
+      try {
+        const { error } = await client.rpc(wasFollowing ? 'unfollow_member' : 'follow_member', { target_public_id: targetId });
+        if (error) throw error;
+        if (followTargetId === targetId) {
+          followState = Object.assign({}, followState, { following: !wasFollowing });
+        }
+        try { document.dispatchEvent(new CustomEvent('fpr:followchange', { detail: { publicId: targetId, following: !wasFollowing } })); } catch(err){}
+      } catch(err){
+        if (followTargetId === targetId) {
+          setStatus(followStatus, 'error', (err && err.message) ? err.message : 'Something went wrong. Please try again.');
+        }
+      } finally {
+        followBusy = false;
+        renderFollowControl();
+      }
+    });
+  }
+
   function resetMemberPanel(){
+    resetFollowControl();
     memberAvatar.hidden = true;
     memberAvatar.removeAttribute('src');
     memberAvatarFallback.hidden = false;
@@ -10038,6 +10232,7 @@ const FPRBadge = (function(){
       setStatus(memberStatus, '', '');
       renderMemberProfile(data);
       loadMemberRecentPosts(publicId, seq);
+      loadFollowState(publicId, seq);
     } catch(err){
       if (seq !== memberProfileSeq) return;
       setStatus(memberStatus, 'error', "This profile couldn't be loaded right now. Please try again in a moment.");
@@ -10050,6 +10245,12 @@ const FPRBadge = (function(){
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeMemberProfile(); });
     // Leaving the Community page (or signing in/out elsewhere) closes it.
     document.addEventListener('fpr:pagechange', closeMemberProfile);
+    // Phase 8A: other parts of the page (the account modal's Following
+    // list) open a profile through this event — same panel, same rules.
+    document.addEventListener('fpr:openmemberprofile', function(e){
+      const id = e && e.detail && e.detail.publicId;
+      if (id) openMemberProfile(id, null);
+    });
   }
 
   // ---------- Reactions (Phase 6C) ----------
@@ -11009,6 +11210,7 @@ const FPRBadge = (function(){
     signedOutNotice.style.display = signedIn ? 'none' : 'block';
     postForm.style.display = signedIn ? 'block' : 'none';
     notifWrap.style.display = signedIn ? 'block' : 'none';
+    if (!signedIn) resetFollowControl(); // Phase 8A: no follow control when signed out
     if (signedIn) {
       refreshUnreadCount();
       if (notifOpen) loadNotifications();
