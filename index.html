@@ -686,6 +686,16 @@
   #account-email-display{font-weight:700; color:var(--charcoal); word-break:break-word;}
   .account-inactive-notice{font-size:.85rem; color:var(--charcoal-soft); background:var(--gray); border-radius:var(--radius-m); padding:10px 12px; margin-top:12px;}
   .account-inactive-notice[hidden]{display:none !important;}
+  /* Phase 7B: own-profile editor in the account modal */
+  .account-profile{text-align:left; margin-top:18px; padding-top:16px; border-top:1px solid var(--line);}
+  .account-profile-title{font-size:1.05rem; color:var(--charcoal); margin-bottom:6px;}
+  .account-avatar-row{display:flex; align-items:center; gap:14px; margin:10px 0 6px;}
+  .account-avatar{width:72px; height:72px; border-radius:999px; object-fit:cover; flex:none; background:var(--sage);}
+  .account-avatar-placeholder{display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.5rem; color:var(--charcoal);}
+  .account-avatar[hidden]{display:none !important;}
+  .account-avatar-actions{display:flex; flex-direction:column; align-items:flex-start; gap:6px;}
+  .account-avatar-actions .btn{padding:6px 16px; font-size:.85rem; width:auto;}
+  .account-profile-count{font-size:.8rem; color:var(--charcoal-soft); opacity:.75; margin-top:4px;}
 </style>
 <!-- Supabase client (Phase 1): optional member accounts only. Loaded from
      jsdelivr's CDN mirror of the published npm package; nothing here can
@@ -1704,6 +1714,7 @@
         <ul>
           <li>Front Porch Recovery has no accounts, no ads, no analytics, and no tracking pixels, and it does not set its own cookies.</li>
           <li>The Daily Check-In and Recovery Counter save a small amount of information <strong>in your own browser</strong>. It is never sent to Front Porch Recovery, and we can't see it.</li>
+          <li>If you sign in and choose to add a recovery date to your Community profile, that date is saved with your profile and shown only as your visibility setting allows (only you, signed-in members, or everyone). It is separate from the Recovery Counter.</li>
           <li>If you use the Contact form, your message is delivered to us through a service called Formspree.</li>
           <li>We don't sell or rent your information, and we don't share it for advertising.</li>
           <li>Our web host and a few outside services receive basic technical information when the site loads.</li>
@@ -1963,7 +1974,7 @@
     <div data-account-view="signed-out">
       <h2 id="account-modal-title" class="ms-modal-title">Sign in to Front Porch Recovery</h2>
       <p class="ms-modal-text">A free account is completely optional. It's only used to recognize you across visits — it does not sync your Recovery Counter or Daily Check-In, and you can keep using every feature on this site without ever signing in.</p>
-      <p class="ms-modal-text">No password: enter your email and we'll send a one-time sign-in link. The display name below (optional — leave it blank to use "New member") is only saved the first time you sign in; it won't change an existing account.</p>
+      <p class="ms-modal-text">No password: enter your email and we'll send a one-time sign-in link. The display name below (optional — leave it blank to use "New member") is only saved the first time you sign in; after that you can change it in your profile.</p>
 
       <form id="account-signin-form" novalidate>
         <div class="field" style="text-align:left; margin-top:16px;">
@@ -1985,7 +1996,57 @@
     <div data-account-view="signed-in" hidden>
       <h2 class="ms-modal-title">You're signed in</h2>
       <p class="ms-modal-text">Signed in as <span id="account-email-display"></span>.</p>
-      <p class="ms-modal-text">This doesn't change anything else here — your Recovery Counter and Daily Check-In still stay on this device only.</p>
+      <p class="ms-modal-text">Your Recovery Counter and Daily Check-In still stay on this device only. The profile below is saved to your account.</p>
+
+      <!-- Phase 7B: the signed-in member's own profile. Loaded and saved
+           only through get_my_profile / update_my_profile / set_my_avatar /
+           clear_my_avatar. -->
+      <form id="account-profile-form" class="account-profile" novalidate>
+        <h3 class="account-profile-title">Your profile</h3>
+        <p class="status-msg" id="account-profile-load-status" role="status" aria-live="polite"></p>
+
+        <div class="account-avatar-row">
+          <img id="account-avatar-img" class="account-avatar" alt="Your profile photo" hidden>
+          <span id="account-avatar-placeholder" class="account-avatar account-avatar-placeholder" aria-hidden="true"></span>
+          <div class="account-avatar-actions">
+            <button type="button" class="btn btn-outline" id="account-avatar-choose">Choose photo</button>
+            <button type="button" class="btn-link" id="account-avatar-remove" hidden>Remove photo</button>
+            <input type="file" id="account-avatar-input" accept="image/jpeg,image/png,image/webp" hidden>
+          </div>
+        </div>
+        <p class="status-msg" id="account-avatar-status" role="status" aria-live="polite"></p>
+
+        <div class="field">
+          <label for="account-profile-name">Display name</label>
+          <input type="text" id="account-profile-name" maxlength="80" autocomplete="nickname" required>
+          <p class="field-error" id="account-profile-name-error" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label for="account-profile-bio">Bio (optional)</label>
+          <textarea id="account-profile-bio" maxlength="300" style="min-height:80px;" placeholder="A line or two about you, if you'd like."></textarea>
+          <p class="account-profile-count"><span id="account-profile-bio-count">0</span> / 300</p>
+          <p class="field-error" id="account-profile-bio-error" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label for="account-profile-recovery-date">Recovery date (optional)</label>
+          <input type="date" id="account-profile-recovery-date">
+          <p class="hint">Separate from your Recovery Counter, which stays on this device. Only saved if you enter it here.</p>
+          <p class="field-error" id="account-profile-recovery-date-error" role="alert"></p>
+        </div>
+
+        <fieldset class="ms-privacy">
+          <legend>Who can see your recovery date</legend>
+          <label class="ms-privacy-opt"><input type="radio" name="account-profile-visibility" value="private" checked><span>Private<span class="ms-privacy-ex">Only you.</span></span></label>
+          <label class="ms-privacy-opt"><input type="radio" name="account-profile-visibility" value="members"><span>Members<span class="ms-privacy-ex">Signed-in Community members.</span></span></label>
+          <label class="ms-privacy-opt"><input type="radio" name="account-profile-visibility" value="public"><span>Public<span class="ms-privacy-ex">Anyone who visits the site.</span></span></label>
+        </fieldset>
+
+        <button type="submit" class="btn btn-primary btn-block" id="account-profile-save" style="margin-top:16px;">Save profile</button>
+        <p class="status-msg" id="account-profile-status" role="status" aria-live="polite"></p>
+      </form>
+
       <button type="button" class="btn btn-outline btn-block" style="margin-top:14px;" data-account-action="signout">Sign out</button>
     </div>
   </div>
@@ -8938,6 +8999,7 @@ const FPRBadge = (function(){
     modal.hidden = false;
     document.documentElement.classList.add('ms-modal-open');
     if (client) emailInput.focus();
+    if (profileUserId) loadProfile(); // Phase 7B: always show the current saved profile
   }
   function closeModal(){
     modal.hidden = true;
@@ -8969,7 +9031,330 @@ const FPRBadge = (function(){
         : (btn === mobileBtn ? 'Account / Sign In' : 'Sign In');
     });
     if (signedIn) emailDisplay.textContent = session.user.email || '';
+
+    // Phase 7B: reset the profile editor whenever the signed-in member
+    // changes (sign-in, sign-out, different account) — but not on routine
+    // token refreshes, so unsaved edits in an open modal aren't wiped.
+    const userId = signedIn ? session.user.id : null;
+    if (userId !== profileUserId) {
+      profileUserId = userId;
+      resetProfile();
+      if (userId && !modal.hidden) loadProfile();
+    }
   }
+
+  /* ---------- Own profile editor (Phase 7B) ----------
+     Reads and writes only through get_my_profile / update_my_profile /
+     set_my_avatar / clear_my_avatar. The avatar is cropped to a square,
+     resized to at most 512x512 and re-encoded through a canvas before
+     upload — re-encoding drops all EXIF/metadata (GPS, camera, etc.) —
+     then uploaded into the member's own public_id folder (the only place
+     the storage policies allow) and recorded with set_my_avatar. The
+     profile recovery date is entered here only; nothing reads or copies
+     the on-device Recovery Counter. */
+  const AVATAR_BUCKET = 'avatars';
+  const AVATAR_MAX_BYTES = 1024 * 1024;           // the avatars bucket's own limit
+  const AVATAR_MAX_SIDE = 512;
+  const AVATAR_MAX_INPUT_BYTES = 20 * 1024 * 1024;
+  const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+  const profileForm = document.getElementById('account-profile-form');
+  const profileLoadStatus = document.getElementById('account-profile-load-status');
+  const profileStatus = document.getElementById('account-profile-status');
+  const profileSaveBtn = document.getElementById('account-profile-save');
+  const profileNameInput = document.getElementById('account-profile-name');
+  const profileNameErr = document.getElementById('account-profile-name-error');
+  const profileBioInput = document.getElementById('account-profile-bio');
+  const profileBioCount = document.getElementById('account-profile-bio-count');
+  const profileBioErr = document.getElementById('account-profile-bio-error');
+  const profileDateInput = document.getElementById('account-profile-recovery-date');
+  const profileDateErr = document.getElementById('account-profile-recovery-date-error');
+  const profileVisibilityInputs = Array.from(document.querySelectorAll('input[name="account-profile-visibility"]'));
+  const avatarImg = document.getElementById('account-avatar-img');
+  const avatarPlaceholder = document.getElementById('account-avatar-placeholder');
+  const avatarChooseBtn = document.getElementById('account-avatar-choose');
+  const avatarRemoveBtn = document.getElementById('account-avatar-remove');
+  const avatarInput = document.getElementById('account-avatar-input');
+  const avatarStatus = document.getElementById('account-avatar-status');
+
+  let profileUserId = null;   // in memory only, never displayed
+  let myProfile = null;       // last profile confirmed by the database
+  let profileLoadSeq = 0;
+  let profileBusy = false;
+
+  function setMsg(el, kind, text){
+    el.className = 'status-msg' + (text ? ' show' : '') + (kind ? ' status-' + kind : '');
+    el.textContent = text || '';
+  }
+  function setFieldError(input, errEl, text){
+    errEl.textContent = text || '';
+    errEl.classList.toggle('show', !!text);
+    input.classList.toggle('invalid', !!text);
+  }
+  function clearProfileErrors(){
+    setFieldError(profileNameInput, profileNameErr, '');
+    setFieldError(profileBioInput, profileBioErr, '');
+    setFieldError(profileDateInput, profileDateErr, '');
+  }
+  function localToday(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  // Save/photo controls work only once a profile has actually loaded, so
+  // a failed load can never save blank values over the real profile.
+  function setProfileControlsEnabled(enabled){
+    profileForm.querySelectorAll('input, textarea, button').forEach(function(el){ el.disabled = !enabled; });
+  }
+  function avatarPublicUrl(path){
+    try { return client.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl || ''; }
+    catch(err){ return ''; }
+  }
+  function renderAvatar(){
+    const path = myProfile && myProfile.avatar_path;
+    const url = path ? avatarPublicUrl(path) : '';
+    if (url) {
+      avatarImg.src = url;
+      avatarImg.hidden = false;
+      avatarPlaceholder.hidden = true;
+    } else {
+      avatarImg.removeAttribute('src');
+      avatarImg.hidden = true;
+      avatarPlaceholder.hidden = false;
+      const name = (myProfile && myProfile.display_name) || '';
+      avatarPlaceholder.textContent = name.trim().charAt(0).toUpperCase() || '?';
+    }
+    avatarRemoveBtn.hidden = !path;
+  }
+  function fillProfileForm(p){
+    profileNameInput.value = p.display_name || '';
+    profileBioInput.value = p.bio || '';
+    profileBioCount.textContent = String(profileBioInput.value.length);
+    profileDateInput.value = p.recovery_date || '';
+    profileDateInput.max = localToday();
+    const vis = p.recovery_visibility || 'private';
+    profileVisibilityInputs.forEach(function(r){ r.checked = r.value === vis; });
+    clearProfileErrors();
+    renderAvatar();
+  }
+  function resetProfile(){
+    profileLoadSeq++; // drop any in-flight load
+    myProfile = null;
+    profileForm.reset();
+    profileBioCount.textContent = '0';
+    clearProfileErrors();
+    setMsg(profileLoadStatus, '', '');
+    setMsg(profileStatus, '', '');
+    setMsg(avatarStatus, '', '');
+    renderAvatar();
+    setProfileControlsEnabled(false);
+  }
+  function notifyProfileChanged(){
+    try { document.dispatchEvent(new CustomEvent('fpr:profilechange')); } catch(err){}
+  }
+
+  async function loadProfile(){
+    if (!client || !profileUserId || profileBusy) return;
+    const seq = ++profileLoadSeq;
+    setMsg(profileLoadStatus, 'info', 'Loading your profile...');
+    setProfileControlsEnabled(false);
+    try {
+      const { data, error } = await client.rpc('get_my_profile');
+      if (seq !== profileLoadSeq) return;
+      if (error) throw error;
+      const p = Array.isArray(data) ? data[0] : data;
+      if (!p) throw new Error('Profile not found.');
+      myProfile = p;
+      fillProfileForm(p);
+      setMsg(profileLoadStatus, '', '');
+      setProfileControlsEnabled(true);
+    } catch(err){
+      if (seq !== profileLoadSeq) return;
+      setMsg(profileLoadStatus, 'error', "Your profile couldn't be loaded right now. Please close this window and try again in a moment.");
+    }
+  }
+
+  profileBioInput.addEventListener('input', function(){
+    profileBioCount.textContent = String(profileBioInput.value.length);
+  });
+
+  profileForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (profileBusy || !myProfile || !client || !profileUserId) return;
+    clearProfileErrors();
+    setMsg(profileStatus, '', '');
+    const name = profileNameInput.value.trim();
+    const bio = profileBioInput.value.trim();
+    const date = profileDateInput.value;
+    const checked = profileVisibilityInputs.find(function(r){ return r.checked; });
+    const visibility = checked ? checked.value : 'private';
+    let ok = true;
+    if (!name || name.length > 80) {
+      setFieldError(profileNameInput, profileNameErr, 'Please enter a display name of 1 to 80 characters.');
+      ok = false;
+    } else if (/[\u0000-\u001F\u007F]/.test(name)) {
+      setFieldError(profileNameInput, profileNameErr, "Display name can't contain line breaks.");
+      ok = false;
+    }
+    if (bio.length > 300) {
+      setFieldError(profileBioInput, profileBioErr, 'Bio must be 300 characters or fewer.');
+      ok = false;
+    }
+    if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > localToday() || date < '1900-01-01')) {
+      setFieldError(profileDateInput, profileDateErr, "Please choose a date that isn't in the future.");
+      ok = false;
+    }
+    if (!ok) return;
+
+    profileBusy = true;
+    setProfileControlsEnabled(false);
+    setMsg(profileStatus, 'info', 'Saving...');
+    try {
+      const { data, error } = await client.rpc('update_my_profile', {
+        p_display_name: name,
+        p_bio: bio || null,
+        p_recovery_date: date || null,
+        p_recovery_visibility: visibility,
+      });
+      if (error) throw error;
+      const p = Array.isArray(data) ? data[0] : data;
+      if (p) { myProfile = p; fillProfileForm(p); }
+      setMsg(profileStatus, 'success', 'Profile saved.');
+      notifyProfileChanged();
+    } catch(err){
+      setMsg(profileStatus, 'error', (err && err.message) ? err.message : 'Something went wrong saving your profile. Please try again.');
+    } finally {
+      profileBusy = false;
+      setProfileControlsEnabled(!!myProfile);
+    }
+  });
+
+  // ---- avatar: decode -> square crop -> <=512px -> re-encode (no EXIF) -> <=1 MB ----
+  function decodeImage(file){
+    if (window.createImageBitmap) {
+      return createImageBitmap(file, { imageOrientation: 'from-image' })
+        .then(function(bmp){ return { source: bmp, width: bmp.width, height: bmp.height }; })
+        .catch(function(){ return decodeWithImg(file); });
+    }
+    return decodeWithImg(file);
+  }
+  function decodeWithImg(file){
+    return new Promise(function(resolve, reject){
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = function(){ URL.revokeObjectURL(url); resolve({ source: img, width: img.naturalWidth, height: img.naturalHeight }); };
+      img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error("That image couldn't be read. Please try a different photo.")); };
+      img.src = url;
+    });
+  }
+  function canvasToBlob(canvas, type, quality){
+    return new Promise(function(resolve){
+      try { canvas.toBlob(function(b){ resolve(b); }, type, quality); }
+      catch(err){ resolve(null); }
+    });
+  }
+  async function encodeAvatar(canvas, quality){
+    const webp = await canvasToBlob(canvas, 'image/webp', quality);
+    if (webp && webp.type === 'image/webp') return webp;   // browsers without WebP encoding fall back to JPEG
+    return canvasToBlob(canvas, 'image/jpeg', quality);
+  }
+  async function prepareAvatar(file){
+    if (!file || AVATAR_TYPES.indexOf(file.type) === -1) throw new Error('Please choose a JPEG, PNG, or WebP image.');
+    if (file.size > AVATAR_MAX_INPUT_BYTES) throw new Error('That image is too large. Please choose one under 20 MB.');
+    const img = await decodeImage(file);
+    const side = Math.min(img.width, img.height);
+    if (!side) throw new Error("That image couldn't be read. Please try a different photo.");
+    const sx = Math.floor((img.width - side) / 2);
+    const sy = Math.floor((img.height - side) / 2);
+    let size = Math.min(AVATAR_MAX_SIDE, side); // never upscale a small image
+    const minSize = Math.min(96, size);
+    while (size >= minSize) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff'; // transparent areas become white rather than black in JPEG
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img.source, sx, sy, side, side, 0, 0, size, size);
+      for (const quality of [0.86, 0.75, 0.62]) {
+        const blob = await encodeAvatar(canvas, quality);
+        if (blob && blob.size <= AVATAR_MAX_BYTES) return blob;
+      }
+      if (size === minSize) break;
+      size = Math.max(minSize, Math.round(size * 0.75));
+    }
+    throw new Error("That photo couldn't be made small enough. Please try a different one.");
+  }
+  function removeAvatarObject(path){
+    // Best-effort tidy-up of an object this member owns; never blocks the UI.
+    try { client.storage.from(AVATAR_BUCKET).remove([path]).catch(function(){}); } catch(err){}
+  }
+  function setAvatarBusy(busy){
+    avatarChooseBtn.disabled = busy;
+    avatarRemoveBtn.disabled = busy;
+    profileSaveBtn.disabled = busy;
+  }
+
+  avatarChooseBtn.addEventListener('click', function(){
+    if (!profileBusy && myProfile) avatarInput.click();
+  });
+
+  avatarInput.addEventListener('change', async function(){
+    const file = avatarInput.files && avatarInput.files[0];
+    avatarInput.value = ''; // lets the same file be chosen again later
+    if (!file || profileBusy || !myProfile || !profileUserId) return;
+    profileBusy = true;
+    setAvatarBusy(true);
+    setMsg(avatarStatus, 'info', 'Preparing your photo...');
+    let uploadedPath = null;
+    try {
+      const blob = await prepareAvatar(file);
+      const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+      const path = myProfile.public_id + '/avatar-' + Date.now() + '.' + ext;
+      setMsg(avatarStatus, 'info', 'Uploading...');
+      const up = await client.storage.from(AVATAR_BUCKET).upload(path, blob, { contentType: blob.type, upsert: false, cacheControl: '3600' });
+      if (up.error) throw up.error;
+      uploadedPath = path;
+      const { error } = await client.rpc('set_my_avatar', { p_path: path });
+      if (error) throw error;
+      const oldPath = myProfile.avatar_path;
+      myProfile.avatar_path = path; // only the photo changed; unsaved form edits are left alone
+      uploadedPath = null;          // now in use by the profile
+      renderAvatar();
+      setMsg(avatarStatus, 'success', 'Photo updated.');
+      if (oldPath && oldPath !== path) removeAvatarObject(oldPath);
+      notifyProfileChanged();
+    } catch(err){
+      if (uploadedPath) removeAvatarObject(uploadedPath); // don't leave an unused upload behind
+      setMsg(avatarStatus, 'error', (err && err.message) ? err.message : 'Something went wrong updating your photo. Please try again.');
+    } finally {
+      profileBusy = false;
+      setAvatarBusy(false);
+    }
+  });
+
+  avatarRemoveBtn.addEventListener('click', async function(){
+    if (profileBusy || !myProfile || !myProfile.avatar_path || !profileUserId) return;
+    profileBusy = true;
+    setAvatarBusy(true);
+    setMsg(avatarStatus, 'info', 'Removing photo...');
+    const oldPath = myProfile.avatar_path;
+    try {
+      const { error } = await client.rpc('clear_my_avatar');
+      if (error) throw error;
+      myProfile.avatar_path = null;
+      renderAvatar();
+      setMsg(avatarStatus, 'success', 'Photo removed.');
+      removeAvatarObject(oldPath);
+      notifyProfileChanged();
+    } catch(err){
+      setMsg(avatarStatus, 'error', (err && err.message) ? err.message : 'Something went wrong removing your photo. Please try again.');
+    } finally {
+      profileBusy = false;
+      setAvatarBusy(false);
+    }
+  });
+
+  resetProfile();
 
   /* Explicit magic-link callback handling. Supabase can send a user back
      here two different ways, and both must be supported without relying
@@ -10411,6 +10796,14 @@ const FPRBadge = (function(){
   // A direct link/bookmark to #community fires goTo() before this
   // listener exists, so check once on startup too.
   if (location.hash === '#community') { loadFeed(); }
+
+  // Phase 7B: the member changed their own display name/photo in the
+  // account modal — re-read what's on screen so their posts/comments
+  // show the new name.
+  document.addEventListener('fpr:profilechange', function(){
+    if (feedLoaded) loadFeed();
+    commentUI.forEach(function(ui){ if (ui.loaded) loadCommentsForPost(ui); });
+  });
 })();
 /* ---------- Installable app ----------
    Registers sw.js (offline support) when the site runs from its real web
