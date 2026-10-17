@@ -696,6 +696,14 @@
   .account-avatar-actions{display:flex; flex-direction:column; align-items:flex-start; gap:6px;}
   .account-avatar-actions .btn{padding:6px 16px; font-size:.85rem; width:auto;}
   .account-profile-count{font-size:.8rem; color:var(--charcoal-soft); opacity:.75; margin-top:4px;}
+  /* Phase 7C: clickable Community author names + member profile panel */
+  .member-author-link{background:none; border:none; padding:0; margin:0; font:inherit; color:inherit; cursor:pointer; text-align:left; text-decoration:underline; text-decoration-color:rgba(26,26,26,.25); text-underline-offset:3px;}
+  .member-author-link:hover{text-decoration-color:currentColor;}
+  .member-profile-avatar{width:96px; height:96px; border-radius:999px; object-fit:cover; margin:4px auto 0; display:block; background:var(--sage);}
+  .member-profile-avatar-fallback{display:flex; align-items:center; justify-content:center; font-weight:700; font-size:2rem; color:var(--charcoal);}
+  .member-profile-avatar[hidden]{display:none !important;}
+  .member-profile-bio{white-space:pre-wrap; word-break:break-word; text-align:left;}
+  .member-profile-meta{font-size:.85rem; color:var(--charcoal-soft); margin-top:6px;}
 </style>
 <!-- Supabase client (Phase 1): optional member accounts only. Loaded from
      jsdelivr's CDN mirror of the published npm package; nothing here can
@@ -1967,6 +1975,22 @@
      (Supabase magic link) is the only sign-in method. Signing in does not
      upload or sync Recovery Counter or Daily Check-In data — those stay
      on this device exactly as before. -->
+<!-- Phase 7C: read-only member profile panel, opened from a Community
+     post/comment author. Filled from community_member_profiles_public
+     with textContent only; never changes the URL. -->
+<div id="member-profile-modal" class="ms-modal" hidden>
+  <div class="ms-modal-panel" role="dialog" aria-modal="true" aria-labelledby="member-profile-name">
+    <button type="button" class="ms-modal-close" id="member-profile-close" aria-label="Close">&times;</button>
+    <img id="member-profile-avatar" class="member-profile-avatar" alt="" hidden>
+    <span id="member-profile-avatar-fallback" class="member-profile-avatar member-profile-avatar-fallback" aria-hidden="true"></span>
+    <h2 id="member-profile-name" class="ms-modal-title" style="margin-top:12px;"></h2>
+    <p id="member-profile-joined" class="member-profile-meta"></p>
+    <p id="member-profile-recovery" class="member-profile-meta" hidden></p>
+    <p id="member-profile-bio" class="ms-modal-text member-profile-bio" hidden></p>
+    <p id="member-profile-status" class="status-msg" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
 <div id="account-modal" class="ms-modal" hidden>
   <div class="ms-modal-panel" role="dialog" aria-modal="true" aria-labelledby="account-modal-title">
     <button type="button" class="ms-modal-close" data-account-action="close" aria-label="Close">&times;</button>
@@ -9619,9 +9643,7 @@ const FPRBadge = (function(){
     meta.style.color = 'var(--charcoal)';
     meta.style.opacity = '1';
 
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = post.display_name || 'Community member';
-    meta.appendChild(nameSpan);
+    meta.appendChild(buildAuthorName(post.display_name, post.author_public_id));
 
     const dateSpan = document.createElement('span');
     dateSpan.style.fontWeight = '400';
@@ -9707,6 +9729,150 @@ const FPRBadge = (function(){
       container.appendChild(note);
     }
     note.textContent = text;
+  }
+
+  // ---------- Member profile panel (Phase 7C) ----------
+  // An author name becomes a button only when the row carries an
+  // author_public_id (the opaque profile id — never the auth id).
+  // The panel reads community_member_profiles_public, which returns
+  // recovery_date only when the current viewer may see it, so this code
+  // never decides visibility itself: it shows the date when the view
+  // returns one and hides the line otherwise. Signed-in viewers query
+  // through the signed-in client so "members" dates can come back;
+  // signed-out viewers use the session-less read client.
+  const memberModal = document.getElementById('member-profile-modal');
+  const memberAvatar = document.getElementById('member-profile-avatar');
+  const memberAvatarFallback = document.getElementById('member-profile-avatar-fallback');
+  const memberName = document.getElementById('member-profile-name');
+  const memberJoined = document.getElementById('member-profile-joined');
+  const memberRecovery = document.getElementById('member-profile-recovery');
+  const memberBio = document.getElementById('member-profile-bio');
+  const memberStatus = document.getElementById('member-profile-status');
+  let memberProfileSeq = 0;
+  let memberReturnFocus = null;
+
+  function buildAuthorName(displayName, authorPublicId){
+    const name = displayName || 'Community member';
+    if (!authorPublicId || !memberModal) {
+      const span = document.createElement('span');
+      span.textContent = name;
+      return span;
+    }
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'member-author-link';
+    btn.textContent = name;
+    btn.setAttribute('aria-label', 'View profile: ' + name);
+    btn.addEventListener('click', function(){ openMemberProfile(authorPublicId, btn); });
+    return btn;
+  }
+
+  function formatMonthYear(iso){
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+    } catch(err){ return ''; }
+  }
+  // recovery_date is a plain 'YYYY-MM-DD' date: build it as a local date so
+  // it never shifts by a day across time zones.
+  function formatPlainDate(ymd){
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd || '');
+    if (!m) return '';
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function resetMemberPanel(){
+    memberAvatar.hidden = true;
+    memberAvatar.removeAttribute('src');
+    memberAvatarFallback.hidden = false;
+    memberAvatarFallback.textContent = '';
+    memberName.textContent = '';
+    memberJoined.textContent = '';
+    memberRecovery.hidden = true;
+    memberRecovery.textContent = '';
+    memberBio.hidden = true;
+    memberBio.textContent = '';
+    setStatus(memberStatus, '', '');
+  }
+
+  function renderMemberProfile(p){
+    const name = p.display_name || 'Community member';
+    memberName.textContent = name;
+    memberAvatarFallback.textContent = name.trim().charAt(0).toUpperCase() || '?';
+    let url = '';
+    if (p.avatar_path) {
+      try { url = (readClient || client).storage.from('avatars').getPublicUrl(p.avatar_path).data.publicUrl || ''; }
+      catch(err){ url = ''; }
+    }
+    if (url) {
+      memberAvatar.alt = 'Profile photo of ' + name;
+      memberAvatar.onerror = function(){ memberAvatar.hidden = true; memberAvatarFallback.hidden = false; };
+      memberAvatar.src = url;
+      memberAvatar.hidden = false;
+      memberAvatarFallback.hidden = true;
+    }
+    const joined = formatMonthYear(p.joined_at);
+    memberJoined.textContent = joined ? 'Joined ' + joined : '';
+    const recovery = p.recovery_date ? formatPlainDate(p.recovery_date) : '';
+    memberRecovery.hidden = !recovery;
+    memberRecovery.textContent = recovery ? 'In recovery since ' + recovery : '';
+    const bio = (p.bio || '').trim();
+    memberBio.hidden = !bio;
+    memberBio.textContent = bio; // plain text only — no linkification, no markup
+  }
+
+  function closeMemberProfile(){
+    if (!memberModal || memberModal.hidden) return;
+    memberProfileSeq++; // drop any in-flight load
+    memberModal.hidden = true;
+    // Only release the page scroll lock if no other modal is open.
+    if (!document.querySelector('.ms-modal:not([hidden])')) document.documentElement.classList.remove('ms-modal-open');
+    resetMemberPanel();
+    if (memberReturnFocus && document.contains(memberReturnFocus)) {
+      try { memberReturnFocus.focus(); } catch(err){}
+    }
+    memberReturnFocus = null;
+  }
+
+  async function openMemberProfile(publicId, triggerEl){
+    if (!memberModal || !publicId) return;
+    const seq = ++memberProfileSeq;
+    memberReturnFocus = triggerEl || null;
+    resetMemberPanel();
+    setStatus(memberStatus, 'info', 'Loading profile...');
+    memberModal.hidden = false;
+    document.documentElement.classList.add('ms-modal-open');
+    try { document.getElementById('member-profile-close').focus(); } catch(err){}
+    try {
+      const db = (client && currentSession) ? client : readClient;
+      if (!db) throw new Error('Profiles unavailable');
+      const { data, error } = await db
+        .from('community_member_profiles_public')
+        .select('public_id, display_name, bio, avatar_path, joined_at, recovery_date')
+        .eq('public_id', publicId)
+        .maybeSingle();
+      if (seq !== memberProfileSeq) return;
+      if (error) throw error;
+      if (!data) {
+        setStatus(memberStatus, 'info', "This profile isn't available right now.");
+        return;
+      }
+      setStatus(memberStatus, '', '');
+      renderMemberProfile(data);
+    } catch(err){
+      if (seq !== memberProfileSeq) return;
+      setStatus(memberStatus, 'error', "This profile couldn't be loaded right now. Please try again in a moment.");
+    }
+  }
+
+  if (memberModal) {
+    document.getElementById('member-profile-close').addEventListener('click', closeMemberProfile);
+    memberModal.addEventListener('click', function(e){ if (e.target === memberModal) closeMemberProfile(); });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeMemberProfile(); });
+    // Leaving the Community page (or signing in/out elsewhere) closes it.
+    document.addEventListener('fpr:pagechange', closeMemberProfile);
   }
 
   // ---------- Reactions (Phase 6C) ----------
@@ -10192,9 +10358,7 @@ const FPRBadge = (function(){
     meta.style.fontWeight = '600';
     meta.style.fontSize = '.88rem';
 
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = comment.display_name || 'Community member';
-    meta.appendChild(nameSpan);
+    meta.appendChild(buildAuthorName(comment.display_name, comment.author_public_id));
 
     const dateSpan = document.createElement('span');
     dateSpan.style.fontWeight = '400';
@@ -10542,7 +10706,7 @@ const FPRBadge = (function(){
       if (!readClient) throw new Error('Comments client unavailable');
       const { data, error } = await readClient
         .from('community_comments_public')
-        .select('id, post_id, parent_comment_id, body, created_at, updated_at, edited_at, display_name')
+        .select('id, post_id, parent_comment_id, body, created_at, updated_at, edited_at, display_name, author_public_id')
         .eq('post_id', ui.post.id)
         .order('created_at', { ascending: true });
       if (error) throw error;
@@ -10601,7 +10765,7 @@ const FPRBadge = (function(){
       if (!readClient) throw new Error('Community feed client unavailable');
       let request = readClient
         .from('community_posts_public')
-        .select('id, body, created_at, updated_at, edited_at, display_name')
+        .select('id, body, created_at, updated_at, edited_at, display_name, author_public_id')
         .order('created_at', { ascending: false });
       if (query) {
         request = request
