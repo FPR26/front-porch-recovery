@@ -707,6 +707,9 @@
   /* Phase 7D: small author avatars + recent posts in the profile panel */
   .member-author{display:inline-flex; align-items:center; gap:6px; vertical-align:middle; max-width:100%;}
   .member-author .member-author-link{display:inline-flex; align-items:center; gap:6px;}
+  /* Phase 8B-3: stored @mentions inside post/comment text */
+  .member-mention-link{background:none; border:none; padding:0; margin:0; font:inherit; color:var(--sage-text); font-weight:600; cursor:pointer; white-space:inherit; text-decoration:underline; text-decoration-color:rgba(26,26,26,.2); text-underline-offset:3px;}
+  .member-mention-link:hover{text-decoration-color:currentColor;}
   .member-avatar-sm{width:24px; height:24px; border-radius:999px; object-fit:cover; flex:none; background:var(--sage); display:inline-flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:700; color:var(--charcoal); text-decoration:none;}
   .member-profile-posts{text-align:left; margin-top:16px; padding-top:12px; border-top:1px solid var(--line);}
   .member-profile-posts-title{font-size:.95rem; color:var(--charcoal); margin-bottom:6px;}
@@ -9965,6 +9968,7 @@ const FPRBadge = (function(){
     bodyEl.style.opacity = '1';
     bodyEl.style.color = 'var(--charcoal-soft)';
     bodyEl.textContent = post.body || ''; // plain text only — no linkification, no markup parsing
+    registerMentionBody('post', post.id, bodyEl, post.body || ''); // stored @mentions only (Phase 8B-3)
     card.appendChild(bodyEl);
 
     card.appendChild(buildReactionBar('post', post.id, card));
@@ -10143,6 +10147,88 @@ const FPRBadge = (function(){
     registerAuthorAvatar(authorPublicId, avatar);
     wrap.appendChild(btn);
     return wrap;
+  }
+
+  // ---------- @mentions in posts and comments (Phase 8B-3) ----------
+  // Bodies render as plain text first. Then, per feed render (and per
+  // opened comment section), one batched query to community_mentions_public
+  // finds the stored mention rows for the sources on screen, and only
+  // tokens bound by a stored row become profile buttons. The handle in a
+  // row is the one used when the text was written, so old text keeps its
+  // @oldname while still opening the same member. Token boundaries match
+  // the database parser; everything is text nodes + createElement.
+  const MENTION_BATCH = 100;
+  const MENTION_TOKEN_RE = /@([A-Za-z][A-Za-z0-9_]{2,23})(?![A-Za-z0-9_])/g;
+  const MENTION_BEFORE_BLOCK = /[A-Za-z0-9_.@]/;
+  let mentionBodyEls = new Map();  // 'post:<id>' / 'comment:<id>' -> { el, body }
+
+  function registerMentionBody(kind, id, el, body){
+    if (id && body && body.indexOf('@') !== -1) mentionBodyEls.set(kind + ':' + id, { el: el, body: body });
+  }
+
+  function buildMentionButton(text, publicId){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'member-mention-link';
+    btn.textContent = text;
+    btn.setAttribute('aria-label', 'View profile: ' + text);
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      openMemberProfile(publicId, btn);
+    });
+    return btn;
+  }
+
+  // byHandle: lowercased handle_at_write -> mentioned_public_id
+  function paintMentions(el, body, byHandle){
+    if (!el.isConnected || !memberModal) return;
+    const frag = document.createDocumentFragment();
+    let last = 0, linked = 0, m;
+    MENTION_TOKEN_RE.lastIndex = 0;
+    while ((m = MENTION_TOKEN_RE.exec(body)) !== null) {
+      const before = m.index > 0 ? body.charAt(m.index - 1) : '';
+      if (before && MENTION_BEFORE_BLOCK.test(before)) continue;
+      const publicId = byHandle.get(m[1].toLowerCase());
+      if (!publicId) continue;
+      if (m.index > last) frag.appendChild(document.createTextNode(body.slice(last, m.index)));
+      frag.appendChild(buildMentionButton(m[0], publicId));
+      last = m.index + m[0].length;
+      linked++;
+    }
+    if (!linked) return;
+    if (last < body.length) frag.appendChild(document.createTextNode(body.slice(last)));
+    el.textContent = '';
+    el.appendChild(frag);
+  }
+
+  async function loadMentions(kind, ids){
+    const keys = Array.from(new Set((ids || []).filter(Boolean)))
+      .filter(function(id){ return mentionBodyEls.has(kind + ':' + id); });
+    if (!keys.length || !readClient) return;
+    const column = kind === 'post' ? 'post_id' : 'comment_id';
+    const grouped = new Map(); // source id -> Map(handle -> public_id)
+    try {
+      for (let i = 0; i < keys.length; i += MENTION_BATCH) {
+        let request = readClient
+          .from('community_mentions_public')
+          .select('post_id, comment_id, handle, mentioned_public_id')
+          .in(column, keys.slice(i, i + MENTION_BATCH));
+        if (kind === 'post') request = request.is('comment_id', null);
+        const { data, error } = await request;
+        if (error) throw error;
+        (data || []).forEach(function(r){
+          const src = r[column];
+          if (!src || !r.handle || !r.mentioned_public_id) return;
+          if (!grouped.has(src)) grouped.set(src, new Map());
+          grouped.get(src).set(String(r.handle).toLowerCase(), r.mentioned_public_id);
+        });
+      }
+    } catch(err){ return; /* best-effort only — text stays plain */ }
+    grouped.forEach(function(byHandle, src){
+      const entry = mentionBodyEls.get(kind + ':' + src);
+      if (entry) { try { paintMentions(entry.el, entry.body, byHandle); } catch(err){} }
+    });
   }
 
   // ---------- Recent posts in the profile panel (Phase 7D) ----------
@@ -10916,6 +11002,7 @@ const FPRBadge = (function(){
     bodyEl.style.margin = '4px 0 0';
     bodyEl.style.fontSize = '.9rem';
     bodyEl.textContent = comment.body || ''; // plain text only — no linkification
+    registerMentionBody('comment', comment.id, bodyEl, comment.body || ''); // stored @mentions only (Phase 8B-3)
     row.appendChild(bodyEl);
 
     row.appendChild(buildReactionBar('comment', comment.id, row));
@@ -11255,6 +11342,7 @@ const FPRBadge = (function(){
         });
       });
       loadAuthorAvatars(comments.map(function(c){ return c.author_public_id; }));
+      loadMentions('comment', comments.map(function(c){ return c.id; }));
     } catch(err){
       ui.notice.style.display = 'block';
     }
@@ -11280,6 +11368,7 @@ const FPRBadge = (function(){
     feedEl.innerHTML = ''; // clearing only; every node re-added below is built via createElement/textContent
     reactionBars = new Map(); // the old cards (and their bars) are gone
     authorAvatarEls = new Map(); // and their author avatars
+    mentionBodyEls = new Map(); // and their mention-bearing bodies (comments re-register when opened)
     if (!posts || posts.length === 0){
       feedEmpty.textContent = activeSearch
         ? 'No published posts match your search.'
@@ -11319,6 +11408,7 @@ const FPRBadge = (function(){
       }
       loadReactionState(posts.map(p => p.id));
       loadAuthorAvatars(posts.map(p => p.author_public_id));
+      loadMentions('post', posts.map(p => p.id));
     } catch(err){
       if (reqId !== feedReqSeq) return;
       // Failure here never breaks the rest of the site — just this
