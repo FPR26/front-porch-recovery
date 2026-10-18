@@ -740,6 +740,16 @@
   .account-following-item .member-avatar-sm{width:32px; height:32px; font-size:.85rem;}
   .account-following-name{font-weight:600; font-size:.92rem;}
   .account-following-since{display:block; font-size:.75rem; font-weight:400; color:var(--charcoal-soft);}
+  /* Phase 9A-3: block control + own Blocked members list */
+  .member-profile-block{display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin-top:10px; font-size:.85rem;}
+  .member-profile-block[hidden]{display:none !important;}
+  .member-profile-blocked-label{font-weight:600; color:var(--charcoal-soft);}
+  .member-block-link{background:none; border:none; padding:0; margin:0; font:inherit; font-size:.82rem; color:var(--charcoal-soft); text-decoration:underline; text-underline-offset:3px; cursor:pointer;}
+  .member-block-link:hover{color:var(--charcoal);}
+  .member-block-link:disabled{opacity:.6; cursor:default;}
+  .account-blocked-item{display:flex; align-items:center; gap:10px; background:var(--white); border:1px solid var(--line); border-radius:10px; padding:8px 10px;}
+  .account-blocked-item .member-avatar-sm{width:32px; height:32px; font-size:.85rem;}
+  .account-blocked-item .member-block-link{margin-left:auto; flex:none;}
   /* Phase 8B-2: handle field + profile panel @handle */
   .account-handle-row{display:flex; align-items:center; gap:6px;}
   .account-handle-at{font-weight:700; color:var(--charcoal-soft);}
@@ -2050,6 +2060,10 @@
       <span id="member-profile-following-label" class="member-profile-following-label" hidden>&#10003; Following</span>
       <button type="button" class="btn btn-primary" id="member-profile-follow-btn">Follow</button>
     </div>
+    <div id="member-profile-block" class="member-profile-block" hidden>
+      <span id="member-profile-blocked-label" class="member-profile-blocked-label" hidden>You've blocked this member</span>
+      <button type="button" class="member-block-link" id="member-profile-block-btn">Block member</button>
+    </div>
     <p id="member-profile-follow-status" class="status-msg" role="status" aria-live="polite"></p>
     <p id="member-profile-bio" class="ms-modal-text member-profile-bio" hidden></p>
     <p id="member-profile-status" class="status-msg" role="status" aria-live="polite"></p>
@@ -2161,6 +2175,15 @@
         <p class="status-msg" id="account-following-status" role="status" aria-live="polite"></p>
         <ul id="account-following-list" class="account-following-list"></ul>
         <p id="account-following-empty" class="hint" style="font-size:.88rem; color:var(--charcoal-soft); margin-top:8px;" hidden>You're not following anyone yet.</p>
+      </section>
+
+      <!-- Phase 9A-3: the signed-in member's own, private Blocked members list. -->
+      <section id="account-blocked" class="account-profile" aria-labelledby="account-blocked-title">
+        <h3 class="account-profile-title" id="account-blocked-title">Blocked members</h3>
+        <p class="hint" style="font-size:.82rem; color:var(--charcoal-soft);">Only you can see this list, and blocked members aren't told. You stop following each other, and they can't follow you, @mention you, or reply to your comments. Public posts stay visible.</p>
+        <p class="status-msg" id="account-blocked-status" role="status" aria-live="polite"></p>
+        <ul id="account-blocked-list" class="account-following-list"></ul>
+        <p id="account-blocked-empty" class="hint" style="font-size:.88rem; color:var(--charcoal-soft); margin-top:8px;" hidden>You haven't blocked anyone.</p>
       </section>
 
       <button type="button" class="btn btn-outline btn-block" style="margin-top:14px;" data-account-action="signout">Sign out</button>
@@ -9117,6 +9140,7 @@ const FPRBadge = (function(){
     if (client) emailInput.focus();
     if (profileUserId) loadProfile(); // Phase 7B: always show the current saved profile
     if (profileUserId) loadFollowing(); // Phase 8A
+    if (profileUserId) loadBlocked(); // Phase 9A-3
   }
   function closeModal(){
     modal.hidden = true;
@@ -9157,7 +9181,8 @@ const FPRBadge = (function(){
       profileUserId = userId;
       resetProfile();
       resetFollowing();
-      if (userId && !modal.hidden) { loadProfile(); loadFollowing(); }
+      resetBlocked();
+      if (userId && !modal.hidden) { loadProfile(); loadFollowing(); loadBlocked(); }
     }
   }
 
@@ -9687,6 +9712,117 @@ const FPRBadge = (function(){
   });
 
   resetFollowing();
+
+  /* ---------- Own Blocked members list (Phase 9A-3) ----------
+     Private to the signed-in member: loaded only through
+     get_my_blocked_members() (public_id, display name, photo, handle,
+     blocked date; never an auth id or email). Unblock goes through
+     unblock_member and never restores old follows. A block or unblock
+     anywhere fires fpr:blockchange, which refreshes this list and the
+     Following list (blocking removes follows both ways). */
+  const blockedSection = document.getElementById('account-blocked');
+  const blockedList = document.getElementById('account-blocked-list');
+  const blockedEmpty = document.getElementById('account-blocked-empty');
+  const blockedStatus = document.getElementById('account-blocked-status');
+  let blockedLoadSeq = 0;
+
+  function resetBlocked(){
+    blockedLoadSeq++;
+    blockedList.replaceChildren();
+    blockedEmpty.hidden = true;
+    setMsg(blockedStatus, '', '');
+    blockedSection.hidden = !profileUserId;
+  }
+
+  function buildBlockedItem(m){
+    const li = document.createElement('li');
+    li.className = 'account-blocked-item';
+    const name = m.display_name || 'Community member';
+    const initial = document.createElement('span');
+    initial.className = 'member-avatar-sm';
+    initial.setAttribute('aria-hidden', 'true');
+    initial.textContent = name.trim().charAt(0).toUpperCase() || '?';
+    li.appendChild(initial);
+    const url = m.avatar_path ? avatarPublicUrl(m.avatar_path) : '';
+    if (url) {
+      const img = document.createElement('img');
+      img.className = 'member-avatar-sm';
+      img.alt = '';
+      img.setAttribute('aria-hidden', 'true');
+      img.onerror = function(){ if (img.isConnected) img.replaceWith(initial); };
+      img.src = url;
+      initial.replaceWith(img);
+    }
+    const text = document.createElement('span');
+    const nameEl = document.createElement('span');
+    nameEl.className = 'account-following-name';
+    nameEl.textContent = name;
+    text.appendChild(nameEl);
+    const bits = [];
+    if (m.handle) bits.push('@' + m.handle);
+    if (m.blocked_at) {
+      let since = '';
+      try { since = new Date(m.blocked_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); } catch(err){}
+      if (since) bits.push('Blocked ' + since);
+    }
+    if (bits.length) {
+      const meta = document.createElement('span');
+      meta.className = 'account-following-since';
+      meta.textContent = bits.join(' · ');
+      text.appendChild(meta);
+    }
+    li.appendChild(text);
+    const unblockBtn = document.createElement('button');
+    unblockBtn.type = 'button';
+    unblockBtn.className = 'member-block-link';
+    unblockBtn.textContent = 'Unblock';
+    unblockBtn.setAttribute('aria-label', 'Unblock ' + name);
+    unblockBtn.addEventListener('click', async function(){
+      if (!client || !profileUserId) return;
+      if (!window.confirm('Unblock ' + name + '? They’ll be able to follow and @mention you again. Old follows aren’t restored.')) return;
+      unblockBtn.disabled = true;
+      setMsg(blockedStatus, '', '');
+      try {
+        const { error } = await client.rpc('unblock_member', { target_public_id: m.public_id });
+        if (error) throw error;
+        try { document.dispatchEvent(new CustomEvent('fpr:blockchange', { detail: { publicId: m.public_id, blocked: false, source: 'account' } })); } catch(err){}
+      } catch(err){
+        unblockBtn.disabled = false;
+        setMsg(blockedStatus, 'error', "That member couldn't be unblocked right now. Please try again.");
+      }
+    });
+    li.appendChild(unblockBtn);
+    return li;
+  }
+
+  async function loadBlocked(){
+    if (!client || !profileUserId) { resetBlocked(); return; }
+    const seq = ++blockedLoadSeq;
+    blockedSection.hidden = false;
+    setMsg(blockedStatus, 'info', 'Loading...');
+    try {
+      const { data, error } = await client.rpc('get_my_blocked_members');
+      if (seq !== blockedLoadSeq) return;
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      blockedList.replaceChildren();
+      rows.forEach(function(m){ blockedList.appendChild(buildBlockedItem(m)); });
+      blockedEmpty.hidden = rows.length !== 0;
+      setMsg(blockedStatus, '', '');
+    } catch(err){
+      if (seq !== blockedLoadSeq) return;
+      setMsg(blockedStatus, 'error', "Your Blocked members list couldn't be loaded right now.");
+    }
+  }
+
+  // Listeners only reload; they never dispatch, so there's no refresh loop.
+  document.addEventListener('fpr:blockchange', function(){
+    if (!profileUserId) return;
+    loadBlocked();
+    loadFollowing();
+  });
+
+  resetBlocked();
 
   /* Explicit magic-link callback handling. Supabase can send a user back
      here two different ways, and both must be supported without relying
@@ -10497,7 +10633,7 @@ const FPRBadge = (function(){
 
   // ---------- Follow / Unfollow (Phase 8A) ----------
   // Shown only to a signed-in viewer looking at someone else's profile.
-  // State comes from get_follow_state (is_self / following); writes go
+  // State comes from get_member_relationship (Phase 9A-3); writes go
   // through follow_member / unfollow_member only. Follows are private:
   // no counts, no lists of other people's follows.
   const followWrap = document.getElementById('member-profile-follow');
@@ -10508,8 +10644,30 @@ const FPRBadge = (function(){
   let followState = null;
   let followBusy = false;
 
+  // Phase 9A-3: state now comes from get_member_relationship. Follow is
+  // offered only when the viewer hasn't blocked this member and the
+  // backend says following is possible (or they already follow). A block
+  // by the other member only ever shows up as can_follow = false, so the
+  // control quietly disappears with no reason given.
+  const blockWrap = document.getElementById('member-profile-block');
+  const blockBtn = document.getElementById('member-profile-block-btn');
+  const blockedLabel = document.getElementById('member-profile-blocked-label');
+  let blockBusy = false;
+
+  function renderBlockControl(){
+    if (!followState || followState.is_self || !currentSession) { blockWrap.hidden = true; return; }
+    const blocked = !!followState.blocked_by_me;
+    blockWrap.hidden = false;
+    blockedLabel.hidden = !blocked;
+    blockBtn.textContent = blocked ? 'Unblock' : 'Block member';
+    blockBtn.setAttribute('aria-label', (blocked ? 'Unblock ' : 'Block ') + (memberName.textContent || 'this member'));
+    blockBtn.disabled = blockBusy || followBusy;
+  }
+
   function renderFollowControl(){
-    if (!followState || followState.is_self || !currentSession) { followWrap.hidden = true; return; }
+    renderBlockControl();
+    if (!followState || followState.is_self || !currentSession || followState.blocked_by_me
+        || !(followState.can_follow || followState.following)) { followWrap.hidden = true; return; }
     const following = !!followState.following;
     followWrap.hidden = false;
     followingLabel.hidden = !following;
@@ -10523,14 +10681,16 @@ const FPRBadge = (function(){
     followTargetId = null;
     followState = null;
     followBusy = false;
+    blockBusy = false;
     followWrap.hidden = true;
+    blockWrap.hidden = true;
     setStatus(followStatus, '', '');
   }
 
   async function loadFollowState(publicId, seq){
     if (!client || !currentSession) return;
     try {
-      const { data, error } = await client.rpc('get_follow_state', { target_public_id: publicId });
+      const { data, error } = await client.rpc('get_member_relationship', { target_public_id: publicId });
       if (seq !== memberProfileSeq) return;
       if (error) throw error;
       followTargetId = publicId;
@@ -10538,9 +10698,56 @@ const FPRBadge = (function(){
       renderFollowControl();
     } catch(err){
       if (seq !== memberProfileSeq) return;
-      followWrap.hidden = true; // follow is optional; the profile itself still shows
+      followWrap.hidden = true; // follow/block are optional; the profile itself still shows
+      blockWrap.hidden = true;
     }
   }
+
+  // Re-reads the relationship for the member currently open, if any.
+  function refreshOpenRelationship(publicId){
+    if (!followTargetId || (publicId && publicId !== followTargetId) || memberModal.hidden) return;
+    loadFollowState(followTargetId, memberProfileSeq);
+  }
+
+  if (blockBtn) {
+    blockBtn.addEventListener('click', async function(){
+      if (blockBusy || followBusy || !followTargetId || !followState || !client || !currentSession) return;
+      const targetId = followTargetId;
+      const name = memberName.textContent || 'this member';
+      const blocking = !followState.blocked_by_me;
+      const question = blocking
+        ? 'Block ' + name + '? They won’t be told. You’ll both stop following each other, and they won’t be able to follow you, @mention you, or reply to your comments. Their public posts stay visible.'
+        : 'Unblock ' + name + '? They’ll be able to follow and @mention you again. Old follows aren’t restored.';
+      if (!window.confirm(question)) return;
+      blockBusy = true;
+      renderFollowControl();
+      setStatus(followStatus, '', '');
+      try {
+        const { error } = await client.rpc(blocking ? 'block_member' : 'unblock_member', { target_public_id: targetId });
+        if (error) throw error;
+        if (followTargetId === targetId) {
+          setStatus(followStatus, 'info', blocking ? 'Blocked.' : 'Unblocked.');
+        }
+        try { document.dispatchEvent(new CustomEvent('fpr:blockchange', { detail: { publicId: targetId, blocked: blocking, source: 'panel' } })); } catch(err){}
+      } catch(err){
+        if (followTargetId === targetId) {
+          setStatus(followStatus, 'error', blocking ? "This member couldn't be blocked right now. Please try again." : "This member couldn't be unblocked right now. Please try again.");
+        }
+      } finally {
+        blockBusy = false;
+        refreshOpenRelationship(targetId);
+        renderFollowControl();
+      }
+    });
+  }
+
+  // A block/unblock elsewhere (the account modal's Blocked members list)
+  // refreshes the open panel. Listeners only reload; they never dispatch.
+  document.addEventListener('fpr:blockchange', function(e){
+    const d = (e && e.detail) || {};
+    if (d.source === 'panel') return; // the panel already refreshed itself
+    refreshOpenRelationship(d.publicId);
+  });
 
   if (followBtn) {
     followBtn.addEventListener('click', async function(){
@@ -10559,7 +10766,14 @@ const FPRBadge = (function(){
         try { document.dispatchEvent(new CustomEvent('fpr:followchange', { detail: { publicId: targetId, following: !wasFollowing } })); } catch(err){}
       } catch(err){
         if (followTargetId === targetId) {
-          setStatus(followStatus, 'error', (err && err.message) ? err.message : 'Something went wrong. Please try again.');
+          // Phase 9A-3: a P0002 here can mean a block appeared in the
+          // meantime. Say nothing about who blocked whom; just re-read.
+          if (err && err.code === 'P0002') {
+            setStatus(followStatus, 'error', "This member can't be followed right now.");
+            refreshOpenRelationship(targetId);
+          } else {
+            setStatus(followStatus, 'error', (err && err.message) ? err.message : 'Something went wrong. Please try again.');
+          }
         }
       } finally {
         followBusy = false;
