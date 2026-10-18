@@ -1489,7 +1489,7 @@
             <button type="button" class="btn-link" id="community-notif-markall" style="font-size:.85rem;">Mark all as read</button>
           </div>
           <p id="community-notif-status" class="status-msg" role="status" aria-live="polite" style="margin-top:8px;"></p>
-          <p id="community-notif-empty" style="display:none; color:var(--charcoal-soft); font-size:.85rem; margin-top:8px;">No notifications yet. Replies to your comments, reactions to your posts and comments, and @mentions of you will show up here.</p>
+          <p id="community-notif-empty" style="display:none; color:var(--charcoal-soft); font-size:.85rem; margin-top:8px;">No notifications yet. Replies to your comments, reactions to your posts and comments, @mentions of you, and new followers will show up here.</p>
           <div id="community-notif-list" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;"></div>
         </div>
       </div>
@@ -1798,7 +1798,7 @@
         <li>if you choose one: a public handle (like @porchfriend), shown on your Community profile and wherever someone mentions you. If you're mentioned in a public post, comment, or reply, that mention is public along with the rest of that content;</li>
         <li>if you add one: a recovery date, plus who can see it — only you (the default), signed-in members, or everyone;</li>
         <li>what you share in the Community: your posts, comments, replies, reactions, reports, and the notifications about them; and</li>
-        <li>who you follow. Your Following list is visible only to you; follows aren't shown publicly, and there are no follower counts.</li>
+        <li>who you follow. Your Following list isn't public, and there are no public follower lists or counts. When you follow a member, they get an in-app notification saying you followed them (it's removed if you unfollow).</li>
       </ul>
       <p>The Recovery Counter and Daily Check-In are not part of your account. They stay in your browser as described above, even when you're signed in. You can change or remove your bio, photo, and recovery date at any time from your profile.</p>
 
@@ -2157,7 +2157,7 @@
       <!-- Phase 8A: the signed-in member's own, private Following list. -->
       <section id="account-following" class="account-profile" aria-labelledby="account-following-title">
         <h3 class="account-profile-title" id="account-following-title">Following</h3>
-        <p class="hint" style="font-size:.82rem; color:var(--charcoal-soft);">Only you can see who you follow.</p>
+        <p class="hint" style="font-size:.82rem; color:var(--charcoal-soft);">Your Following list is private. Members you follow are notified when you follow them.</p>
         <p class="status-msg" id="account-following-status" role="status" aria-live="polite"></p>
         <ul id="account-following-list" class="account-following-list"></ul>
         <p id="account-following-empty" class="hint" style="font-size:.88rem; color:var(--charcoal-soft); margin-top:8px;" hidden>You're not following anyone yet.</p>
@@ -10852,6 +10852,7 @@ const FPRBadge = (function(){
     if (n.notification_type === 'mention_post') return name + ' mentioned you in a post';
     if (n.notification_type === 'mention_comment') return name + ' mentioned you in a comment';
     if (n.notification_type === 'mention_reply') return name + ' mentioned you in a reply';
+    if (n.notification_type === 'follow') return name + ' followed you';
     return name + ' responded to something you shared';
   }
 
@@ -10904,7 +10905,11 @@ const FPRBadge = (function(){
     detail.style.fontSize = '.82rem';
     detail.style.whiteSpace = 'pre-wrap';
     detail.style.color = 'var(--charcoal-soft)';
-    if (n.target_available && n.excerpt) {
+    const isFollow = n.notification_type === 'follow';
+    if (isFollow) {
+      // Phase 8C-3: no excerpt; only note when the profile can't be opened.
+      if (!(n.target_available && n.actor_public_id)) detail.textContent = "Their profile isn't available right now.";
+    } else if (n.target_available && n.excerpt) {
       detail.style.fontStyle = 'italic';
       detail.textContent = '“' + n.excerpt + (n.excerpt.length >= 140 ? '…' : '') + '”';
     } else if (!n.target_available) {
@@ -10917,7 +10922,18 @@ const FPRBadge = (function(){
     actions.style.gap = '12px';
     actions.style.marginTop = '6px';
 
-    if (n.target_available && n.post_id) {
+    if (isFollow && n.target_available && n.actor_public_id) {
+      const profileBtn = document.createElement('button');
+      profileBtn.type = 'button';
+      profileBtn.className = 'btn-link';
+      profileBtn.style.fontSize = '.8rem';
+      profileBtn.textContent = 'View profile';
+      profileBtn.addEventListener('click', async function(){
+        if (unread) await markNotificationRead(n.id);
+        try { document.dispatchEvent(new CustomEvent('fpr:openmemberprofile', { detail: { publicId: n.actor_public_id } })); } catch(err){}
+      });
+      actions.appendChild(profileBtn);
+    } else if (!isFollow && n.target_available && n.post_id) {
       const viewBtn = document.createElement('button');
       viewBtn.type = 'button';
       viewBtn.className = 'btn-link';
