@@ -15,6 +15,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 8A — Following** — private member follows: Follow / Unfollow from a member's profile panel and a private Following list. No public follower lists or counts.
 - **Phase 8B — Handles and @mentions** — complete: optional unique public handles, clickable @mentions in posts, comments and replies, and @handle autocomplete in the composers.
 - **Phase 8C — Connection notifications** — complete: in-app notifications when you're @mentioned or followed, alongside the existing reply and reaction notifications.
+- **Phase 9A — Member blocking** — complete: private blocking from a member's profile, with a private Blocked members list. Muting (hiding someone's content) is a later phase.
 
 ## Community features
 
@@ -31,6 +32,11 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - Admin moderation in `admin.html` (hide, restore, remove; reports resolve/dismiss; member profile moderation)
 - Member profiles: edit your own profile from the account window; click an author to see their profile and recent posts
 - Following: your Following list is private, and there are no public follower lists or counts; a member you follow gets an in-app notification saying you followed them (removed if you unfollow)
+- Blocking:
+  - **Block member** / **Unblock** in a member's profile panel (with confirmation), and a private **Blocked members** list with Unblock in the account window. The blocked person isn't told.
+  - Blocking removes follows both ways; unblocking doesn't restore them.
+  - While either member has blocked the other, they can't follow each other, can't create new @mentions of each other (or find each other in autocomplete), and can't reply directly to each other's comments. New notifications between them are suppressed.
+  - Public posts and comments stay visible to everyone, older mentions stay, and top-level comments and reactions are still allowed. Hiding someone's content (muting) is not part of 9A.
 - Handles: an optional, unique public `@handle` (3–24 characters: lowercase letters, numbers and single underscores, starting with a letter; changeable once every 30 days; admins can reset but not assign one)
 - @mentions: `@handle` in a post, comment or reply links to that member's profile. Mentions are stored by the database when the text is saved and bound to the member's public id, so older text keeps working after a handle change (see `supabase/README.md` for the one edit-after-rename caveat)
 - @handle autocomplete for signed-in members in the post, comment and reply boxes

@@ -519,6 +519,59 @@ Migrations `phase8c1_mention_notifications` and `phase8c3_follow_notifications`,
 
 `phase8a_member_follows`, `phase8b1_handles_mentions_foundation`, `phase8c1_mention_notifications` and `phase8c3_follow_notifications` were applied manually in the Supabase SQL Editor. They are **not** recorded in `supabase_migrations.schema_migrations`, which still lists only the earlier migrations. The files in `supabase/migrations/` are the record of what was applied.
 
+## Phase 9A: member blocking
+
+Migration `phase9a_blocking_foundation`, applied manually in the Supabase SQL Editor. 9A-3 and 9A-4 are frontend and docs only.
+
+Blocking is an **interaction-safety** feature. It does no content filtering: public posts, comments and profiles look the same to everyone, including a blocked pair.
+
+### `member_blocks`
+
+- `blocker_user_id` and `blocked_user_id` both reference `auth.users` with `ON DELETE CASCADE`, plus `created_at`.
+- Primary key `(blocker_user_id, blocked_user_id)`, so there's one row per direction. `member_blocks_not_self_check` stops self-blocks, and there's an index on `blocked_user_id`.
+- RLS is on with no policies, and `anon`/`authenticated` have no table privileges at all. Every read and write goes through the RPCs. Auth ids stay internal; the RPCs use `profiles.public_id`.
+- Admins get no block-list access in the app. Member review belongs to a later reporting phase.
+
+### RPCs
+
+All are `security definer` with `search_path = public, pg_temp`, executable by `authenticated` only.
+
+- **`block_member(target_public_id)`:**
+  - Self gets `22023` and an unknown id gets `P0002`. The target only needs a profile, not published content.
+  - It takes the pair lock, inserts the block (repeat calls are harmless) and deletes follows **in both directions**. The 8C-3 follow delete trigger removes the matching follow notifications.
+  - Returns `(blocked, blocked_at)`.
+- **`unblock_member(target_public_id)`:** removes only the caller's own block and returns whether a row was removed. Repeat calls are harmless. **Follows are not restored.**
+- **`get_member_relationship(target_public_id)`:** returns `is_self`, `following`, `followed_at`, `blocked_by_me`, `blocked_at` and `can_follow`.
+  - It **never exposes "blocked by them"**. A block by the other member only shows up as `can_follow = false`, which is also false for unlisted members.
+  - The profile panel uses this. `get_follow_state` is unchanged and kept for compatibility.
+- **`get_my_blocked_members()`:** the caller's own list only, with `public_id`, `display_name`, `avatar_path`, `handle` and `blocked_at`, newest first. No email, auth ids or recovery data.
+
+### Internal helpers and guards
+
+The helpers and guards have EXECUTE revoked from `public`, `anon` and `authenticated`, so none of them can be called directly.
+
+- **`is_block_between(a, b)`:** true if either member blocked the other. Every check uses it.
+- **`lock_member_pair(a, b)`:** a transaction advisory lock on the unordered pair. Both `block_member` and the follow guard take it, so a block and a follow can't race past each other.
+- **Follow guard (`member_follows_block_guard`):** BEFORE INSERT on `member_follows`. It takes the pair lock and rejects any follow across a block with a generic `P0002` ("This member can't be followed right now."). It covers every follow write path; `follow_member` is unchanged.
+- **Reply guard (`community_comments_reply_block_guard`):** BEFORE INSERT on `community_comments`, **replies only**. A reply to the other member's comment gets a generic `P0002` ("This reply can't be posted right now."). Top-level comments and reactions stay allowed in 9A.
+- **Notification guard (`community_notifications_block_guard`):** BEFORE INSERT on `community_notifications`. It silently skips any notification whose recipient and actor are a blocked pair: replies, reactions, mentions, follows, and any future type. Historical non-follow notifications are kept.
+
+### Recreated functions (same signatures)
+
+- **`search_member_handles`:** excludes members who have a block with the caller in either direction, applied before the 8-result limit.
+- **`sync_community_mentions`:** doesn't resolve a handle whose owner has a block with the content's author. No new mention row is created, so there's no link and no notification, and the typed text stays plain.
+
+### Known current behaviour
+
+- **Historical mentions:** mention rows created before a block stay, and still link, **unless that post or comment is edited**. The re-sync then drops the mention across the block, just like edit-after-rename (8B).
+- **Mentions across a block:** these are covered in depth by three checks: the autocomplete filter, the mention-sync filter and the notification guard. A mention written at the exact moment a block is created may slip past the first two, and the notification guard is the backstop.
+- **Inferring a block:** a blocked member may be able to infer the block (they can't follow, find or reply to the blocker), but no RPC or UI says who blocked whom.
+- **Account deletion:** blocks are removed by the FK cascade. This wasn't live-tested because destructive `DELETE` tests are blocked in the tooling; the FK structure was verified.
+
+### Migration history
+
+`phase9a_blocking_foundation` was applied manually in the Supabase SQL Editor and is **not** recorded in `supabase_migrations.schema_migrations`. Together with 8A, 8B-1, 8C-1 and 8C-3, five migrations have now been applied this way. The history table still has only the earlier 9 rows. No history rows have been added by hand.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
