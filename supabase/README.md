@@ -447,7 +447,77 @@ Migration `phase8b1_handles_mentions_foundation`, applied directly in the Supaba
   - Composer autocomplete calls `search_member_handles` after a 300 ms pause, and only for signed-in members typing `@` plus 2 or more characters at a valid boundary. It only inserts text; the trigger decides the stored mentions.
 - **Old text keeps its binding:** a mention stays bound to the member's identity (`mentioned_public_id`). If they later change handle, unedited text still shows `@oldname` and still opens their profile.
 - **Known behaviour:** if a post or comment that says `@oldname` is *edited* after that member changed handle, the re-sync resolves only current handles, so that old mention is dropped and `@oldname` becomes plain text. This is accepted for Phase 8B; handle aliases/history are out of scope.
-- **Notifications:** none for mentions in 8B (planned for Phase 8C).
+- **Notifications:** mention notifications were added in Phase 8C (below).
+
+## Phase 8C: mention and follow notifications
+
+Migrations `phase8c1_mention_notifications` and `phase8c3_follow_notifications`, both applied directly in the Supabase SQL Editor. 8C-2 and 8C-4 are frontend and docs only.
+
+### Schema (8C-1)
+
+- `community_notifications.notification_type` allows 7 types:
+  - existing: `comment_reply`, `post_reaction`, `comment_reaction` (unchanged behaviour);
+  - new: `mention_post`, `mention_comment`, `mention_reply`, `follow`.
+- `post_id` is now nullable. `community_notifications_shape_check` fixes which ids each type carries:
+  - `mention_post`: `post_id` only;
+  - `mention_comment`: `post_id` + `comment_id`;
+  - `mention_reply`: `post_id` + `comment_id` (the parent comment) + `reply_comment_id` (the reply), the same shape as `comment_reply`;
+  - `follow`: no post or comment ids.
+- `actor_user_id` is not required by the shape check, because deleting the actor's account sets it to `NULL`. `community_notifications_not_self_check` still blocks self-notifications.
+- **Dedupe:** partial unique indexes allow one notification per recipient per source:
+  - `mention_post` on `(recipient, post_id)`;
+  - `mention_comment` on `(recipient, comment_id)`;
+  - `mention_reply` on `(recipient, reply_comment_id)`;
+  - `follow` on `(recipient, actor)`.
+  Reply and reaction notifications keep their Phase 6C behaviour.
+
+### Mention notifications (8C-1)
+
+- An `AFTER INSERT` trigger on `community_mentions` (`community_mentions_notify`) creates them. The 8B-1 sync only inserts genuinely new mention rows, so:
+  - mentions that survive an edit unchanged, removed mentions and handle renames never notify;
+  - a mention added in an edit notifies once;
+  - removing and re-adding the same member doesn't notify twice (dedupe index).
+- **Skipped:** self-mentions; unpublished posts or comments (or an unpublished parent); and a reply that mentions the parent comment's author, who already gets a `comment_reply` for it.
+- The actor is the content's author. Volume stays bounded by the 8B-1 cap of 10 mentions per source.
+
+### Follow notifications (8C-3)
+
+- An `AFTER INSERT` trigger on `member_follows` (`member_follows_notify_insert`) creates one `follow` notification for the followed member. `follow_member` inserts with `ON CONFLICT DO NOTHING`, so a repeat follow never notifies again.
+- An `AFTER DELETE` trigger (`member_follows_notify_delete`) removes only that pair's follow notification, read or unread. Unfollowing removes it, and following again later creates a fresh one. A follower never has more than one follow notification with the same member at a time.
+- `follow_member` / `unfollow_member` are unchanged. Following lists stay private; the followed member is told who followed them (privacy page updated).
+
+### Read model and security
+
+- `list_my_community_notifications(p_limit, p_before)` was dropped and recreated in 8C-1. It has the same name and arguments and the same columns, plus `actor_public_id` and `actor_avatar_path`.
+  - Those two are filled only when the actor is listed in `community_member_profiles_public`.
+  - No auth ids, recipient ids or emails are ever returned.
+- **`target_available`:**
+  - mentions: the source (and its post/parent) must be visible in the public views;
+  - follow: the actor is listed.
+  - When unavailable, ids and the excerpt come back `NULL`.
+- **Excerpts:** the post body for `mention_post`, the comment for `mention_comment`, the reply for `mention_reply`, and none for `follow`.
+- **Access:**
+  - Reads stay recipient-private (`auth.uid()`). `list`, `count`, `mark one` and `mark all` are executable by `authenticated` only.
+  - All three trigger functions are `security definer` with `search_path = public, pg_temp`, and EXECUTE is revoked from `public`, `anon` and `authenticated`, so they can't be called directly.
+  - The frontend never writes notifications; only the triggers and the existing 6C RPCs do.
+
+### Frontend (8C-2, 8C-4)
+
+- Rows show the actor's photo when listed, otherwise their initial, or "?" when the actor is gone.
+- Mention **View** marks the item read, focuses the post, opens its comments, then scrolls to and highlights the exact `data-comment-id` (falling back to the post). Reply and comment-reaction notifications use the same targeting.
+- Follow **View profile** marks the item read and opens the member profile panel.
+- Opening the panel marks nothing read.
+- The unread count refreshes on Community visits, after read actions, and once on `visibilitychange` when the tab becomes visible on the Community page while signed in. There's no polling or realtime.
+
+### Known current behaviour
+
+- **Unlisted followers:** a follower who hasn't published any Community content isn't in `community_member_profiles_public`. Their follow notification shows their display name but no photo, no public id and no **View profile** button ("Their profile isn't available right now."). This is expected.
+- **Deleted follower account:** not live-tested, because destructive `DELETE` tests are blocked in the tooling. The read model degrades safely to "A member" with no profile button.
+- **Edit after rename (8B):** editing text that still says `@oldname` after that member changed handle drops the mention, so no new notification is created for it.
+
+### Migration history
+
+`phase8a_member_follows`, `phase8b1_handles_mentions_foundation`, `phase8c1_mention_notifications` and `phase8c3_follow_notifications` were applied manually in the Supabase SQL Editor. They are **not** recorded in `supabase_migrations.schema_migrations`, which still lists only the earlier migrations. The files in `supabase/migrations/` are the record of what was applied.
 
 ## What's next
 

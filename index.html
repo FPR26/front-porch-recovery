@@ -11840,6 +11840,14 @@ const FPRBadge = (function(){
   // A direct link/bookmark to #community fires goTo() before this
   // listener exists, so check once on startup too.
   if (location.hash === '#community') { loadFeed(); }
+  // Phase 8C-4: one unread-count refresh when the tab comes back into
+  // view on the Community page (signed in only). No polling, no realtime,
+  // nothing while hidden, and the open panel isn't reloaded.
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState !== 'visible' || !currentSession) return;
+    const communityPage = document.getElementById('page-community');
+    if (communityPage && communityPage.classList.contains('active')) refreshUnreadCount();
+  });
 
   // Phase 7B: the member changed their own display name/photo in the
   // account modal — re-read what's on screen so their posts/comments
