@@ -2095,6 +2095,22 @@
 <!-- ================= MILESTONE BADGE POPUP =================
      One dialog with three steps: prompt → choose a background → preview.
      Controlled by the "Badge UI" script (section 6 of the counter code). -->
+<div id="community-celebration-modal" class="ms-modal" hidden>
+  <div class="ms-modal-panel" role="dialog" aria-modal="true" aria-labelledby="community-celebration-title" style="max-width:560px;">
+    <button type="button" class="ms-modal-close" data-community-celebration-close aria-label="Close celebration">&times;</button>
+    <p class="ms-modal-kicker">Community growth</p>
+    <h2 id="community-celebration-title" class="ms-modal-title">Growing together</h2>
+    <p class="ms-modal-text">Thanks for helping this porch grow—one honest day at a time.</p>
+    <img id="community-celebration-image" alt="" hidden style="display:block; width:100%; height:auto; margin-top:18px; border-radius:12px;">
+    <p id="community-celebration-status" class="ms-modal-text" role="status" aria-live="polite"></p>
+    <div class="ms-modal-actions">
+      <button type="button" class="btn btn-amber" id="community-celebration-download" disabled>Download celebration card</button>
+      <button type="button" class="btn btn-outline" id="community-celebration-retry" hidden>Try again</button>
+      <button type="button" class="btn btn-outline" data-community-celebration-close>Close</button>
+    </div>
+  </div>
+</div>
+
 <div id="ms-modal" class="ms-modal" hidden>
   <div class="ms-modal-panel" role="dialog" aria-modal="true" aria-labelledby="ms-modal-title">
     <button type="button" class="ms-modal-close" data-ms-action="close" aria-label="Close">&times;</button>
@@ -10373,6 +10389,15 @@ const FPRBadge = (function(){
         const message = document.createElement('p');
         message.textContent = 'Thanks for helping this porch grow—one honest day at a time.';
         item.appendChild(message);
+        const celebrate = document.createElement('button');
+        celebrate.type = 'button';
+        celebrate.className = 'btn btn-primary';
+        celebrate.textContent = 'View celebration';
+        celebrate.style.margin = '0 8px 8px 0';
+        celebrate.addEventListener('click', function(){
+          document.dispatchEvent(new CustomEvent('fpr:celebratecommunity', { detail: { memberCount: m.member_count } }));
+        });
+        item.appendChild(celebrate);
         if (!m.read_at) {
           const button = document.createElement('button');
           button.type = 'button';
@@ -12620,6 +12645,139 @@ const FPRBadge = (function(){
     commentUI.forEach(function(ui){ if (ui.loaded) loadCommentsForPost(ui); });
   });
 })();
+/* ---------- Community celebration cards (separate from recovery badges) ---------- */
+function drawCommunityCelebration(ctx, logo, count){
+  const size = 1200;
+  ctx.fillStyle = '#F6F5F2';
+  ctx.fillRect(0, 0, size, size);
+  ctx.strokeStyle = '#D9A65B';
+  ctx.lineWidth = 5;
+  ctx.strokeRect(42, 42, size - 84, size - 84);
+  ctx.strokeStyle = '#A7B8A8';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(60, 60, size - 120, size - 120);
+  const width = 350;
+  const height = width * logo.height / logo.width;
+  ctx.drawImage(logo, (size - width) / 2, 115, width, height);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#4F5A50';
+  ctx.font = 'bold 28px Arial, sans-serif';
+  ctx.fillText('COMMUNITY MILESTONE', 600, 390);
+  ctx.fillStyle = '#1A1A1A';
+  ctx.font = 'bold 170px Georgia, serif';
+  ctx.fillText(count.toLocaleString('en-US'), 600, 605);
+  ctx.font = 'bold 42px Arial, sans-serif';
+  ctx.fillText('MEMBERS STRONG', 600, 675);
+  ctx.fillStyle = '#4F5A50';
+  ctx.font = '38px Georgia, serif';
+  ctx.fillText('One porch. Growing together.', 600, 790);
+  ctx.font = '30px Arial, sans-serif';
+  ctx.fillText('One honest day at a time.', 600, 850);
+  ctx.fillStyle = '#1A1A1A';
+  ctx.font = 'bold 34px Arial, sans-serif';
+  ctx.fillText('Front Porch Recovery', 600, 1020);
+  ctx.font = '22px Arial, sans-serif';
+  ctx.fillText('fpr26.github.io/front-porch-recovery', 600, 1065);
+}
+(function(){
+  const modal = document.getElementById('community-celebration-modal');
+  const preview = document.getElementById('community-celebration-image');
+  const title = document.getElementById('community-celebration-title');
+  const status = document.getElementById('community-celebration-status');
+  const download = document.getElementById('community-celebration-download');
+  const retry = document.getElementById('community-celebration-retry');
+  const closeButtons = modal.querySelectorAll('[data-community-celebration-close]');
+  const thresholds = [10,25,50,100,250,500,1000,2500,5000,10000];
+  let requestSeq = 0;
+  let returnFocus = null;
+  let imageUrl = null;
+  let currentCount = null;
+  function releaseImage(){
+    preview.hidden = true;
+    preview.removeAttribute('src');
+    if (imageUrl) URL.revokeObjectURL(imageUrl);
+    imageUrl = null;
+  }
+  function close(){
+    requestSeq++;
+    modal.hidden = true;
+    releaseImage();
+    if (!document.querySelector('.ms-modal:not([hidden])')) document.documentElement.classList.remove('ms-modal-open');
+    if (returnFocus && returnFocus.isConnected) returnFocus.focus();
+  }
+  async function prepare(){
+    const seq = ++requestSeq;
+    releaseImage();
+    download.disabled = true;
+    retry.hidden = true;
+    status.textContent = 'Preparing your celebration card…';
+    try {
+      const logo = await new Promise(function(resolve, reject){
+        const img = new Image();
+        const timeout = setTimeout(function(){ reject(new Error('Artwork timeout')); }, 8000);
+        img.onload = function(){ clearTimeout(timeout); resolve(img); };
+        img.onerror = function(){ clearTimeout(timeout); reject(new Error('Artwork unavailable')); };
+        img.src = CONFIG.brand.brandLogoUrl;
+      });
+      if (seq !== requestSeq || modal.hidden) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 1200;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas unavailable');
+      drawCommunityCelebration(ctx, logo, currentCount);
+      const blob = await new Promise(function(resolve, reject){
+        canvas.toBlob(function(value){ value ? resolve(value) : reject(new Error('Image unavailable')); }, 'image/png');
+      });
+      if (seq !== requestSeq || modal.hidden) return;
+      imageUrl = URL.createObjectURL(blob);
+      preview.src = imageUrl;
+      preview.alt = 'Front Porch Recovery community milestone: ' + currentCount.toLocaleString() + ' members strong. One porch. Growing together.';
+      preview.hidden = false;
+      download.disabled = false;
+      status.textContent = 'Your community celebration card is ready.';
+    } catch(err){
+      if (seq !== requestSeq || modal.hidden) return;
+      status.textContent = 'The card couldn’t be prepared. Please try again.';
+      retry.hidden = false;
+    }
+  }
+  document.addEventListener('fpr:celebratecommunity', function(e){
+    const count = Number(e.detail && e.detail.memberCount);
+    if (!thresholds.includes(count)) return;
+    returnFocus = document.activeElement;
+    currentCount = count;
+    title.textContent = 'We reached ' + count.toLocaleString() + ' members!';
+    modal.hidden = false;
+    document.documentElement.classList.add('ms-modal-open');
+    closeButtons[0].focus();
+    prepare();
+  });
+  download.addEventListener('click', function(){
+    if (!imageUrl || download.disabled) return;
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = 'front-porch-recovery-' + currentCount + '-members.png';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    status.textContent = 'Download requested. On iPhone, you may need to save the image from its preview to Photos or Files.';
+  });
+  retry.addEventListener('click', prepare);
+  closeButtons.forEach(function(button){ button.addEventListener('click', close); });
+  modal.addEventListener('click', function(e){ if (e.target === modal) close(); });
+  document.addEventListener('keydown', function(e){
+    if (modal.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    if (e.key !== 'Tab') return;
+    const focusable = Array.from(modal.querySelectorAll('button')).filter(function(button){ return !button.disabled && !button.hidden; });
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  document.addEventListener('fpr:pagechange', function(){ if (!modal.hidden) close(); });
+})();
+
 /* ---------- Installable app ----------
    Registers sw.js (offline support) when the site runs from its real web
    address, captures Android/desktop Chrome's install prompt for the
