@@ -78,7 +78,6 @@
   .support-fpr-payment h3{font-size:1.1rem; font-weight:700;}
   .support-fpr-payment p{margin-top:12px; line-height:1.65; color:var(--charcoal-soft);}
   .support-fpr-tag{font-size:1.2rem; font-weight:700; overflow-wrap:anywhere;}
-  .support-fpr-copy-status{font-size:.85rem;}
   .support-fpr-note{color:var(--sage-text); font-size:.88rem; line-height:1.65; max-width:65ch; margin-top:20px;}
   @media(max-width:479px){.support-fpr-actions .btn{width:100%;}}
 
@@ -1267,18 +1266,17 @@
       <div class="support-fpr-panel">
         <p class="hero-eyebrow" style="color:var(--sage-text);">Support FPR</p>
         <h2 id="support-fpr-title" style="margin-top:10px;">Help keep the porch light on.</h2>
-        <p class="support-fpr-intro">Front Porch Recovery is free to use. Keeping it here takes hosting, tools, development, and ongoing care. If this porch has been useful to you and you’re in a position to help, you can contribute through MoneyLion or buy a book or something from the shop to help support that work.</p>
+        <p class="support-fpr-intro">Front Porch Recovery is free to use. Keeping it here takes hosting, tools, development, and ongoing care. If this porch has been useful to you and you’re in a position to help, you can contribute through Cash App or buy a book or something from the shop to help support that work.</p>
         <div class="support-fpr-actions">
           <button type="button" class="btn btn-primary" data-nav="books">Explore the books</button>
           <a class="btn btn-outline" href="https://frontporchrecovery.etsy.com" target="_blank" rel="noopener noreferrer">Shop on Etsy</a>
         </div>
         <div class="support-fpr-payment">
-          <h3>Contribute directly with MoneyLion</h3>
-          <p>Already use MoneyLion? You can send support to our RoarTag:</p>
-          <p class="support-fpr-tag" id="support-moneylion-tag">$FPR26</p>
-          <button type="button" class="btn btn-outline" id="support-copy-moneylion" style="margin-top:12px;">Copy MoneyLion tag</button>
-          <p class="support-fpr-copy-status" id="support-copy-status" role="status" aria-live="polite"></p>
-          <p>In your MoneyLion Spend account, open <strong>Pay</strong> and search for <strong>$FPR26</strong>. Check the recipient before choosing an amount and sending. Payments take place in MoneyLion.</p>
+          <h3>Contribute directly with Cash App</h3>
+          <p>Your support helps keep Front Porch Recovery going. Choose an amount that works for you.</p>
+          <a class="btn btn-amber" href="https://cash.app/$FPR2026" target="_blank" rel="noopener noreferrer" style="margin-top:16px;">Support FPR on Cash App</a>
+          <p class="support-fpr-tag">$FPR2026 · Front Porch Recovery</p>
+          <p style="font-size:.85rem;">Opens Cash App in a new tab. Check that the recipient is Front Porch Recovery before sending.</p>
         </div>
         <p class="support-fpr-note">Support is always optional. You don’t need to buy anything to belong here or use the recovery tools and community. Taking care of yourself comes first.</p>
       </div>
@@ -7406,21 +7404,6 @@ document.body.addEventListener('click', (e) => {
   const navBtn = e.target.closest('[data-nav]');
   if(navBtn){ e.preventDefault(); goTo(navBtn.dataset.nav, { scrollTarget: navBtn.dataset.scrollTarget }); return; }
 });
-/* ---------- Support FPR: copy the public MoneyLion tag ---------- */
-(function(){
-  const button = document.getElementById('support-copy-moneylion');
-  const status = document.getElementById('support-copy-status');
-  if (!button || !status) return;
-  button.addEventListener('click', async function(){
-    try {
-      await navigator.clipboard.writeText(document.getElementById('support-moneylion-tag').textContent.trim());
-      status.textContent = 'Copied $FPR26. Open MoneyLion to send support.';
-    } catch(err){
-      status.textContent = 'Copy wasn’t available. Press and hold or select $FPR26 above to copy it.';
-    }
-  });
-})();
-
 /* ---------- Mobile menu: open/close, focus trap, Escape, scroll lock ---------- */
 (function(){
   const openBtn = document.getElementById('menuOpenBtn');
