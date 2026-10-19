@@ -12399,7 +12399,7 @@ const FPRBadge = (function(){
     } catch(err){ /* best-effort only — Edit buttons simply won't show */ }
   }
 
-  function renderFeed(posts){
+  function renderFeed(posts, mutedHidden){
     const openPostIds = new Set();
     commentUI.forEach(function(ui, id){ if (ui.opened) openPostIds.add(id); });
     commentUI.clear();
@@ -12408,9 +12408,15 @@ const FPRBadge = (function(){
     authorAvatarEls = new Map(); // and their author avatars
     mentionBodyEls = new Map(); // and their mention-bearing bodies (comments re-register when opened)
     if (!posts || posts.length === 0){
-      feedEmpty.textContent = activeSearch
-        ? 'Try another word or phrase, or clear search to return to the feed.'
-        : 'No posts to show right now. You can share something with the porch above.';
+      // Phase 9B-2: if posts loaded but every one was from a muted author,
+      // say so rather than implying the Community is empty.
+      feedEmpty.textContent = mutedHidden > 0
+        ? (activeSearch
+            ? 'No posts to show. The matching posts are from members you’ve muted.'
+            : 'No posts to show. You’ve muted the authors of some posts.')
+        : activeSearch
+          ? 'Try another word or phrase, or clear search to return to the feed.'
+          : 'No posts to show right now. You can share something with the porch above.';
       feedEmpty.style.display = 'block';
       return;
     }
@@ -12450,7 +12456,7 @@ const FPRBadge = (function(){
       if (reqId !== feedReqSeq) return;
       const posts = (data || []).filter(function(p){ return !mutedMemberIds.has(p.author_public_id); });
       feedNotice.style.display = 'none';
-      renderFeed(posts);
+      renderFeed(posts, (data || []).length - posts.length);
       feedLoaded = true;
       if (query) {
         setStatus(searchStatus, 'info', posts.length
