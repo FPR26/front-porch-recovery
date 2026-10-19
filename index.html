@@ -77,7 +77,18 @@
   }
   .header-inner{
     max-width:var(--maxw); margin:0 auto; padding:14px 20px;
-    display:flex; align-items:center; justify-content:space-between;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .header-actions{display:flex; align-items:center; gap:10px; flex:none;}
+  .header-inner .brand{min-width:0;}
+  .header-inner .brand > span{min-width:0;}
+  @media(max-width:599px){
+    .header-inner{padding:12px 14px; gap:8px;}
+    .header-inner .brand{gap:8px; text-align:left;}
+    .header-inner .brand-name{font-size:.92rem;}
+    .header-inner .brand-name, .header-inner .brand-sub{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .header-actions{gap:6px;}
+    .header-actions .menu-toggle{flex:none;}
   }
   .brand{display:flex; align-items:center; gap:10px; cursor:pointer; border:none; background:none; padding:0;}
   .brand svg{width:30px;height:30px;flex:none;}
@@ -791,7 +802,7 @@
       <button data-nav="community">Community</button>
       <button data-nav="about">About</button>
     </nav>
-    <div style="display:flex; align-items:center; gap:10px;">
+    <div class="header-actions">
       <button class="header-account-btn" id="header-account-btn" type="button" data-account-action="open">Sign In</button>
       <button class="btn btn-primary header-cta" data-nav="checkin">Check In</button>
       <button class="menu-toggle" id="menuOpenBtn" aria-label="Open menu" aria-expanded="false">
@@ -9192,7 +9203,7 @@ const FPRBadge = (function(){
     [headerBtn, mobileBtn].forEach(btn => {
       if (!btn) return;
       btn.textContent = signedIn
-        ? (btn === mobileBtn ? 'Account' : (session.user.email || 'Account'))
+        ? 'Account'
         : (btn === mobileBtn ? 'Account / Sign In' : 'Sign In');
     });
     if (signedIn) emailDisplay.textContent = session.user.email || '';
