@@ -67,6 +67,26 @@
     *{scroll-behavior:auto !important;}
   }
 
+  /* Community: visible search and readable member safety guidance. */
+  .community-search-box{padding:20px; background:var(--white); border:1.5px solid var(--sage-deep); border-radius:var(--radius-m); margin-bottom:18px;}
+  .community-search-label{display:block; font-weight:700; font-size:1rem; margin-bottom:8px;}
+  .community-search-help{font-size:.85rem; color:var(--charcoal-soft); margin-top:8px;}
+  #community-search-form{display:flex; flex-wrap:wrap; align-items:center; gap:10px;}
+  #community-search-input{min-width:0; flex:1 1 220px; width:auto; background:var(--white); border:1.5px solid var(--sage-deep); border-radius:var(--radius-s); padding:12px; font:inherit; font-size:1rem; color:var(--charcoal);}
+  #community-search-input::placeholder{color:var(--charcoal-soft); opacity:1;}
+  #community-search-input:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+  #community-search-form .btn{min-height:46px;}
+  .community-safety{margin-bottom:22px; padding:14px 16px; border:1px solid var(--line); border-radius:var(--radius-m); background:var(--white);}
+  .community-safety summary{cursor:pointer; font-weight:600;}
+  .community-safety p{margin-top:10px; font-size:.9rem; line-height:1.65; color:var(--charcoal-soft);}
+  .community-feed-loading{padding:16px 0; color:var(--charcoal-soft);}
+  @media(max-width:479px){
+    .community-search-box{padding:16px;}
+    #community-search-input{flex-basis:100%; width:100%;}
+    #community-search-form .btn{flex:1;}
+    #page-community textarea, #page-community select{font-size:16px;}
+  }
+
   /* Support FPR: a quiet, optional section within the Porch Shop. */
   .support-fpr{scroll-margin-top:110px;}
   .support-fpr:focus{outline:none;}
@@ -1581,15 +1601,27 @@
 
   <section class="block bg-cream">
     <div class="wrap" style="max-width:680px;">
-      <!-- Phase 6C: search published community posts (posts only, never comments). -->
-      <form id="community-search-form" role="search" novalidate style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
-        <input type="text" id="community-search-input" maxlength="100" placeholder="Search community posts" aria-label="Search community posts" autocomplete="off" enterkeyhint="search" style="flex:1 1 200px; width:auto; padding:10px 12px;">
-        <button type="submit" class="btn btn-primary" id="community-search-submit" style="padding:8px 18px; font-size:.85rem; width:auto;">Search</button>
-        <button type="button" class="btn btn-outline" id="community-search-clear" style="display:none; padding:8px 18px; font-size:.85rem; width:auto;">Clear</button>
-      </form>
+      <h2 style="font-size:1.4rem; margin-bottom:16px;">Community posts</h2>
+      <div class="community-search-box">
+        <label class="community-search-label" for="community-search-input">Search community posts</label>
+        <form id="community-search-form" role="search" novalidate>
+          <input type="search" id="community-search-input" maxlength="100" placeholder="Enter a word or phrase" aria-describedby="community-search-help" autocomplete="off" enterkeyhint="search">
+          <button type="submit" class="btn btn-primary" id="community-search-submit">Search</button>
+          <button type="button" class="btn btn-outline" id="community-search-clear" style="display:none;">Clear search</button>
+        </form>
+        <p class="community-search-help" id="community-search-help">Search post text using at least 2 characters. Comments and replies aren’t searched.</p>
+      </div>
+      <details class="community-safety">
+        <summary>Manage what you see and report concerns</summary>
+        <p>Tap a member’s name or profile photo to open their profile. When signed in, you can <strong>Mute</strong>, <strong>Block</strong>, or <strong>Report</strong> another member there.</p>
+        <p><strong>Mute</strong> hides their posts and notifications and collapses their comments. <strong>Block</strong> restricts follows, mentions, and replies between you. <strong>Report</strong> sends a concern to admins for review.</p>
+        <p>Manage muted and blocked members in <strong>Account</strong>. To report a specific post or comment, use its own <strong>Report</strong> button.</p>
+      </details>
       <p id="community-search-status" class="status-msg" role="status" aria-live="polite" style="margin-bottom:12px;"></p>
-      <p id="community-feed-notice" class="status-msg status-info" style="display:none; margin-bottom:14px;" role="status">The community feed couldn't be loaded right now. The rest of the site still works — please try this page again later.</p>
-      <p id="community-feed-empty" style="display:none; color:var(--charcoal-soft);">No posts yet. Be the first to say hello.</p>
+      <p id="community-feed-loading" class="community-feed-loading" role="status" aria-live="polite" hidden>Loading community posts…</p>
+      <p id="community-feed-notice" class="status-msg status-info" style="display:none; margin-bottom:14px;" role="status">Community posts couldn’t be loaded. Please try again.</p>
+      <button type="button" class="btn btn-outline" id="community-feed-retry" hidden style="margin-bottom:16px;">Try again</button>
+      <p id="community-feed-empty" style="display:none; color:var(--charcoal-soft); margin-bottom:16px;" role="status">No posts to show right now.</p>
       <div id="community-feed" style="display:flex; flex-direction:column; gap:16px;"></div>
     </div>
   </section>
@@ -10182,6 +10214,8 @@ const FPRBadge = (function(){
   const feedEl = document.getElementById('community-feed');
   const feedNotice = document.getElementById('community-feed-notice');
   const feedEmpty = document.getElementById('community-feed-empty');
+  const feedLoading = document.getElementById('community-feed-loading');
+  const feedRetry = document.getElementById('community-feed-retry');
 
   if (!signedOutNotice || !postForm || !feedEl) return; // defensive: markup missing
 
@@ -12191,8 +12225,8 @@ const FPRBadge = (function(){
     mentionBodyEls = new Map(); // and their mention-bearing bodies (comments re-register when opened)
     if (!posts || posts.length === 0){
       feedEmpty.textContent = activeSearch
-        ? 'No published posts match your search.'
-        : 'No posts yet. Be the first to say hello.';
+        ? 'Try another word or phrase, or clear search to return to the feed.'
+        : 'No posts to show right now. You can share something with the porch above.';
       feedEmpty.style.display = 'block';
       return;
     }
@@ -12207,6 +12241,13 @@ const FPRBadge = (function(){
   async function loadFeed(){
     const reqId = ++feedReqSeq;
     const query = activeSearch;
+    feedLoading.hidden = false;
+    feedLoading.textContent = query ? 'Searching community posts…' : 'Loading community posts…';
+    feedEl.setAttribute('aria-busy', 'true');
+    feedEl.hidden = true;
+    feedEmpty.style.display = 'none';
+    feedNotice.style.display = 'none';
+    feedRetry.hidden = true;
     try {
       if (!readClient) throw new Error('Community feed client unavailable');
       let request = readClient
@@ -12230,7 +12271,7 @@ const FPRBadge = (function(){
       if (query) {
         setStatus(searchStatus, 'info', posts.length
           ? 'Showing ' + posts.length + (posts.length === 1 ? ' post' : ' posts') + ' matching “' + query + '”.'
-          : 'No published posts match “' + query + '”.');
+          : 'No visible posts match “' + query + '”.');
       }
       loadReactionState(posts.map(p => p.id));
       loadAuthorAvatars(posts.map(p => p.author_public_id));
@@ -12241,8 +12282,18 @@ const FPRBadge = (function(){
       // one page's feed shows a subtle message instead.
       if (query) setStatus(searchStatus, 'error', "Search couldn't be completed right now. Please try again in a moment.");
       else feedNotice.style.display = 'block';
+      feedEl.innerHTML = '';
+      commentUI.clear();
+      feedRetry.hidden = false;
+    } finally {
+      if (reqId === feedReqSeq) {
+        feedLoading.hidden = true;
+        feedEl.hidden = false;
+        feedEl.setAttribute('aria-busy', 'false');
+      }
     }
   }
+  feedRetry.addEventListener('click', loadFeed);
 
   async function refreshMyPosts(){
     myPostIds = new Set();
