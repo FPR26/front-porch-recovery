@@ -99,13 +99,13 @@
   .support-fpr:focus{outline:none;}
   .support-fpr-panel{background:var(--white); border:1px solid var(--line); border-top:4px solid var(--amber); border-radius:var(--radius-l); padding:clamp(24px,5vw,44px);}
   .support-fpr-panel h2{font-size:clamp(1.5rem,4vw,2rem); line-height:1.2; max-width:22ch;}
-  .support-fpr-intro{color:var(--charcoal-soft); max-width:65ch; margin-top:16px; line-height:1.7;}
-  .support-fpr-actions{display:flex; flex-wrap:wrap; gap:12px; margin-top:24px;}
-  .support-fpr-payment{margin-top:24px; padding:20px; background:var(--cream); border:1px solid var(--line); border-radius:var(--radius-m);}
-  .support-fpr-payment h3{font-size:1.1rem; font-weight:700;}
-  .support-fpr-payment p{margin-top:12px; line-height:1.65; color:var(--charcoal-soft);}
-  .support-fpr-tag{font-size:1.2rem; font-weight:700; overflow-wrap:anywhere;}
-  .support-fpr-note{color:var(--sage-text); font-size:.88rem; line-height:1.65; max-width:65ch; margin-top:20px;}
+  .support-fpr-free{color:var(--charcoal); font-weight:600; max-width:65ch; margin-top:16px; line-height:1.6;}
+  .support-fpr-intro{color:var(--charcoal-soft); max-width:65ch; margin-top:10px; line-height:1.7;}
+  .support-fpr-actions{display:flex; flex-wrap:wrap; gap:12px; margin-top:22px;}
+  .support-fpr-helper{font-size:.85rem; color:var(--charcoal-soft); line-height:1.6; margin-top:10px; overflow-wrap:anywhere;}
+  .support-fpr-secondary{font-size:.9rem; color:var(--charcoal-soft); line-height:1.6; margin-top:18px;}
+  .support-fpr-secondary a{color:var(--charcoal); text-decoration:underline; text-underline-offset:3px;}
+  .support-fpr-note{color:var(--sage-text); font-size:.88rem; line-height:1.65; max-width:65ch; margin-top:12px;}
   @media(max-width:479px){.support-fpr-actions .btn{width:100%;}}
 
   /* ---------- Header ---------- */
@@ -1292,27 +1292,6 @@
       <p style="color:var(--gray); margin-top:10px; max-width:56ch;">Mugs, totes, hoodies, shirts, and hats that help pay for this work and put a little front-porch honesty out in the world.</p>
     </div>
   </section>
-  <section class="block bg-cream tight support-fpr" id="support-fpr" aria-labelledby="support-fpr-title" tabindex="-1">
-    <div class="wrap">
-      <div class="support-fpr-panel">
-        <p class="hero-eyebrow" style="color:var(--sage-text);">Support FPR</p>
-        <h2 id="support-fpr-title" style="margin-top:10px;">Help keep the porch light on.</h2>
-        <p class="support-fpr-intro">Front Porch Recovery is free to use. Keeping it here takes hosting, tools, development, and ongoing care. If this porch has been useful to you and you’re in a position to help, you can contribute through Cash App or buy a book or something from the shop to help support that work.</p>
-        <div class="support-fpr-actions">
-          <button type="button" class="btn btn-primary" data-nav="books">Explore the books</button>
-          <a class="btn btn-outline" href="https://frontporchrecovery.etsy.com" target="_blank" rel="noopener noreferrer">Shop on Etsy</a>
-        </div>
-        <div class="support-fpr-payment">
-          <h3>Contribute directly with Cash App</h3>
-          <p>Your support helps keep Front Porch Recovery going. Choose an amount that works for you.</p>
-          <a class="btn btn-amber" href="https://cash.app/$FPR2026" target="_blank" rel="noopener noreferrer" style="margin-top:16px;">Support FPR on Cash App</a>
-          <p class="support-fpr-tag">$FPR2026 · Front Porch Recovery</p>
-          <p style="font-size:.85rem;">Opens Cash App in a new tab. Check that the recipient is Front Porch Recovery before sending.</p>
-        </div>
-        <p class="support-fpr-note">Support is always optional. You don’t need to buy anything to belong here or use the recovery tools and community. Taking care of yourself comes first.</p>
-      </div>
-    </div>
-  </section>
   <section class="block bg-cream">
     <div class="wrap">
       <div style="margin-bottom:22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
@@ -1320,6 +1299,24 @@
         <a class="btn btn-outline" href="https://frontporchrecovery.etsy.com" target="_blank" rel="noopener noreferrer">Visit our Etsy shop</a>
       </div>
       <div class="grid grid-4" id="shop-grid"></div>
+    </div>
+  </section>
+  <!-- Support FPR: optional, after the products. The footer "Support FPR"
+       link scrolls here via data-scroll-target="support-fpr". -->
+  <section class="block bg-cream tight support-fpr" id="support-fpr" aria-labelledby="support-fpr-title" tabindex="-1">
+    <div class="wrap">
+      <div class="support-fpr-panel">
+        <p class="hero-eyebrow" style="color:var(--sage-text);">Support FPR</p>
+        <h2 id="support-fpr-title" style="margin-top:10px;">Help Keep the Porch Light On</h2>
+        <p class="support-fpr-free">Front Porch Recovery is free to use. No payment is ever needed to use the recovery tools or the community.</p>
+        <p class="support-fpr-intro">Hosting, tools, development, and keeping the app growing take time and money. If FPR has helped you and you’d like to help keep it going, you can contribute here.</p>
+        <div class="support-fpr-actions">
+          <a class="btn btn-amber" href="https://cash.app/$FPR2026" target="_blank" rel="noopener noreferrer">Support Front Porch Recovery</a>
+        </div>
+        <p class="support-fpr-helper">Opens Cash App ($FPR2026).<br>Please check that the recipient is Front Porch Recovery before sending.</p>
+        <p class="support-fpr-secondary">You can also support FPR through the <a href="#books" data-nav="books">books</a> and the <a href="https://frontporchrecovery.etsy.com" target="_blank" rel="noopener noreferrer">shop</a>.</p>
+        <p class="support-fpr-note">Support is always optional. Taking care of yourself comes first.</p>
+      </div>
     </div>
   </section>
 </section>
@@ -1975,6 +1972,7 @@
       <h2>Links to other websites</h2>
       <p>This site links to outside websites, including Facebook (our page and the Love Beyond the Chain community group), YouTube, Etsy, Amazon, and recovery-resource organizations such as SAMHSA, 988, USARA, AA, NA, SMART Recovery, and others. Those links open in a new tab and are marked as leaving the site.</p>
       <p>Outside websites have their own privacy practices and policies, and Front Porch Recovery does not control them. Once you leave this site, their policies apply. Purchases you make on Amazon or Etsy are handled entirely by those companies; Front Porch Recovery never receives your payment information.</p>
+      <p>If you choose to support Front Porch Recovery through Cash App, the payment is handled by Cash App under its own privacy practices. Cash App may show Front Porch Recovery information associated with the payment, such as your Cash App name or $Cashtag, the amount, a note you include, and transaction details. Front Porch Recovery does not receive your card or bank details through this app.</p>
 
       <h2>Milestones and badges</h2>
       <p>Recovery milestones are worked out on your device from the start date you entered in the Recovery Counter. Milestone badges are drawn on your device too — the image is never uploaded to Front Porch Recovery. If you share a badge, it goes only where you choose to send it, and that app's privacy policy applies there.</p>
@@ -2055,6 +2053,7 @@
 
       <h2>6. Books, downloads, merchandise, and music</h2>
       <p>Front Porch Recovery books, downloadable resources, merchandise, and music are sold or hosted through outside platforms such as Amazon, Etsy, and YouTube. Purchases, downloads, payments, shipping, and refunds on those platforms are governed by that platform's own terms. Buying or downloading something gives you a personal-use copy, not ownership of the work or permission to share, resell, or republish it.</p>
+      <p>You can also choose to support Front Porch Recovery with an optional contribution through Cash App. Those payments are handled by Cash App under its own terms. Contributions are voluntary, are not purchases, and are not tax-deductible. Front Porch Recovery is not a registered nonprofit or charity.</p>
 
       <h2>7. Ownership of our creative work</h2>
       <p>Unless otherwise stated, the original books, writing, Daily Porch reflections, Toolbox and Porch content, music, the Front Porch Recovery name, logo, and branding, graphics, images, website content, and other creative material on this site belong to Justin Whetstone / Front Porch Recovery and are protected intellectual property. The Front Porch Recovery name and logo may not be used in a way that suggests we endorse or are connected to someone else.</p>
