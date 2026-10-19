@@ -572,6 +572,35 @@ The helpers and guards have EXECUTE revoked from `public`, `anon` and `authentic
 
 `phase9a_blocking_foundation` was applied manually in the Supabase SQL Editor and is **not** recorded in `supabase_migrations.schema_migrations`. Together with 8A, 8B-1, 8C-1 and 8C-3, five migrations have now been applied this way. The history table still has only the earlier 9 rows. No history rows have been added by hand.
 
+## Phase 9B — Member muting
+
+Migration: migrations/phase9b1_member_mutes.sql. Applied manually in the SQL Editor during Phase 9B-1; do not blindly re-run it. The original migration MD5 was verified as 2128129f9f375ba963b28710c9823e9e.
+
+- member_mutes is private, with cascading auth-user foreign keys, a pair primary key, a no-self constraint, an index for the muted user, and RLS with no member policies or direct member table access.
+- mute_member, unmute_member, and get_my_muted_members use SECURITY DEFINER and search_path = public, pg_temp. Execute is limited to authenticated members. Public/anon execution is revoked.
+- get_my_muted_members returns public profile fields and muted_at; it does not expose auth IDs or email.
+- Notification list/count skip muted actors when read. Stored notifications are retained and reappear after unmuting if otherwise eligible.
+- Frontend filtering uses a per-identity cache of public IDs. Initial signed-in feed/comment rendering waits for auth restoration and cache loading. fpr:mutechange reloads it; sign-out clears it. Cache errors fail open.
+- Community feed/search omit muted authors’ posts. Comments/replies remain in place, collapsed behind Show; revealing uses the original card builder and controls. Follows, blocks, reactions, and interaction permissions are unaffected.
+
+Verification: backend rollback tests were reported complete in the Phase 9B-1 handoff. During this session, live tests with JUSTIN and MAXOM confirmed feed/search filtering, comment/reply collapse and Show, persistence after refresh, account-list unmuting, restored search results, and notification hiding/restoration. Cache/identity races and failure fallback were covered by focused local tests, not by the live walkthrough.
+
+## Phase 9C — Member reports
+
+Migration: migrations/phase9c1_member_reports.sql. Applied manually in the SQL Editor on 2026-10-19. The rollback verification passed before the frontend/admin deployment at 96ffc05.
+
+- community_reports adds member_public_id referencing profiles(public_id), cascading on profile deletion. Its target constraint now requires exactly one post, comment, or member target. Existing report reasons and admin-only RLS remain unchanged.
+- The partial unique index community_reports_one_open_member_per_reporter enforces one open report for each reporter/member pair, including concurrent inserts. The RPC translates uniqueness violations into a friendly duplicate message.
+- report_member(p_target_public_id uuid, p_reason text, p_details text default null) returns only a receipt UUID. It validates sign-in, target existence, no self-report, allowed reason, and details length (500 characters maximum), trims details, and creates an open report.
+- report_member uses SECURITY DEFINER with search_path = public, pg_temp; only authenticated execution is granted. The existing table grants still prevent member writes, and ordinary members cannot read reports.
+- moderate_community_report already operates on the reports row type; no new moderation permissions or actions were added. Admins can Resolve or Dismiss, with reviewed_at/reviewed_by recorded. This does not apply an account penalty.
+- The profile form is hidden for self/signed-out viewers. Changing accounts closes the profile and discards any report draft. Existing post/comment reports retain their RPC path.
+- The admin Reports tab selects the member public ID and batches profile-name lookup. Member-supplied names/details are rendered as text. No new auth ID or email lookup was introduced for the reported member.
+
+Verification: signed-out/self/unknown-target/null-or-invalid-reason/overlong-details rejection, authenticated submission, duplicate-open-report protection, private report reads, non-admin moderation rejection, and stored receipt fields passed rollback SQL checks. Frontend tests covered validation, double submission, error recovery, existing content-report RPCs, and safe admin rendering. Live tests covered member submission, duplicate rejection, new submission after dismissal, admin target/details, Dismiss, Resolve, and dismissal persistence after refresh. Success-state Close labeling and a concurrent database race were not separately exercised live.
+
+The manual migration application does not add a Supabase migration-history row automatically. Migration history has not been re-queried in this session; earlier counts below are historical notes.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -598,6 +627,6 @@ The helpers and guards have EXECUTE revoked from `public`, `anon` and `authentic
 
 **Phase 8A is complete** — private member follows (see "Phase 8A" above).
 
-**Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and payments.
+**Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and on-site payment processing. Optional Support FPR contributions use an external Cash App link; no payment credentials or transaction records are stored by this website.
 
 Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
