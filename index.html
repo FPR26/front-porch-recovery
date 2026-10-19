@@ -1585,6 +1585,20 @@
         </div>
       </div>
 
+      <details class="community-safety" id="community-growth-admin" hidden>
+        <summary>Admin tools · Community growth</summary>
+        <p>Preview a celebration card without changing the member count, recording a milestone, or notifying members. Sample cards are labeled as previews.</p>
+        <label for="community-growth-preview-count" style="display:block; font-weight:600; margin:12px 0 6px;">Sample milestone</label>
+        <select id="community-growth-preview-count" style="width:100%; font-size:1rem;">
+          <option value="10">10 members</option><option value="25">25 members</option>
+          <option value="50">50 members</option><option value="100">100 members</option>
+          <option value="250">250 members</option><option value="500">500 members</option>
+          <option value="1000">1,000 members</option><option value="2500">2,500 members</option>
+          <option value="5000">5,000 members</option><option value="10000">10,000 members</option>
+        </select>
+        <button type="button" class="btn btn-outline" id="community-growth-preview-btn" style="margin-top:12px;">Preview celebration card</button>
+      </details>
+
       <!-- Signed-in: post form (hidden until a session is confirmed). -->
       <form class="form-card" id="community-post-form" style="display:none;" novalidate>
         <div class="field">
@@ -10338,6 +10352,42 @@ const FPRBadge = (function(){
   const milestonesWrap = document.getElementById('community-milestones');
   const milestonesList = document.getElementById('community-milestones-list');
   const milestonesStatus = document.getElementById('community-milestones-status');
+  const growthAdmin = document.getElementById('community-growth-admin');
+  const growthPreviewCount = document.getElementById('community-growth-preview-count');
+  const growthPreviewBtn = document.getElementById('community-growth-preview-btn');
+  let growthAdminUserId = null;
+  let growthAdminSeq = 0;
+  let growthAdminAllowed = false;
+  function clearGrowthAdminPreview(){
+    growthAdminSeq++;
+    growthAdminUserId = null;
+    growthAdminAllowed = false;
+    growthAdmin.hidden = true;
+    growthAdmin.open = false;
+  }
+  async function loadGrowthAdminPreview(){
+    if (!client || !currentSession) { clearGrowthAdminPreview(); return; }
+    const userId = currentSession.user.id;
+    if (growthAdminUserId === userId) return;
+    growthAdminUserId = userId;
+    const seq = ++growthAdminSeq;
+    growthAdminAllowed = false;
+    growthAdmin.hidden = true;
+    await Promise.resolve();
+    if (seq !== growthAdminSeq || !currentSession || currentSession.user.id !== userId) return;
+    try {
+      const { data, error } = await client.rpc('is_admin');
+      if (seq !== growthAdminSeq || !currentSession || currentSession.user.id !== userId) return;
+      growthAdminAllowed = !error && data === true;
+      growthAdmin.hidden = !growthAdminAllowed;
+    } catch(err){ /* optional admin preview stays hidden on failure */ }
+  }
+  growthPreviewBtn.addEventListener('click', function(){
+    if (!growthAdminAllowed || !currentSession) return;
+    document.dispatchEvent(new CustomEvent('fpr:celebratecommunity', {
+      detail: { memberCount: Number(growthPreviewCount.value), isPreview: true }
+    }));
+  });
   let growthSeq = 0;
   let milestonesSeq = 0;
 
@@ -12465,6 +12515,7 @@ const FPRBadge = (function(){
     resolveInitialAuth();
     if (previousUserId !== (currentSession && currentSession.user.id)) {
       clearCommunityMilestones();
+      clearGrowthAdminPreview();
       closeMemberProfile(); // discard report drafts when switching accounts
       feedEl.innerHTML = '';
       commentUI.forEach(function(ui){ ui.listEl.innerHTML = ''; });
@@ -12475,11 +12526,13 @@ const FPRBadge = (function(){
     notifWrap.style.display = signedIn ? 'block' : 'none';
     if (!signedIn) resetFollowControl(); // Phase 8A: no follow control when signed out
     if (signedIn) {
+      loadGrowthAdminPreview();
       loadCommunityMilestones();
       if (location.hash === '#community') loadCommunityMemberCount();
       refreshUnreadCount();
       if (notifOpen) loadNotifications();
     } else {
+      clearGrowthAdminPreview();
       clearCommunityMilestones();
       resetNotifications();
     }
@@ -12646,7 +12699,7 @@ const FPRBadge = (function(){
   });
 })();
 /* ---------- Community celebration cards (separate from recovery badges) ---------- */
-function drawCommunityCelebration(ctx, logo, count){
+function drawCommunityCelebration(ctx, logo, count, isPreview){
   const size = 1200;
   ctx.fillStyle = '#F6F5F2';
   ctx.fillRect(0, 0, size, size);
@@ -12678,6 +12731,11 @@ function drawCommunityCelebration(ctx, logo, count){
   ctx.fillText('Front Porch Recovery', 600, 1020);
   ctx.font = '22px Arial, sans-serif';
   ctx.fillText('fpr26.github.io/front-porch-recovery', 600, 1065);
+  if (isPreview) {
+    ctx.fillStyle = '#4F5A50';
+    ctx.font = 'bold 24px Arial, sans-serif';
+    ctx.fillText('ADMIN PREVIEW — SAMPLE MILESTONE', 600, 99);
+  }
 }
 (function(){
   const modal = document.getElementById('community-celebration-modal');
@@ -12692,6 +12750,7 @@ function drawCommunityCelebration(ctx, logo, count){
   let returnFocus = null;
   let imageUrl = null;
   let currentCount = null;
+  let currentIsPreview = false;
   function releaseImage(){
     preview.hidden = true;
     preview.removeAttribute('src');
@@ -12725,17 +12784,17 @@ function drawCommunityCelebration(ctx, logo, count){
       canvas.height = 1200;
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas unavailable');
-      drawCommunityCelebration(ctx, logo, currentCount);
+      drawCommunityCelebration(ctx, logo, currentCount, currentIsPreview);
       const blob = await new Promise(function(resolve, reject){
         canvas.toBlob(function(value){ value ? resolve(value) : reject(new Error('Image unavailable')); }, 'image/png');
       });
       if (seq !== requestSeq || modal.hidden) return;
       imageUrl = URL.createObjectURL(blob);
       preview.src = imageUrl;
-      preview.alt = 'Front Porch Recovery community milestone: ' + currentCount.toLocaleString() + ' members strong. One porch. Growing together.';
+      preview.alt = (currentIsPreview ? 'Admin sample, not a reached milestone. ' : '') + 'Front Porch Recovery community milestone: ' + currentCount.toLocaleString() + ' members strong. One porch. Growing together.';
       preview.hidden = false;
       download.disabled = false;
-      status.textContent = 'Your community celebration card is ready.';
+      status.textContent = currentIsPreview ? 'Sample card ready. No announcement was sent and the member count is unchanged.' : 'Your community celebration card is ready.';
     } catch(err){
       if (seq !== requestSeq || modal.hidden) return;
       status.textContent = 'The card couldn’t be prepared. Please try again.';
@@ -12747,7 +12806,9 @@ function drawCommunityCelebration(ctx, logo, count){
     if (!thresholds.includes(count)) return;
     returnFocus = document.activeElement;
     currentCount = count;
-    title.textContent = 'We reached ' + count.toLocaleString() + ' members!';
+    currentIsPreview = e.detail.isPreview === true;
+    title.textContent = currentIsPreview ? 'Admin preview · ' + count.toLocaleString() + ' members' : 'We reached ' + count.toLocaleString() + ' members!';
+    download.textContent = currentIsPreview ? 'Download sample card' : 'Download celebration card';
     modal.hidden = false;
     document.documentElement.classList.add('ms-modal-open');
     closeButtons[0].focus();
@@ -12757,7 +12818,7 @@ function drawCommunityCelebration(ctx, logo, count){
     if (!imageUrl || download.disabled) return;
     const link = document.createElement('a');
     link.href = imageUrl;
-    link.download = 'front-porch-recovery-' + currentCount + '-members.png';
+    link.download = 'front-porch-recovery-' + (currentIsPreview ? 'preview-' : '') + currentCount + '-members.png';
     document.body.appendChild(link);
     link.click();
     link.remove();
