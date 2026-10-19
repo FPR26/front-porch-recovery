@@ -10085,8 +10085,10 @@ const FPRBadge = (function(){
   }
 
   // Listeners only reload; they never dispatch, so there's no refresh loop.
+  // The list is only on screen while the account modal is open, and
+  // openModal() reloads it, so skip the extra RPC while it's closed.
   document.addEventListener('fpr:mutechange', function(){
-    if (!profileUserId) return;
+    if (!profileUserId || modal.hidden) return;
     loadMuted();
   });
 
