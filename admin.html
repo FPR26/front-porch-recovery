@@ -350,6 +350,7 @@
       <div id="reports-dashboard" hidden>
         <div class="dash-toolbar">
           <div class="filters" id="reports-filters" role="tablist" aria-label="Filter reports by status"></div>
+          <div class="filters" id="reports-type-filters" role="tablist" aria-label="Filter reports by type"></div>
           <span class="refresh-note" id="reports-refresh-note"></span>
         </div>
         <div class="story-list" id="reports-list"></div>
@@ -603,6 +604,7 @@
     communityCommentsStatusMsg: document.getElementById('community-comments-status-msg'),
     reportsDashboard: document.getElementById('reports-dashboard'),
     reportsFilters: document.getElementById('reports-filters'),
+    reportsTypeFilters: document.getElementById('reports-type-filters'),
     reportsRefreshNote: document.getElementById('reports-refresh-note'),
     reportsList: document.getElementById('reports-list'),
     reportsEmptyState: document.getElementById('reports-empty-state'),
@@ -1545,19 +1547,35 @@
      Phase 6B: Reports moderation
      ============================================================ */
   const REPORT_STATUS_FILTERS = [
-    { key: 'all', label: 'All' },
     { key: 'open', label: 'Open' },
     { key: 'resolved', label: 'Resolved' },
     { key: 'dismissed', label: 'Dismissed' },
+    { key: 'all', label: 'All' },
+  ];
+  // Phase 9D: client-side type filter over the already-loaded reports.
+  const REPORT_TYPE_FILTERS = [
+    { key: 'all', label: 'All types' },
+    { key: 'member', label: 'Member' },
+    { key: 'post', label: 'Post' },
+    { key: 'comment', label: 'Comment' },
   ];
   let communityReports = [];
-  let reportsActiveFilter = 'all';
+  let reportsActiveFilter = 'open';
+  let reportsTypeFilter = 'all';
   let reportsLoaded = false;
+
+  function reportType(r){
+    return r.member_public_id ? 'member' : (r.post_id ? 'post' : 'comment');
+  }
+  function reportsOfType(){
+    return reportsTypeFilter === 'all' ? communityReports : communityReports.filter(r => reportType(r) === reportsTypeFilter);
+  }
 
   function renderReportsFilters(){
     els.reportsFilters.innerHTML = '';
+    const ofType = reportsOfType();
     REPORT_STATUS_FILTERS.forEach(f => {
-      const count = f.key === 'all' ? communityReports.length : communityReports.filter(r => r.status === f.key).length;
+      const count = f.key === 'all' ? ofType.length : ofType.filter(r => r.status === f.key).length;
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'filter-btn' + (reportsActiveFilter === f.key ? ' active' : '');
@@ -1572,6 +1590,24 @@
       btn.appendChild(countSpan);
       btn.addEventListener('click', () => { reportsActiveFilter = f.key; renderReportsFilters(); renderReportsList(); });
       els.reportsFilters.appendChild(btn);
+    });
+    els.reportsTypeFilters.innerHTML = ''; // clearing only; buttons below use textContent
+    REPORT_TYPE_FILTERS.forEach(f => {
+      const count = f.key === 'all' ? communityReports.length : communityReports.filter(r => reportType(r) === f.key).length;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'filter-btn' + (reportsTypeFilter === f.key ? ' active' : '');
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(reportsTypeFilter === f.key));
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = f.label + ' ';
+      const countSpan = document.createElement('span');
+      countSpan.className = 'count';
+      countSpan.textContent = '(' + count + ')';
+      btn.appendChild(labelSpan);
+      btn.appendChild(countSpan);
+      btn.addEventListener('click', () => { reportsTypeFilter = f.key; renderReportsFilters(); renderReportsList(); });
+      els.reportsTypeFilters.appendChild(btn);
     });
   }
 
@@ -1692,7 +1728,8 @@
   }
 
   function renderReportsList(){
-    const visible = reportsActiveFilter === 'all' ? communityReports : communityReports.filter(r => r.status === reportsActiveFilter);
+    const ofType = reportsOfType();
+    const visible = reportsActiveFilter === 'all' ? ofType : ofType.filter(r => r.status === reportsActiveFilter);
     els.reportsList.innerHTML = '';
     els.reportsEmptyState.hidden = visible.length !== 0;
     visible.forEach(report => els.reportsList.appendChild(buildReportCard(report)));

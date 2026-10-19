@@ -796,6 +796,10 @@
   .member-profile-block{display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin-top:10px; font-size:.85rem;}
   .member-profile-block[hidden]{display:none !important;}
   .member-profile-blocked-label{font-weight:600; color:var(--charcoal-soft);}
+  /* Phase 9D: Mute · Block · Report share one subdued row */
+  .member-profile-safety{display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px 18px; margin-top:12px;}
+  .member-profile-safety .member-profile-block{margin-top:0;}
+  .account-safety-kicker{margin:18px 0 0; padding-top:14px; border-top:1px solid var(--line); font-size:.78rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--charcoal-soft);}
   .member-block-link{background:none; border:none; padding:0; margin:0; font:inherit; font-size:.82rem; color:var(--charcoal-soft); text-decoration:underline; text-underline-offset:3px; cursor:pointer;}
   .member-block-link:hover{color:var(--charcoal);}
   .member-block-link:disabled{opacity:.6; cursor:default;}
@@ -2215,20 +2219,23 @@
       <span id="member-profile-following-label" class="member-profile-following-label" hidden>&#10003; Following</span>
       <button type="button" class="btn btn-primary" id="member-profile-follow-btn">Follow</button>
     </div>
-    <div id="member-profile-report" hidden>
-      <div class="member-profile-block">
+    <!-- Phase 9D: one subdued safety row (Mute · Block · Report). Each
+         control keeps its own id and hidden state; the report form opens
+         below the row. -->
+    <div class="member-profile-safety" role="group" aria-label="Safety options">
+      <div id="member-profile-mute" class="member-profile-block" hidden>
+        <span id="member-profile-muted-label" class="member-profile-blocked-label" hidden>You’ve muted this member</span>
+        <button type="button" class="member-block-link" id="member-profile-mute-btn">Mute member</button>
+      </div>
+      <div id="member-profile-block" class="member-profile-block" hidden>
+        <span id="member-profile-blocked-label" class="member-profile-blocked-label" hidden>You’ve blocked this member</span>
+        <button type="button" class="member-block-link" id="member-profile-block-btn">Block member</button>
+      </div>
+      <div id="member-profile-report" class="member-profile-block" hidden>
         <button type="button" class="member-block-link" id="member-profile-report-btn" aria-expanded="false" aria-controls="member-profile-report-form">Report member</button>
       </div>
-      <div id="member-profile-report-form"></div>
     </div>
-    <div id="member-profile-mute" class="member-profile-block" hidden>
-      <span id="member-profile-muted-label" class="member-profile-blocked-label" hidden>You’ve muted this member</span>
-      <button type="button" class="member-block-link" id="member-profile-mute-btn">Mute member</button>
-    </div>
-    <div id="member-profile-block" class="member-profile-block" hidden>
-      <span id="member-profile-blocked-label" class="member-profile-blocked-label" hidden>You've blocked this member</span>
-      <button type="button" class="member-block-link" id="member-profile-block-btn">Block member</button>
-    </div>
+    <div id="member-profile-report-form"></div>
     <p id="member-profile-follow-status" class="status-msg" role="status" aria-live="polite"></p>
     <p id="member-profile-bio" class="ms-modal-text member-profile-bio" hidden></p>
     <p id="member-profile-status" class="status-msg" role="status" aria-live="polite"></p>
@@ -2344,6 +2351,7 @@
 
       <!-- Phase 9A-3: the signed-in member's own, private Blocked members list. -->
       <section id="account-blocked" class="account-profile" aria-labelledby="account-blocked-title">
+        <p class="account-safety-kicker">Safety &amp; visibility</p>
         <h3 class="account-profile-title" id="account-blocked-title">Blocked members</h3>
         <p class="hint" style="font-size:.82rem; color:var(--charcoal-soft);">Only you can see this list, and blocked members aren't told. You stop following each other, and they can't follow you, @mention you, or reply to your comments. Public posts stay visible.</p>
         <p class="status-msg" id="account-blocked-status" role="status" aria-live="polite"></p>
@@ -11125,6 +11133,12 @@ const FPRBadge = (function(){
 
   function renderMemberReportControl(){
     memberReportWrap.hidden = !currentSession || !followTargetId || !followState || !!followState.is_self;
+    // Phase 9D: the form now sits outside the control's wrapper, so close
+    // any open draft whenever the control itself is hidden.
+    if (memberReportWrap.hidden && memberReportForm.children.length) {
+      memberReportForm.replaceChildren();
+      memberReportBtn.setAttribute('aria-expanded', 'false');
+    }
   }
   memberReportBtn.addEventListener('click', function(){
     if (memberReportWrap.hidden) return;
@@ -11157,7 +11171,7 @@ const FPRBadge = (function(){
     const muting = !mutedMemberIds.has(targetId);
     const name = memberName.textContent || 'this member';
     if (!window.confirm(muting
-      ? 'Mute ' + name + '? Their posts will be hidden from your feed and search, their comments will be collapsed, and their notifications will be hidden. They won’t be told. Following and other interactions stay the same.'
+      ? 'Mute ' + name + '? They won’t be told. Their posts will be hidden from your feed and search, their comments will be collapsed, and their notifications will be hidden. They can still follow, mention, and reply to you.'
       : 'Unmute ' + name + '? Their posts, comments, and notifications will appear normally again.')) return;
     muteBusy = true;
     renderMuteControl();
@@ -11903,7 +11917,7 @@ const FPRBadge = (function(){
     if (targetType === 'member') {
       const note = document.createElement('p');
       note.className = 'hint';
-      note.textContent = 'Only admins can review reports. This member won’t be notified. Reporting does not automatically block or mute them.';
+      note.textContent = 'Only FPR admins review reports, and this member won’t be told. Reporting doesn’t automatically block or mute them, and doesn’t guarantee a particular outcome.';
       wrap.appendChild(note);
     }
 

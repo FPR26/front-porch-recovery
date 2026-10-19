@@ -19,6 +19,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 
 - **Phase 9B — Member muting** — complete: profile Mute/Unmute, private Muted members list, hidden feed/search posts, collapsed comments/replies, and notification filtering. Muting and blocking are independent.
 - **Support FPR** — deployed and checked live: optional support section on the Porch Shop page, footer access, Books/Etsy links, and an external Cash App link to the FPR business profile ($FPR2026). The website does not process payments.
+- **Phase 9D — Safety polish** — complete: Mute · Block · Report share one subdued row in the profile panel, the account window groups Blocked and Muted members under "Safety & visibility", confirmation copy is consistent across the three, and the admin Reports tab adds a type filter (All/Member/Post/Comment) with Open as the default status.
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **Admin mobile layout** — deployed and checked on a phone: wrapping tabs, readable text, account header, and filters. Current checkpoint: main at e9ad981 on 2026-10-19.
 
