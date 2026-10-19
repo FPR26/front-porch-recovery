@@ -1,5 +1,5 @@
 -- Run in the Supabase SQL editor AFTER phase9c1_member_reports.sql.
--- Uses two existing non-admin profiles; all inserted reports are rolled back.
+-- Uses a non-admin reporter and a different existing profile; all inserted reports are rolled back.
 begin;
 
 do $$
@@ -16,10 +16,9 @@ begin
   from public.profiles p where not exists
     (select 1 from public.admin_users a where a.user_id = p.id) limit 1;
   select p.id, p.public_id into target, target_public
-  from public.profiles p where p.id <> caller and not exists
-    (select 1 from public.admin_users a where a.user_id = p.id) limit 1;
+  from public.profiles p where p.id <> caller limit 1;
   if caller is null or target is null then
-    raise exception 'Need two existing non-admin member profiles for this rollback test.';
+    raise exception 'Need one non-admin member and one other profile for this rollback test.';
   end if;
 
   if has_function_privilege('anon', 'public.report_member(uuid,text,text)', 'EXECUTE') then
@@ -99,4 +98,5 @@ begin
   raise notice 'PASS: permissions, signed-out/self/unknown/invalid input guards, authenticated insert, duplicate protection, private RLS, non-admin moderation rejection, stored receipt.';
 end;
 $$;
+select 'PASS — member-report validation and privacy checks passed; test changes are rolled back.' as result;
 rollback;
