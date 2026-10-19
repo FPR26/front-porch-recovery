@@ -3,9 +3,6 @@
 -- and invokes the real trigger on a temporary probe table. Rollback restores
 -- the real count function and removes all test events/read receipts.
 begin;
-create temporary table pg_temp.growth_trigger_probe(id integer);
-create trigger growth_probe_after_insert after insert on pg_temp.growth_trigger_probe
-  for each row execute function public.record_community_growth_milestones();
 
 do $$
 declare
@@ -17,6 +14,8 @@ declare
   result_rows integer;
   original_time timestamptz;
 begin
+  execute 'create temporary table pg_temp.growth_trigger_probe(id integer) on commit drop';
+  execute 'create trigger growth_probe_after_insert after insert on pg_temp.growth_trigger_probe for each row execute function public.record_community_growth_milestones()';
   select count(*) into expected_count from public.profiles p join auth.users u on u.id=p.id
     where u.email_confirmed_at is not null;
   real_count := public.get_community_member_count();
