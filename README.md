@@ -17,7 +17,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 8C — Connection notifications** — complete: in-app notifications when you're @mentioned or followed, alongside the existing reply and reaction notifications.
 - **Phase 9A — Member blocking** — complete: private blocking from a member's profile, with a private Blocked members list. Blocking and muting are separate controls (see below).
 
-- **Phase 9B — Member muting** — deployed and checked live: profile Mute/Unmute, private Muted members list, hidden feed/search posts, collapsed comments/replies, and notification filtering.
+- **Phase 9B — Member muting** — complete: profile Mute/Unmute, private Muted members list, hidden feed/search posts, collapsed comments/replies, and notification filtering. Muting and blocking are independent.
 - **Support FPR** — deployed and checked live: optional support section on the Porch Shop page, footer access, Books/Etsy links, and an external Cash App link to the FPR business profile ($FPR2026). The website does not process payments.
 - **Phase 9C — Report a member** — deployed: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **Admin mobile layout** — deployed and checked on a phone: wrapping tabs, readable text, account header, and filters. Current checkpoint: main at e9ad981 on 2026-10-19.
@@ -48,6 +48,9 @@ Live site: https://fpr26.github.io/front-porch-recovery/
   - Show temporarily reveals the original card and controls; refreshing collapses it again. Unmuting restores normal rendering and notification visibility.
   - Notification list/count exclude muted actors at read time; stored notifications are retained. Muting does not block interactions or remove follows, posts, comments, or reactions.
   - The client loads one mute cache for the signed-in identity, reloads on fpr:mutechange, and clears on sign-out. If loading fails, Community remains available and content is shown normally.
+  - If every loaded post is from muted members, the feed says so ("You've muted the authors of some posts.") instead of implying the Community is empty.
+  - A muted member's profile, including Recent Posts, stays visible when you open it on purpose.
+  - Mute and block are independent: blocking doesn't mute, muting doesn't block, and unblocking or unmuting leaves the other in place. Muting doesn't remove follows or stop @mentions, autocomplete, replies, or reactions.
 - Member reporting:
   - Signed-in members can report another member from their profile, choosing a reason and optionally adding up to 500 characters of details. Self-reports are rejected.
   - Only one open member report per reporter/target pair is permitted. A new report can be submitted once the earlier one is resolved or dismissed.

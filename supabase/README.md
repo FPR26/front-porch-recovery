@@ -583,6 +583,23 @@ Migration: migrations/phase9b1_member_mutes.sql. Applied manually in the SQL Edi
 - Frontend filtering uses a per-identity cache of public IDs. Initial signed-in feed/comment rendering waits for auth restoration and cache loading. fpr:mutechange reloads it; sign-out clears it. Cache errors fail open.
 - Community feed/search omit muted authors’ posts. Comments/replies remain in place, collapsed behind Show; revealing uses the original card builder and controls. Follows, blocks, reactions, and interaction permissions are unaffected.
 
+Further details (Phase 9B-4 closeout):
+
+- **Table:** `member_mutes(muter_user_id, muted_user_id, created_at)`. Both FKs reference `auth.users` with `ON DELETE CASCADE`. The primary key is the pair, `member_mutes_not_self_check` stops self-mutes, and `member_mutes_muted_user_idx` indexes the muted member. RLS is on with no policies, and `anon`/`authenticated` have no table privileges at all.
+- **RPCs:**
+  - **`mute_member(target_public_id)`:** self gets `22023`, an unknown id gets `P0002`. A repeat call is harmless and returns the original `muted_at`. It has no other side effects: follows, blocks, mentions, replies, reactions and notifications are untouched.
+  - **`unmute_member(target_public_id)`:** removes only the caller's own mute and returns whether a row was removed (false on repeat or for an unknown id).
+  - **`get_my_muted_members()`:** the caller's own list only, newest first (`public_id`, `display_name`, `avatar_path`, `handle`, `muted_at`).
+- **Notifications:** `list_my_community_notifications` and `count_my_unread_community_notifications` were recreated with the same signatures and columns, plus a `NOT EXISTS` check on `member_mutes`, so muted actors are filtered at read time. Notification rows are never deleted, and creation is unchanged. The 9A block guard (which skips creation across a block) is separate and unchanged. Unmuting makes historical notifications visible again.
+- **Frontend:**
+  - Mute state comes only from the shared cache, a Set of muted `public_id`s. There's no `get_mute_state` RPC and no change to `get_member_relationship`.
+  - `fpr:mutechange` fires exactly once per mute or unmute. Its listeners never re-dispatch it.
+  - The account Muted members list reloads on that event only while the account modal is open (opening the modal reloads it).
+  - A muted member's profile, including Recent Posts, stays visible when it's opened on purpose.
+  - All-muted feeds and searches show a mute-aware empty state. The search backend limit (50) is unchanged, so muted rows can make a search show fewer than 50 results.
+- **Independence from blocking:** blocking doesn't mute and muting doesn't block. Unblocking keeps a mute, unmuting keeps a block, and both can exist at once.
+- **Migration history:** `phase9b1_member_mutes` was applied manually in the SQL Editor and is **not** in `supabase_migrations.schema_migrations`. Seven migrations have now been applied manually and are missing from the history table: 8A, 8B-1, 8C-1, 8C-3, 9A, 9B-1, and 9C-1 (`phase9c1_member_reports`, below). Re-checked live on 2026-10-19, the table still has 9 rows, ending at `phase7d_admin_avatar_removal`. No rows have been added by hand.
+
 Verification: backend rollback tests were reported complete in the Phase 9B-1 handoff. During this session, live tests with JUSTIN and MAXOM confirmed feed/search filtering, comment/reply collapse and Show, persistence after refresh, account-list unmuting, restored search results, and notification hiding/restoration. Cache/identity races and failure fallback were covered by focused local tests, not by the live walkthrough.
 
 ## Phase 9C — Member reports
@@ -599,7 +616,7 @@ Migration: migrations/phase9c1_member_reports.sql. Applied manually in the SQL E
 
 Verification: signed-out/self/unknown-target/null-or-invalid-reason/overlong-details rejection, authenticated submission, duplicate-open-report protection, private report reads, non-admin moderation rejection, and stored receipt fields passed rollback SQL checks. Frontend tests covered validation, double submission, error recovery, existing content-report RPCs, and safe admin rendering. Live tests covered member submission, duplicate rejection, new submission after dismissal, admin target/details, Dismiss, Resolve, and dismissal persistence after refresh. Success-state Close labeling and a concurrent database race were not separately exercised live.
 
-The manual migration application does not add a Supabase migration-history row automatically. Migration history has not been re-queried in this session; earlier counts below are historical notes.
+The manual migration application does not add a Supabase migration-history row automatically. Re-checked live on 2026-10-19 (Phase 9B-4), the history table still has 9 rows and does not include `phase9c1_member_reports`.
 
 ## What's next
 
