@@ -27,7 +27,22 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Support FPR** — complete: an optional "Help Keep the Porch Light On" card at the bottom of the Porch Shop (after the products), reached from the footer's "Support FPR" link. One "Support Front Porch Recovery" button opens the FPR Cash App business profile ($FPR2026) externally, with small links to the books and shop. FPR is free to use, the site never processes payments, contributions aren't tax-deductible (FPR isn't a registered nonprofit), and there are no support prompts in recovery tools, Community, or crisis content. Privacy and Terms mention Cash App.
 - **Phase 9D — Safety polish** — complete: Mute · Block · Report share one subdued row in the profile panel, the account window groups Blocked and Muted members under "Safety & visibility", confirmation copy is consistent across the three, and the admin Reports tab adds a type filter (All/Member/Post/Comment) with Open as the default status.
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
+- **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
 - **Admin mobile layout** — deployed and checked on a phone: wrapping tabs, readable text, account header, and filters. Current checkpoint: main at e9ad981 on 2026-10-19.
+
+## My Recovery
+
+"My Recovery" (main nav, next to Check In; `#myrecovery`) is a private dashboard for signed-in members. Signed out, it explains what it is and offers Sign in; the Check-In and Recovery Counter still work without an account.
+
+- **Private to the account, not the device.** Entries are saved with the member's account so they follow them across devices. The on-device Daily Check-In and Recovery Counter are unchanged and are never uploaded or copied into My Recovery.
+- **Today:** one entry per member per calendar day (the member's local date): mood 1–5, cravings 0–10, "One win today" and "What do I need today?" (each optional, up to 300 characters). At least one field is needed to save. Saving again updates the same day, with a Saved/Unsaved state. Tapping a selected mood or cravings value again clears it.
+- **Recovery Counter card:** shows the on-device counter's current days (read only), or a "Set up your Recovery Counter" button that goes to the home counter.
+- **Last 7 days:** days logged out of 7, average mood, average cravings, and a 7-day strip. No interpretation, scoring or advice.
+- **Current goal:** one active goal with an optional target date. Members can create, edit, mark complete or not complete, start a new goal (replaces the current one), and clear it. Cleared or replaced goals stay stored but aren't listed in v1.
+- **Recent history:** the last 7 days, expandable to the last 30. Tap a day to see the full entry; past entries can be edited.
+- **Not connected to anything else:** no Community, profile, badge, follower, notification or admin exposure; no AI, points or streak rankings. Member text is rendered as plain text.
+
+The backend is `supabase/migrations/phase11a_my_recovery_v1.sql` (applied; see `supabase/README.md`).
 
 ## Community features
 

@@ -202,6 +202,13 @@
      needs more room than 860px to avoid wrapping/crowding, so the hamburger
      menu stays active well past typical tablet widths. */
   @media(min-width:1400px){
+    /* 12 nav items (incl. My Recovery) plus the brand and actions don't fit
+       the page's 1100px content width without wrapping, so the header row
+       gets more room and the nav buttons are a little tighter. */
+    .header-inner{max-width:1440px;}
+    nav.desktop-nav button{padding:9px 7px; font-size:.85rem;}
+    nav.desktop-nav button, .header-inner .brand-name, .header-inner .brand-sub{white-space:nowrap;}
+    .header-inner .brand{flex:none;}
     nav.desktop-nav{display:flex;}
     .header-cta{display:inline-flex;}
     #menuOpenBtn{display:none;}
@@ -842,6 +849,61 @@
   .account-handle-check.ok{color:var(--sage-text); font-weight:600;}
   .account-handle-check.bad{color:#7A2E24;}
   .member-profile-handle{font-size:.92rem; color:var(--charcoal-soft); margin-top:2px;}
+
+  /* ---------- My Recovery (Phase 11A) ---------- */
+  .mr-wrap{max-width:680px;}
+  .mr-private-pill{display:inline-flex; align-items:center; gap:6px; margin-top:12px; padding:5px 12px; border-radius:999px; background:rgba(167,184,168,.18); color:#DCE5DC; font-size:.85rem; font-weight:600;}
+  .mr-private-pill svg{width:15px; height:15px; flex:none;}
+  .mr-distinction{font-size:.9rem; line-height:1.6; color:var(--charcoal-soft); margin:0 0 18px;}
+  .mr-link{background:none; border:none; padding:0; font:inherit; color:var(--sage-text); font-weight:600; text-decoration:underline; text-underline-offset:3px; cursor:pointer;}
+  .mr-card{margin-top:16px;}
+  .mr-card h2{font-size:1.25rem;}
+  .mr-card > p{margin-top:8px;}
+  #mr-signedout .btn{margin-top:14px;}
+  .mr-card-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .mr-date{font-size:.88rem; color:var(--sage-text); font-weight:600;}
+  .mr-state{font-size:.9rem; color:var(--charcoal-soft); margin-top:4px;}
+  .mr-state.saved{color:var(--sage-text); font-weight:700;}
+  .mr-state.dirty{color:#7a5a1e; font-weight:600;}
+  .mr-fieldset{border:none; padding:0; margin:16px 0 0; min-width:0;}
+  .mr-fieldset legend{font-weight:600; font-size:.92rem; margin-bottom:8px; padding:0;}
+  .mr-hint{font-weight:400; opacity:.65;}
+  .mr-mood{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:6px;}
+  .mr-mood .choice{padding:10px 2px; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:12px; font-size:.75rem; line-height:1.15;}
+  .mr-mood .choice strong{font-size:1.05rem;}
+  .mr-cravings{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:6px;}
+  .mr-cravings .scale-btn{width:auto; height:44px;}
+  @media(min-width:520px){ .mr-cravings{grid-template-columns:repeat(11, minmax(0,1fr));} }
+  .mr-count{font-size:.75rem; color:var(--charcoal-soft); text-align:right; margin-top:4px; min-height:1em;}
+  .mr-actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+  .mr-actions .btn{flex:1 1 140px; padding:13px 14px; white-space:nowrap;}
+  .mr-muted{font-size:.82rem; color:var(--charcoal-soft); margin-top:10px;}
+  .mr-empty{font-size:.92rem; color:var(--charcoal-soft); margin-top:8px;}
+  .mr-big{font-size:2.2rem; font-weight:800; color:var(--sage-text); line-height:1.1; margin-top:8px;}
+  .mr-stats{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; margin-top:12px;}
+  .mr-stat{background:var(--cream, #FAF7F2); border:1px solid var(--line); border-radius:12px; padding:10px 6px; text-align:center;}
+  .mr-stat .n{font-size:1.25rem; font-weight:800; color:var(--sage-text);}
+  .mr-stat .l{font-size:.72rem; opacity:.75; margin-top:2px;}
+  .mr-week{display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:4px; margin-top:12px; list-style:none; padding:0;}
+  .mr-week li{text-align:center; font-size:.7rem; color:var(--charcoal-soft);}
+  .mr-week .dot{display:flex; align-items:center; justify-content:center; height:30px; margin-top:3px; border-radius:8px; border:1px dashed var(--line); font-weight:700; font-size:.85rem; color:var(--charcoal);}
+  .mr-week .dot.on{border-style:solid; background:var(--sage); border-color:var(--sage);}
+  .mr-goal-text{font-size:1.05rem; font-weight:700; margin-top:8px; overflow-wrap:anywhere;}
+  .mr-goal-text.done{text-decoration:line-through; text-decoration-color:rgba(26,26,26,.35);}
+  .mr-goal-meta{font-size:.85rem; color:var(--charcoal-soft); margin-top:4px;}
+  .mr-goal-badge{display:inline-block; margin-top:8px; padding:3px 10px; border-radius:999px; background:var(--sage); font-size:.78rem; font-weight:700;}
+  .mr-history-list{list-style:none; padding:0; margin:12px 0 0; display:flex; flex-direction:column; gap:8px;}
+  .mr-day{width:100%; text-align:left; background:var(--white); border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; min-height:48px; color:var(--charcoal); font:inherit; cursor:pointer;}
+  .mr-day:hover, .mr-day[aria-expanded="true"]{border-color:var(--charcoal);}
+  .mr-day-top{display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; font-weight:700; font-size:.92rem;}
+  .mr-day-nums{font-weight:600; color:var(--sage-text); font-size:.85rem;}
+  .mr-day-preview{display:block; font-size:.84rem; color:var(--charcoal-soft); margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .mr-entry{margin-top:12px; padding:14px; border-radius:12px; background:var(--cream, #FAF7F2); border:1px solid var(--line);}
+  .mr-entry h3{font-size:1rem;}
+  .mr-entry dl{margin:8px 0 0;}
+  .mr-entry dt{font-size:.75rem; font-weight:700; color:var(--sage-text); margin-top:8px;}
+  .mr-entry dd{margin:2px 0 0; white-space:pre-wrap; overflow-wrap:anywhere;}
+  #mr-history-more{margin-top:12px; width:100%;}
 </style>
 <!-- Supabase client (Phase 1): optional member accounts only. Loaded from
      jsdelivr's CDN mirror of the published npm package; nothing here can
@@ -864,6 +926,7 @@
     <nav class="desktop-nav" aria-label="Primary">
       <button data-nav="home">Home</button>
       <button data-nav="checkin">Check In</button>
+      <button data-nav="myrecovery">My Recovery</button>
       <button data-nav="porch">The Porch</button>
       <button data-nav="books">Books</button>
       <button data-nav="shop">Shop</button>
@@ -892,6 +955,7 @@
   <div class="links">
     <button data-nav="home">Home</button>
     <button data-nav="checkin">Check In</button>
+    <button data-nav="myrecovery">My Recovery</button>
     <button data-nav="porch">The Porch</button>
     <button data-nav="books">Books</button>
     <button data-nav="shop">Shop</button>
@@ -1226,6 +1290,111 @@
         <p><strong>In an emergency, call <a class="crisis-num" href="tel:911"><strong>911</strong></a>.</strong> If you're in immediate danger, having a medical emergency, or at risk of harming yourself or someone else, call 911 or go to the nearest emergency room — emergency responders can get help to you fastest.</p>
         <p>If you need to talk to someone right now, call or text <a class="crisis-num" href="tel:988"><strong>988</strong></a> (Suicide &amp; Crisis Lifeline) — free, confidential, and available 24/7 in the U.S.</p>
         <p>This check-in is peer support and community connection — it is not emergency or clinical treatment.</p>
+      </div>
+    </div>
+  </section>
+</section>
+
+<!-- ================= MY RECOVERY (Phase 11A) =================
+     Signed-in, account-private dashboard. Separate from the on-device
+     Check-In and Recovery Counter: nothing local is uploaded or copied.
+     Built by the My Recovery script (textContent only). -->
+<section class="page" id="page-myrecovery">
+  <section class="block bg-charcoal tight">
+    <div class="wrap mr-wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;">Your private space</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">My Recovery</h1>
+      <p class="mr-private-pill"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>Private to your account.</p>
+      <p style="color:var(--gray); margin-top:10px; max-width:58ch;">My Recovery entries are not public and do not appear in Community.</p>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap mr-wrap">
+      <p class="mr-distinction">My Recovery is private to your account and can follow you across devices. Your existing Check-In and Recovery Counter still stay on this device unless you choose to use My Recovery. <button type="button" class="mr-link" data-nav="privacy">Privacy</button></p>
+
+      <div class="form-card mr-card" id="mr-signedout">
+        <h2>Sign in to use My Recovery</h2>
+        <p>With a free account you can keep a quick daily log, see your recent days, and set one small goal. It’s private to you and available on any device you sign in on.</p>
+        <button type="button" class="btn btn-primary" id="mr-signin">Sign in</button>
+        <p class="mr-muted">No account needed for the <button type="button" class="mr-link" data-nav="checkin">Check-In</button> or the <button type="button" class="mr-link" data-nav="home" data-scroll-target="home-counter">Recovery Counter</button>. They keep working on this device.</p>
+      </div>
+
+      <div id="mr-signedin" hidden>
+        <div class="status-msg status-error" id="mr-load-error" role="alert"><span id="mr-load-error-text"></span> <button type="button" class="mr-link" id="mr-retry">Try again</button></div>
+
+        <section class="form-card mr-card" id="mr-today" aria-labelledby="mr-today-title" tabindex="-1">
+          <div class="mr-card-head">
+            <h2 id="mr-today-title">Today</h2>
+            <span class="mr-date" id="mr-today-date"></span>
+          </div>
+          <p class="mr-state" id="mr-today-state" role="status" aria-live="polite">Nothing logged today yet.</p>
+          <form id="mr-log-form" novalidate>
+            <fieldset class="mr-fieldset">
+              <legend>Mood</legend>
+              <div class="mr-mood" id="mr-mood"></div>
+            </fieldset>
+            <fieldset class="mr-fieldset">
+              <legend>Cravings <span class="mr-hint">(0 = none, 10 = intense)</span></legend>
+              <div class="scale-row mr-cravings" id="mr-cravings"></div>
+            </fieldset>
+            <div class="field">
+              <label for="mr-win">One win today <span class="mr-hint">(optional)</span></label>
+              <textarea id="mr-win" maxlength="300" rows="2"></textarea>
+              <p class="mr-count" id="mr-win-count" aria-live="polite"></p>
+            </div>
+            <div class="field">
+              <label for="mr-need">What do I need today? <span class="mr-hint">(optional)</span></label>
+              <textarea id="mr-need" maxlength="300" rows="2"></textarea>
+              <p class="mr-count" id="mr-need-count" aria-live="polite"></p>
+            </div>
+            <p class="field-error" id="mr-log-error" role="alert"></p>
+            <div class="mr-actions">
+              <button type="submit" class="btn btn-primary" id="mr-save">Save today</button>
+              <button type="button" class="btn btn-outline" id="mr-back-today" hidden>Back to today</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="form-card mr-card" id="mr-counter" aria-labelledby="mr-counter-title">
+          <h2 id="mr-counter-title">Recovery Counter</h2>
+          <div id="mr-counter-body"></div>
+          <p class="mr-muted">Your counter stays on this device. It isn’t saved to My Recovery.</p>
+        </section>
+
+        <section class="form-card mr-card" id="mr-summary" aria-labelledby="mr-summary-title">
+          <h2 id="mr-summary-title">Last 7 days</h2>
+          <div id="mr-summary-body"></div>
+        </section>
+
+        <section class="form-card mr-card" id="mr-goal" aria-labelledby="mr-goal-title">
+          <h2 id="mr-goal-title">Current goal</h2>
+          <div id="mr-goal-view"></div>
+          <form id="mr-goal-form" novalidate hidden>
+            <div class="field">
+              <label for="mr-goal-text">Your goal</label>
+              <input type="text" id="mr-goal-text" maxlength="200" autocomplete="off" placeholder="e.g. Call my sponsor 3 times this week">
+            </div>
+            <div class="field">
+              <label for="mr-goal-date">Target date <span class="mr-hint">(optional)</span></label>
+              <input type="date" id="mr-goal-date">
+            </div>
+            <div class="mr-actions">
+              <button type="submit" class="btn btn-primary" id="mr-goal-save">Save goal</button>
+              <button type="button" class="btn btn-outline" id="mr-goal-cancel">Cancel</button>
+            </div>
+          </form>
+          <p class="field-error" id="mr-goal-error" role="alert"></p>
+        </section>
+
+        <section class="form-card mr-card" id="mr-history" aria-labelledby="mr-history-title">
+          <h2 id="mr-history-title">Recent history</h2>
+          <p class="mr-muted" id="mr-history-range"></p>
+          <ul class="mr-history-list" id="mr-history-list"></ul>
+          <p class="mr-empty" id="mr-history-empty" hidden>Your history will start here after your first My Recovery entry.</p>
+          <div class="mr-entry" id="mr-entry" hidden tabindex="-1" aria-labelledby="mr-entry-title"></div>
+          <button type="button" class="btn btn-outline" id="mr-history-more" hidden>Show the last 30 days</button>
+        </section>
       </div>
     </div>
   </section>
@@ -1927,6 +2096,7 @@
           <li>Front Porch Recovery has no ads, no analytics, and no tracking pixels, and it does not set its own cookies. Signing in is optional.</li>
           <li>The Daily Check-In and Recovery Counter save a small amount of information <strong>in your own browser</strong>. It is never sent to Front Porch Recovery, and we can't see it.</li>
           <li>If you sign in, your account and Community profile are saved on our servers: your display name and anything you choose to add — a short bio, a profile photo, and a recovery date with who can see it. The profile recovery date is separate from the Recovery Counter.</li>
+        <li>If you use My Recovery, your daily entries and current goal are saved privately with your account so they're available on any device you sign in on.</li>
           <li>If you use the Contact form, your message is delivered to us through a service called Formspree.</li>
           <li>We don't sell or rent your information, and we don't share it for advertising.</li>
           <li>Our web host and a few outside services receive basic technical information when the site loads.</li>
@@ -1960,6 +2130,14 @@
         <li>who you follow. Your Following list isn't public, and there are no public follower lists or counts. When you follow a member, they get an in-app notification saying you followed them (it's removed if you unfollow);</li>
         <li>who you block. Your Blocked members list is private, and the person you block isn't told; and</li>
         <li>who you mute. Your Muted members list is private, and the person you mute isn't told.</li>
+      </ul>
+
+      <h2>My Recovery (private to your account)</h2>
+      <p>If you use My Recovery, what you enter is saved with your account so it can follow you across devices: a daily entry (mood, cravings, and the optional “One win today” and “What do I need today?” notes) and one current goal with an optional target date. Goals you clear or replace stay stored with your account but aren't shown.</p>
+      <ul>
+        <li>Only you can see your My Recovery entries in the site. They aren't public, and they never appear in the Community, on your profile, in notifications, or to the people who follow you.</li>
+        <li>FPR's admin tools have no screen for My Recovery, and we don't review it.</li>
+        <li>My Recovery never copies your Daily Check-In or Recovery Counter. Those stay in your browser unless you choose to type something into My Recovery yourself.</li>
       </ul>
 
       <h2>Blocking members</h2>
@@ -2427,6 +2605,7 @@
         <h4>Explore</h4>
         <ul>
           <li><a href="#" data-nav="checkin">Check In</a></li>
+          <li><a href="#" data-nav="myrecovery">My Recovery</a></li>
           <li><a href="#" data-nav="porch">The Porch</a></li>
           <li><a href="#" data-nav="toolbox">Recovery Toolbox</a></li>
           <li><a href="#" data-nav="daily">Daily Porch</a></li>
@@ -2567,7 +2746,7 @@ const CONFIG = {
      (otherwise the pages point visitors to the Contact form). Change
      lastUpdated whenever any of those pages' wording changes. */
   legal: {
-    lastUpdated: 'October 17, 2026',
+    lastUpdated: 'October 19, 2026',
     ownerName: 'Justin Whetstone',
     contactEmail: 'frontporchrecovery@gmail.com',
     siteUrl: 'https://fpr26.github.io/front-porch-recovery/'
@@ -13067,6 +13246,440 @@ const FPRBadge = (function(){
   // by the time goTo('home', { scrollTarget }) scrolls to it.
   const footerReplay = document.getElementById('footer-onboard-replay');
   if (footerReplay) footerReplay.addEventListener('click', replay);
+})();
+
+/* ---------- My Recovery (Phase 11A) ----------
+   Signed-in, account-private dashboard: today's log, the on-device
+   Recovery Counter (read only, never uploaded), a 7-day summary, one
+   current goal and recent history. Data comes only from the
+   *_my_recovery_* RPCs, which act on the caller's own rows and return no
+   ids. Nothing here reads or writes the local Check-In data, changes the
+   counter's storage, or touches Community, profiles or notifications.
+   Member text is rendered with textContent only. Data loads when the
+   page is opened and is cleared from memory on sign-out or account
+   switch. */
+(function(){
+  const page = document.getElementById('page-myrecovery');
+  if (!page) return;
+  const client = window.__fprSupabaseClient || null;
+  const M = (typeof FPRMilestones !== 'undefined') ? FPRMilestones : null;
+  const $ = function(id){ return document.getElementById(id); };
+  const signedOutView = $('mr-signedout'), signedInView = $('mr-signedin');
+  const loadErr = $('mr-load-error'), loadErrText = $('mr-load-error-text');
+  const todayTitle = $('mr-today-title'), todayDate = $('mr-today-date'), todayState = $('mr-today-state');
+  const logForm = $('mr-log-form'), moodBox = $('mr-mood'), cravBox = $('mr-cravings');
+  const winInput = $('mr-win'), needInput = $('mr-need'), winCount = $('mr-win-count'), needCount = $('mr-need-count');
+  const logError = $('mr-log-error'), saveBtn = $('mr-save'), backToday = $('mr-back-today');
+  const counterBody = $('mr-counter-body'), summaryBody = $('mr-summary-body');
+  const goalView = $('mr-goal-view'), goalForm = $('mr-goal-form'), goalText = $('mr-goal-text'), goalDate = $('mr-goal-date');
+  const goalSave = $('mr-goal-save'), goalCancel = $('mr-goal-cancel'), goalError = $('mr-goal-error');
+  const histList = $('mr-history-list'), histEmpty = $('mr-history-empty'), histRange = $('mr-history-range'), histMore = $('mr-history-more');
+  const MOODS = [[1, 'Rough'], [2, 'Struggling'], [3, 'Okay'], [4, 'Good'], [5, 'Great']];
+
+  let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0, loaded = false;
+  let logs = [];              // the member's entries from the last 30 days, newest first
+  let goal = null;            // active goal or null
+  let editingDate = null;     // null = today; otherwise a past entry's date
+  let mood = null, cravings = null, dirty = false;
+  let showAll = false, openEntry = null, goalMode = 'view', busy = false;
+
+  function pad(n){ return String(n).padStart(2, '0'); }
+  function todayStr(){ const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parts(s){ return String(s).split('-').map(Number); }
+  function shiftDays(s, n){
+    const p = parts(s); const t = new Date(Date.UTC(p[0], p[1] - 1, p[2]) + n * 86400000);
+    return t.getUTCFullYear() + '-' + pad(t.getUTCMonth() + 1) + '-' + pad(t.getUTCDate());
+  }
+  function fmtDay(s, opts){
+    const p = parts(s);
+    try { return new Date(Date.UTC(p[0], p[1] - 1, p[2])).toLocaleDateString('en-US', Object.assign({ timeZone: 'UTC' }, opts || { weekday: 'short', month: 'short', day: 'numeric' })); }
+    catch(e){ return s; }
+  }
+  function fmtTime(ts){ try { return new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); } catch(e){ return ''; } }
+  function el(tag, cls, text){
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function btn(label, cls, onClick){
+    const b = el('button', cls, label); b.type = 'button';
+    if (onClick) b.addEventListener('click', onClick);
+    return b;
+  }
+  function currentDate(){ return editingDate || todayStr(); }
+  function entryFor(date){ return logs.find(function(l){ return l.log_date === date; }) || null; }
+  function moodLabel(n){ const m = MOODS.find(function(x){ return x[0] === n; }); return m ? m[1] : ''; }
+  function nums(l){
+    const out = [];
+    if (l.mood != null) out.push('Mood ' + l.mood + '/5');
+    if (l.cravings != null) out.push('Cravings ' + l.cravings + '/10');
+    return out.join(' · ');
+  }
+  function errMsg(err, fallback){
+    const code = err && err.code;
+    if (code === '42501') return 'Please sign in again to use My Recovery.';
+    if (code === '22023' || code === 'P0002') return (err && err.message) || fallback; // our own validation text
+    return fallback;
+  }
+  function showFieldError(node, msg){ node.textContent = msg || ''; node.classList.toggle('show', !!msg); }
+
+  // ---- Today form ----
+  MOODS.forEach(function(m){
+    const b = el('button', 'choice'); b.type = 'button';
+    b.dataset.value = String(m[0]);
+    b.setAttribute('aria-pressed', 'false');
+    b.setAttribute('aria-label', 'Mood ' + m[0] + ' of 5, ' + m[1]);
+    b.appendChild(el('strong', null, String(m[0])));
+    b.appendChild(el('span', null, m[1]));
+    moodBox.appendChild(b);
+  });
+  for (let i = 0; i <= 10; i++) {
+    const b = el('button', 'scale-btn', String(i)); b.type = 'button';
+    b.dataset.value = String(i);
+    b.setAttribute('aria-pressed', 'false');
+    b.setAttribute('aria-label', 'Cravings ' + i + ' out of 10');
+    cravBox.appendChild(b);
+  }
+  function paintChoices(){
+    moodBox.querySelectorAll('button').forEach(function(b){
+      const on = Number(b.dataset.value) === mood;
+      b.classList.toggle('selected', on); b.setAttribute('aria-pressed', String(on));
+    });
+    cravBox.querySelectorAll('button').forEach(function(b){
+      const on = Number(b.dataset.value) === cravings;
+      b.classList.toggle('selected', on); b.setAttribute('aria-pressed', String(on));
+    });
+  }
+  function paintCounts(){
+    winCount.textContent = winInput.value.length ? winInput.value.length + ' / 300' : '';
+    needCount.textContent = needInput.value.length ? needInput.value.length + ' / 300' : '';
+  }
+  function markDirty(){ dirty = true; showFieldError(logError, ''); paintTodayState(); }
+  moodBox.addEventListener('click', function(e){
+    const b = e.target.closest('button'); if (!b) return;
+    const v = Number(b.dataset.value); mood = (mood === v) ? null : v; // tap again to clear
+    paintChoices(); markDirty();
+  });
+  cravBox.addEventListener('click', function(e){
+    const b = e.target.closest('button'); if (!b) return;
+    const v = Number(b.dataset.value); cravings = (cravings === v) ? null : v;
+    paintChoices(); markDirty();
+  });
+  [winInput, needInput].forEach(function(t){ t.addEventListener('input', function(){ paintCounts(); markDirty(); }); });
+
+  function fillForm(entry){
+    mood = entry && entry.mood != null ? Number(entry.mood) : null;
+    cravings = entry && entry.cravings != null ? Number(entry.cravings) : null;
+    winInput.value = (entry && entry.win_text) || '';
+    needInput.value = (entry && entry.need_text) || '';
+    dirty = false;
+    showFieldError(logError, '');
+    paintChoices(); paintCounts(); paintToday();
+  }
+  function paintTodayState(){
+    const entry = entryFor(currentDate());
+    todayState.classList.remove('saved', 'dirty');
+    if (!loaded && !dirty) { todayState.textContent = loadErr.classList.contains('show') ? '' : 'Loading…'; return; }
+    if (dirty) { todayState.textContent = 'Unsaved changes.'; todayState.classList.add('dirty'); }
+    else if (entry) {
+      todayState.textContent = editingDate ? 'Saved ✓' : 'Saved ✓ · last updated ' + fmtTime(entry.updated_at);
+      todayState.classList.add('saved');
+    }
+    else todayState.textContent = editingDate ? 'No entry for this day.' : 'Nothing logged today yet.';
+  }
+  function paintToday(){
+    const d = currentDate();
+    todayTitle.textContent = editingDate ? 'Editing ' + fmtDay(d) : 'Today';
+    todayDate.textContent = editingDate ? '' : fmtDay(d, { weekday: 'long', month: 'short', day: 'numeric' });
+    backToday.hidden = !editingDate;
+    saveBtn.textContent = editingDate ? 'Save changes' : (entryFor(d) ? 'Update today' : 'Save today');
+    paintTodayState();
+  }
+  function confirmDiscard(){ return !dirty || window.confirm('Discard your unsaved changes?'); }
+  function editDate(date){
+    if (date === todayStr()) date = null;
+    if (date === editingDate) return true;
+    if (!confirmDiscard()) return false;
+    editingDate = date;
+    fillForm(entryFor(currentDate()));
+    return true;
+  }
+  backToday.addEventListener('click', function(){ if (editDate(null)) focusToday(); });
+  function focusToday(){
+    const card = $('mr-today');
+    try { card.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); } catch(e){}
+    try { card.focus({ preventScroll: true }); } catch(e){}
+  }
+
+  logForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (!client || !signedIn || busy) return;
+    const win = winInput.value.trim(), need = needInput.value.trim();
+    if (mood == null && cravings == null && !win && !need) { showFieldError(logError, 'Add at least one thing before saving.'); return; }
+    const date = currentDate(), mySeq = seq;
+    busy = true; saveBtn.disabled = true; showFieldError(logError, '');
+    try {
+      const { data, error } = await client.rpc('save_my_recovery_log', {
+        p_log_date: date, p_mood: mood, p_cravings: cravings, p_win_text: win, p_need_text: need
+      });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) throw new Error('No row');
+      logs = logs.filter(function(l){ return l.log_date !== row.log_date; }).concat([row])
+        .sort(function(a, b){ return a.log_date < b.log_date ? 1 : -1; });
+      fillForm(row);
+      renderSummary(); renderHistory();
+    } catch(err){
+      if (mySeq !== seq) return;
+      showFieldError(logError, errMsg(err, 'Couldn’t save right now. Please try again.'));
+    } finally {
+      if (mySeq === seq) { busy = false; saveBtn.disabled = false; }
+    }
+  });
+
+  // ---- Recovery Counter (on-device; read only) ----
+  function renderCounter(){
+    counterBody.replaceChildren();
+    let start = null;
+    try { start = M ? M.savedStart() : null; } catch(e){ start = null; }
+    if (start) {
+      const days = M.daysBetween(start, M.todayYMD());
+      counterBody.appendChild(el('p', 'mr-big', days.toLocaleString() + (days === 1 ? ' day' : ' days')));
+      counterBody.appendChild(el('p', 'mr-goal-meta', 'Since ' + M.fmtDate(start)));
+      const b = btn('Open the full counter', 'mr-link'); b.setAttribute('data-nav', 'home'); b.setAttribute('data-scroll-target', 'home-counter');
+      const p = el('p'); p.style.marginTop = '8px'; p.appendChild(b); counterBody.appendChild(p);
+    } else {
+      counterBody.appendChild(el('p', 'mr-empty', 'Add your recovery start date on this device to see your days here.'));
+      const b = btn('Set up your Recovery Counter', 'btn btn-outline'); b.style.marginTop = '10px';
+      b.setAttribute('data-nav', 'home'); b.setAttribute('data-scroll-target', 'home-counter');
+      counterBody.appendChild(b);
+    }
+  }
+  document.addEventListener('fpr:counterupdate', renderCounter);
+
+  // ---- Last 7 days ----
+  function avg(list, key){
+    const v = list.map(function(l){ return l[key]; }).filter(function(x){ return x != null; }).map(Number);
+    if (!v.length) return null;
+    return v.reduce(function(a, b){ return a + b; }, 0) / v.length;
+  }
+  function renderSummary(){
+    summaryBody.replaceChildren();
+    const t = todayStr(), from = shiftDays(t, -6);
+    const week = logs.filter(function(l){ return l.log_date >= from && l.log_date <= t; });
+    const am = avg(week, 'mood'), ac = avg(week, 'cravings');
+    const stats = el('div', 'mr-stats');
+    [[week.length + ' / 7', 'days logged'],
+     [am == null ? '—' : am.toFixed(1), 'avg mood (of 5)'],
+     [ac == null ? '—' : ac.toFixed(1), 'avg cravings (of 10)']].forEach(function(s){
+      const box = el('div', 'mr-stat');
+      box.appendChild(el('div', 'n', s[0])); box.appendChild(el('div', 'l', s[1]));
+      stats.appendChild(box);
+    });
+    summaryBody.appendChild(stats);
+    const strip = el('ul', 'mr-week'); strip.setAttribute('aria-label', 'Each of the last 7 days');
+    for (let i = 6; i >= 0; i--) {
+      const d = shiftDays(t, -i), entry = entryFor(d);
+      const li = el('li');
+      li.appendChild(el('span', null, i === 0 ? 'Today' : fmtDay(d, { weekday: 'short' })));
+      const dot = el('span', 'dot' + (entry ? ' on' : ''), entry ? (entry.mood != null ? String(entry.mood) : '✓') : '');
+      dot.setAttribute('aria-hidden', 'true');
+      li.appendChild(dot);
+      li.setAttribute('aria-label', fmtDay(d) + ': ' + (entry ? (entry.mood != null ? 'mood ' + entry.mood + ' of 5' : 'logged') : 'not logged'));
+      strip.appendChild(li);
+    }
+    summaryBody.appendChild(strip);
+    if (!week.length) summaryBody.appendChild(el('p', 'mr-empty', 'Nothing logged in the last 7 days yet.'));
+    else summaryBody.appendChild(el('p', 'mr-muted', 'Numbers on each day are your mood (1–5).'));
+  }
+
+  // ---- Current goal ----
+  function renderGoal(){
+    goalView.replaceChildren();
+    goalForm.hidden = goalMode === 'view';
+    goalView.hidden = goalMode !== 'view';
+    if (goalMode !== 'view' || !loaded) return;
+    if (!goal) {
+      goalView.appendChild(el('p', 'mr-empty', 'Set one small goal for yourself.'));
+      const b = btn('Set a goal', 'btn btn-primary', function(){ openGoalForm('new'); }); b.style.marginTop = '10px';
+      goalView.appendChild(b);
+      return;
+    }
+    goalView.appendChild(el('p', 'mr-goal-text' + (goal.completed ? ' done' : ''), goal.goal_text));
+    if (goal.target_date) goalView.appendChild(el('p', 'mr-goal-meta', 'Target date: ' + fmtDay(goal.target_date, { month: 'short', day: 'numeric', year: 'numeric' })));
+    if (goal.completed) goalView.appendChild(el('span', 'mr-goal-badge', 'Completed ✓'));
+    const actions = el('div', 'mr-actions');
+    actions.appendChild(btn(goal.completed ? 'Mark not complete' : 'Mark complete', goal.completed ? 'btn btn-outline' : 'btn btn-primary', function(){ setCompleted(!goal.completed); }));
+    actions.appendChild(btn('Edit', 'btn btn-outline', function(){ openGoalForm('edit'); }));
+    goalView.appendChild(actions);
+    const more = el('p', 'mr-muted');
+    more.appendChild(btn('Start a new goal', 'mr-link', function(){ openGoalForm('new'); }));
+    more.appendChild(document.createTextNode(' · '));
+    more.appendChild(btn('Clear goal', 'mr-link', clearGoal));
+    goalView.appendChild(more);
+  }
+  function openGoalForm(mode){
+    goalMode = mode;
+    goalText.value = mode === 'edit' && goal ? goal.goal_text : '';
+    goalDate.value = mode === 'edit' && goal && goal.target_date ? goal.target_date : '';
+    goalSave.textContent = mode === 'new' && goal ? 'Replace goal' : 'Save goal';
+    showFieldError(goalError, '');
+    renderGoal();
+    try { goalText.focus(); } catch(e){}
+  }
+  goalCancel.addEventListener('click', function(){ goalMode = 'view'; showFieldError(goalError, ''); renderGoal(); });
+  async function goalCall(fn, args, fallback){
+    if (!client || !signedIn || busy) return;
+    const mySeq = seq;
+    busy = true; showFieldError(goalError, '');
+    goalSave.disabled = true;
+    try {
+      const { data, error } = await client.rpc(fn, args);
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      if (fn === 'clear_my_recovery_goal') goal = null;
+      else goal = (Array.isArray(data) ? data[0] : data) || null;
+      goalMode = 'view';
+      renderGoal();
+    } catch(err){
+      if (mySeq !== seq) return;
+      showFieldError(goalError, errMsg(err, fallback));
+    } finally {
+      if (mySeq === seq) { busy = false; goalSave.disabled = false; }
+    }
+  }
+  goalForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    const text = goalText.value.trim();
+    if (!text) { showFieldError(goalError, 'Write a goal first.'); return; }
+    goalCall('set_my_recovery_goal', { p_goal_text: text, p_target_date: goalDate.value || null, p_replace: goalMode === 'new' },
+      'Couldn’t save your goal right now. Please try again.');
+  });
+  function setCompleted(v){
+    goalCall('set_my_recovery_goal_completed', { p_completed: v }, 'Couldn’t update your goal right now. Please try again.');
+  }
+  function clearGoal(){
+    if (!window.confirm('Clear your current goal? It won’t be shown here anymore.')) return;
+    goalCall('clear_my_recovery_goal', {}, 'Couldn’t clear your goal right now. Please try again.');
+  }
+
+  // ---- Recent history ----
+  function renderHistory(){
+    histList.replaceChildren();
+    const t = todayStr(), from = shiftDays(t, showAll ? -29 : -6);
+    const shown = logs.filter(function(l){ return l.log_date >= from && l.log_date <= t; });
+    histRange.textContent = showAll ? 'Last 30 days' : 'Last 7 days';
+    histEmpty.hidden = !loaded || logs.length > 0;
+    histRange.hidden = logs.length === 0;
+    histMore.hidden = logs.length === 0;
+    histMore.textContent = showAll ? 'Show the last 7 days' : 'Show the last 30 days';
+    if (logs.length && !shown.length) histList.appendChild(el('li', 'mr-empty', 'Nothing logged in the last 7 days.'));
+    if (openEntry && !shown.some(function(l){ return l.log_date === openEntry; })) openEntry = null;
+    shown.forEach(function(l){
+      const li = el('li');
+      const b = el('button', 'mr-day'); b.type = 'button';
+      b.setAttribute('aria-expanded', String(openEntry === l.log_date));
+      const top = el('span', 'mr-day-top');
+      top.appendChild(el('span', null, fmtDay(l.log_date) + (l.log_date === t ? ' · Today' : '')));
+      top.appendChild(el('span', 'mr-day-nums', nums(l)));
+      b.appendChild(top);
+      const prev = l.win_text ? 'Win: ' + l.win_text : (l.need_text ? 'Need: ' + l.need_text : '');
+      if (prev) b.appendChild(el('span', 'mr-day-preview', prev.length > 90 ? prev.slice(0, 90) + '…' : prev));
+      b.addEventListener('click', function(){ openEntry = (openEntry === l.log_date) ? null : l.log_date; renderHistory(); });
+      li.appendChild(b);
+      if (openEntry === l.log_date) li.appendChild(entryDetail(l));
+      histList.appendChild(li);
+    });
+  }
+  function entryDetail(l){
+    const box = el('div', 'mr-entry');
+    const id = 'mr-entry-' + l.log_date;
+    box.id = id;
+    box.appendChild(el('h3', null, fmtDay(l.log_date, { weekday: 'long', month: 'long', day: 'numeric' })));
+    const dl = el('dl');
+    [['Mood', l.mood != null ? l.mood + ' / 5 · ' + moodLabel(Number(l.mood)) : '—'],
+     ['Cravings', l.cravings != null ? l.cravings + ' / 10' : '—'],
+     ['One win', l.win_text || '—'],
+     ['What I needed', l.need_text || '—']].forEach(function(r){
+      dl.appendChild(el('dt', null, r[0])); dl.appendChild(el('dd', null, r[1]));
+    });
+    box.appendChild(dl);
+    const actions = el('div', 'mr-actions');
+    actions.appendChild(btn(l.log_date === todayStr() ? 'Edit today' : 'Edit this entry', 'btn btn-outline', function(){
+      if (editDate(l.log_date)) focusToday();
+    }));
+    actions.appendChild(btn('Close', 'btn btn-outline', function(){ openEntry = null; renderHistory(); }));
+    box.appendChild(actions);
+    return box;
+  }
+  histMore.addEventListener('click', function(){ showAll = !showAll; renderHistory(); });
+
+  // ---- Loading / session ----
+  function renderAll(){ paintToday(); renderCounter(); renderSummary(); renderGoal(); renderHistory(); }
+  function showLoadError(msg){ loadErrText.textContent = msg; loadErr.classList.toggle('show', !!msg); }
+  async function load(){
+    if (!client || !signedIn) return;
+    const mySeq = seq, myLoad = ++loadSeq; // seq = identity; loadSeq = newest load wins
+    showLoadError('');
+    try {
+      const t = todayStr();
+      const res = await Promise.all([
+        client.rpc('list_my_recovery_logs', { p_since: shiftDays(t, -29) }),
+        client.rpc('get_my_recovery_goal')
+      ]);
+      if (mySeq !== seq || myLoad !== loadSeq) return;
+      if (res[0].error) throw res[0].error;
+      if (res[1].error) throw res[1].error;
+      logs = (res[0].data || []).slice().sort(function(a, b){ return a.log_date < b.log_date ? 1 : -1; });
+      goal = (Array.isArray(res[1].data) ? res[1].data[0] : res[1].data) || null;
+      loaded = true;
+      if (!dirty) fillForm(entryFor(currentDate()));
+      renderAll();
+    } catch(err){
+      if (mySeq !== seq || myLoad !== loadSeq) return;
+      showLoadError(errMsg(err, 'We couldn’t load My Recovery right now.'));
+      paintTodayState();
+    }
+  }
+  $('mr-retry').addEventListener('click', load);
+  $('mr-signin').addEventListener('click', function(){ const b = $('header-account-btn'); if (b) b.click(); });
+
+  function reset(){
+    seq++; busy = false; loaded = false;
+    logs = []; goal = null; editingDate = null; showAll = false; openEntry = null; goalMode = 'view';
+    saveBtn.disabled = false; goalSave.disabled = false;
+    goalText.value = ''; goalDate.value = '';
+    showLoadError(''); showFieldError(goalError, '');
+    fillForm(null);
+    renderAll();
+  }
+  function pageActive(){ return page.classList.contains('active'); }
+  function onSession(session){
+    const nowUser = session && session.user ? session.user.id : null;
+    if (nowUser === sessionUser) return; // token refresh etc.
+    sessionUser = nowUser;
+    signedIn = !!nowUser;
+    reset(); // never carry one account's data into another
+    signedOutView.hidden = signedIn;
+    signedInView.hidden = !signedIn;
+    if (signedIn && pageActive()) load();
+  }
+  signedOutView.hidden = false; signedInView.hidden = true;
+  renderCounter();
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  }
+  document.addEventListener('fpr:pagechange', function(e){
+    if (!e || !e.detail || e.detail.page !== 'myrecovery') return;
+    renderCounter();
+    if (signedIn) { if (!editingDate && !dirty) paintToday(); load(); }
+  });
+  // Coming back to the tab (e.g. the next morning): refresh dates and data.
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible' && signedIn && pageActive() && !dirty) load();
+  });
 })();
 
 /* ---------- Community celebration cards (separate from recovery badges) ----------

@@ -639,6 +639,40 @@ Closeout notes (Phase 9C, verified live 2026-10-19):
 
   No history rows have been added by hand. The files in `supabase/migrations/` are the record.
 
+## Phase 11A — My Recovery v1
+
+Migration: `migrations/phase11a_my_recovery_v1.sql`. It's additive only (no DROP, ALTER or DELETE of existing objects). It was applied through the normal migration tool on 2026-10-19, so it **is** recorded in `schema_migrations` (row 10, `phase11a_my_recovery_v1`).
+
+- **`recovery_daily_logs`:**
+  - Columns: `id`, `user_id` (references `auth.users`, `ON DELETE CASCADE`), `log_date`, `mood` (1–5), `cravings` (0–10), `win_text`, `need_text` (each 1–300 characters or NULL), `created_at`, `updated_at`.
+  - `unique (user_id, log_date)` enforces one row per member per date. A CHECK requires at least one value.
+  - `log_date` is the member's local date. The RPC accepts up to one day past the server's UTC date and back to 366 days.
+- **`recovery_goals`:**
+  - Columns: `id`, `user_id` (`ON DELETE CASCADE`), `goal_text` (1–200), `target_date`, `completed`, `completed_at`, `cleared_at`, `created_at`, `updated_at`.
+  - The partial unique index `recovery_goals_one_active_idx (user_id) where cleared_at is null` allows only one active goal. Clearing or replacing a goal sets `cleared_at`, and the row is kept.
+- **Access:** RLS is on with **no policies**, and `public`, `anon` and `authenticated` have **no table privileges**. Members use only these RPCs:
+  - `save_my_recovery_log(date, int, int, text, text)` upserts. Every field is replaced, and blank notes are stored as NULL.
+  - `list_my_recovery_logs(p_since date)` returns the newest rows first, at most 60.
+  - `get_my_recovery_goal()`.
+  - `set_my_recovery_goal(text, date, p_replace boolean)` edits the active goal, or clears it and starts a new one.
+  - `set_my_recovery_goal_completed(boolean)`.
+  - `clear_my_recovery_goal()`.
+
+  Each is `security definer` with `search_path = public, pg_temp`, executable by `authenticated` only (revoked from public/anon). Each acts on `auth.uid()`'s rows only and returns no `id` or `user_id`. Errors use `42501` for no session, `22023` for validation, and `P0002` for no current goal.
+- **No other paths:** there's no admin RPC or policy, no view, no trigger, and no link to Community, profiles, notifications or badges. The app never uploads the on-device Check-In or Recovery Counter.
+
+**Verification (2026-10-19):**
+- **Privileges:** `has_table_privilege` is false for anon and authenticated on both tables, and EXECUTE is authenticated-only.
+- **Rollback DO block** (two throwaway users, ending in RAISE EXCEPTION). These passed:
+  - anon RPC and table access are denied, and direct table access as authenticated is denied;
+  - save, then update, keeps one row per date;
+  - validation rejects mood 6, cravings 11, an empty entry, 301 characters and a date in the future, and accepts 300 characters;
+  - goals: create, edit (same row), complete, uncomplete, and replace (old row kept, one active). Blank and 201-character goals are rejected, and clear is idempotent;
+  - member B sees none of A's logs or goals, and B's clear and complete calls don't touch A's;
+  - Community post, comment and notification counts are unchanged.
+- **Browser fixture suite (77 checks):** signed-out view, local Check-In and Counter, save/update/reload, the 7-day summary, 7/30-day history, editing past entries, the goal lifecycle, account switch and sign-out clearing, the error/retry path, no XSS, no recovery calls from Community, mobile (390px) and desktop header fit, and admin load.
+- **Real data** was untouched: the new tables are empty after testing, and there are still 5 users, 2 posts, 4 comments and 1 notification.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -667,4 +701,4 @@ Closeout notes (Phase 9C, verified live 2026-10-19):
 
 **Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and on-site payment processing. Optional Support FPR contributions use an external Cash App link; no payment credentials or transaction records are stored by this website.
 
-Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
