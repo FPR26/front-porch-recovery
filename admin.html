@@ -202,7 +202,7 @@
   .mod-status-msg.status-info{background:var(--gray); color:var(--charcoal-soft);}
 
   /* ---------- Phase 6A: Community Posts moderation ---------- */
-  .dash-tabs{display:flex; gap:8px; margin-bottom:18px; border-bottom:1.5px solid var(--line); padding-bottom:0;}
+  .dash-tabs{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; border-bottom:1.5px solid var(--line); padding-bottom:0;}
   .tab-btn{
     background:transparent; border:none; border-bottom:3px solid transparent; padding:10px 4px; margin-right:18px;
     font-size:.92rem; font-weight:700; color:var(--charcoal-soft); opacity:.65;
@@ -217,6 +217,36 @@
   .badge.status-resolved{background:var(--sage); color:var(--charcoal);}
   .badge.status-dismissed{background:var(--gray); color:var(--charcoal-soft);}
   .report-target-preview{font-size:.85rem; color:var(--charcoal-soft); white-space:pre-wrap; margin-top:4px; padding:8px 10px; background:var(--cream, #F7F4EE); border-radius:6px;}
+
+  /* Keep moderation readable on narrow screens without hiding overflow. */
+  html{-webkit-text-size-adjust:100%;}
+  header.admin-header .wrap > div, .session-info{min-width:0; max-width:100%;}
+  .session-email{min-width:0;}
+  .story-card{min-width:0;}
+  .story-card > *, .story-top > *{min-width:0; max-width:100%;}
+  .story-title, .story-meta, .community-post-body, .report-target-preview,
+  .preview-row .value, .preview-body-box, .mod-info-grid .value,
+  .refresh-note, .status-msg, .mod-status-msg{overflow-wrap:anywhere;}
+  .tab-btn:focus-visible, .filter-btn:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+  @media(max-width:600px){
+    .wrap{padding-left:max(16px, env(safe-area-inset-left)); padding-right:max(16px, env(safe-area-inset-right));}
+    header.admin-header{padding-top:max(16px, env(safe-area-inset-top));}
+    header.admin-header h1{font-size:1rem; overflow-wrap:anywhere;}
+    .session-info{width:100%; justify-content:space-between;}
+    .session-email{flex:1; max-width:none;}
+    #signout-btn{flex:none; min-height:44px; white-space:nowrap;}
+    main{padding-top:20px;}
+    .dash-tabs{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; border-bottom:0;}
+    .tab-btn{min-width:0; min-height:48px; margin:0; padding:10px 8px; border:1.5px solid var(--line); border-radius:var(--radius-s); font-size:.88rem; line-height:1.35; opacity:1; overflow-wrap:anywhere;}
+    .tab-btn.active{background:var(--sage-deep); color:var(--white); border-color:var(--sage-deep);}
+    .tab-btn:last-child:nth-child(odd){grid-column:1 / -1;}
+    .filter-btn{min-height:44px;}
+    .story-card{padding:16px;}
+    .action-row{gap:8px;}
+    .action-row .btn{min-height:44px; flex:1 1 120px;}
+    .field input, .edit-panel textarea, .edit-panel select{font-size:16px;}
+    .gate{padding:26px 20px;}
+  }
 </style>
 </head>
 <body>
