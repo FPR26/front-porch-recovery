@@ -94,6 +94,28 @@
     #page-community textarea, #page-community select{font-size:16px;}
   }
 
+  /* ONBOARD-1: Home "Start here" card */
+  .onboard-card{background:var(--white); border:1px solid var(--line); border-left:4px solid var(--sage); border-radius:var(--radius-l); padding:clamp(18px,4vw,28px); scroll-margin-top:110px;}
+  .onboard-card:focus{outline:none;}
+  .onboard-card h2{font-size:clamp(1.25rem,3.5vw,1.5rem); line-height:1.25;}
+  .onboard-list{list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:10px;}
+  .onboard-item{display:flex; gap:10px; align-items:flex-start; line-height:1.5;}
+  .onboard-mark{flex:none; width:1.6em; text-align:center; font-weight:700; color:var(--sage-text);}
+  .onboard-item-body{min-width:0;}
+  .onboard-item-title{font-weight:600; color:var(--charcoal);}
+  button.onboard-item-title{background:none; border:none; padding:0; margin:0; font:inherit; font-weight:600; color:var(--charcoal); text-align:left; cursor:pointer; text-decoration:underline; text-underline-offset:3px; min-height:28px;}
+  .onboard-item-text{display:block; color:var(--charcoal-soft); font-size:.92rem;}
+  .onboard-done .onboard-item-title{color:var(--charcoal-soft);}
+  .onboard-done-label{font-weight:400; color:var(--sage-text); font-size:.88rem; margin-left:4px;}
+  .onboard-optional{font-weight:400; color:var(--charcoal-soft);}
+  .onboard-actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; align-items:center;}
+  .onboard-actions .btn{min-height:44px; width:auto;}
+  .onboard-link{background:none; border:none; padding:10px 4px; font:inherit; font-size:.92rem; color:var(--charcoal); text-decoration:underline; text-underline-offset:3px; cursor:pointer; min-height:44px;}
+  .onboard-privacy{margin-top:12px; padding:14px 16px; background:var(--cream); border-radius:var(--radius-m); font-size:.9rem; line-height:1.55; color:var(--charcoal-soft);}
+  .onboard-privacy ul{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:6px;}
+  .onboard-privacy .onboard-link{padding:6px 0; min-height:0; font-size:.88rem;}
+  @media (prefers-reduced-motion: reduce){ .onboard-card{scroll-behavior:auto;} }
+
   /* Support FPR: a quiet, optional section within the Porch Shop. */
   .support-fpr{scroll-margin-top:110px;}
   .support-fpr:focus{outline:none;}
@@ -917,6 +939,14 @@
       </div>
     </div>
   </div>
+
+  <!-- ONBOARD-1: lightweight "Start here" card. Built by the onboarding
+       script (textContent only); hidden when dismissed. No modal, no tour. -->
+  <section class="block bg-cream tight" id="fpr-onboard-wrap" hidden>
+    <div class="wrap">
+      <div class="onboard-card" id="fpr-onboard" tabindex="-1" aria-labelledby="fpr-onboard-title"></div>
+    </div>
+  </section>
 
   <!-- Recovery counter (same saved date as the Toolbox counter) -->
   <section class="block bg-sage" id="home-counter">
@@ -2366,7 +2396,8 @@
         <p id="account-muted-empty" class="hint" style="font-size:.88rem; color:var(--charcoal-soft); margin-top:8px;" hidden>You haven't muted anyone.</p>
       </section>
 
-      <button type="button" class="btn btn-outline btn-block" style="margin-top:14px;" data-account-action="signout">Sign out</button>
+      <p style="margin-top:14px; text-align:center;"><button type="button" class="onboard-link" id="account-onboard-replay">Show the getting-started guide</button></p>
+      <button type="button" class="btn btn-outline btn-block" style="margin-top:6px;" data-account-action="signout">Sign out</button>
     </div>
   </div>
 </div>
@@ -2388,6 +2419,7 @@
           <li><a href="#" data-nav="porch">The Porch</a></li>
           <li><a href="#" data-nav="toolbox">Recovery Toolbox</a></li>
           <li><a href="#" data-nav="daily">Daily Porch</a></li>
+          <li><a href="#home" data-nav="home" data-scroll-target="fpr-onboard" id="footer-onboard-replay">Getting started</a></li>
         </ul>
       </div>
       <div>
@@ -12739,6 +12771,256 @@ const FPRBadge = (function(){
     commentUI.forEach(function(ui){ if (ui.loaded) loadCommentsForPost(ui); });
   });
 })();
+/* ---------- ONBOARD-1: Home "Start here" card ----------
+   One inline card below the Home hero. Signed out: four short pointers
+   plus a privacy explainer. Signed in: a four-item checklist whose
+   "done" states are derived live (today's check-in from the existing
+   check-in keys, display name / handle from the member's own profile,
+   Community visit from a per-account flag). State is browser-only and
+   per account, keyed by public_id (never the auth id); storage errors
+   just mean the card may reappear. No DB writes, no analytics, no
+   financial asks; built with createElement/textContent only. */
+(function(){
+  const wrap = document.getElementById('fpr-onboard-wrap');
+  const card = document.getElementById('fpr-onboard');
+  if (!wrap || !card) return;
+  const GUEST_KEY = 'fpr_onboard_v1_guest';
+  const accountKey = function(pid){ return 'fpr_onboard_v1:' + pid; };
+  const communityKey = function(pid){ return 'fpr_onboard_v1_community:' + pid; };
+  function sGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function sSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+  function sDel(k){ try { localStorage.removeItem(k); } catch(e){} }
+
+  const client = window.__fprSupabaseClient || null;
+  let signedIn = false;
+  let profile = null;          // { public_id, display_name, handle } for the signed-in member
+  let profileSeq = 0;
+  let notNowFor = null;        // public_id hidden for this page session only ("Not now")
+  let privacyOpen = false;
+
+  function today(){
+    const n = new Date();
+    return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
+  }
+  function checkedInToday(){ return sGet('fpr_checkin_last_date') === today(); }
+
+  function el(tag, cls, text){
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function navButton(label, page, scrollTarget){
+    const b = el('button', 'onboard-item-title', label);
+    b.type = 'button';
+    b.setAttribute('data-nav', page);
+    if (scrollTarget) b.setAttribute('data-scroll-target', scrollTarget);
+    return b;
+  }
+  function openAccount(){
+    const btn = document.getElementById('header-account-btn');
+    if (btn) btn.click();
+  }
+
+  function privacyPanel(signedInView){
+    const box = el('div', 'onboard-privacy');
+    box.id = 'fpr-onboard-privacy';
+    box.hidden = !privacyOpen;
+    const ul = el('ul');
+    [
+      'Check-ins, reflections, and your Recovery Counter stay on this device. They are not sent to Front Porch Recovery.',
+      'Community posts and comments are public, and your display name, @handle, and photo can appear with them.',
+      'Your recovery date is private unless you choose to show it to members or everyone.',
+      'Your Following, Blocked, and Muted lists and your reports are private.',
+    ].forEach(function(t){ ul.appendChild(el('li', null, t)); });
+    box.appendChild(ul);
+    const full = el('button', 'onboard-link', 'Read the full Privacy Policy');
+    full.type = 'button';
+    full.setAttribute('data-nav', 'privacy');
+    const p = el('p'); p.style.marginTop = '8px'; p.appendChild(full);
+    box.appendChild(p);
+    return box;
+  }
+  function privacyToggle(label){
+    const t = el('button', 'onboard-link', label);
+    t.type = 'button';
+    t.setAttribute('aria-controls', 'fpr-onboard-privacy');
+    t.setAttribute('aria-expanded', String(privacyOpen));
+    t.addEventListener('click', function(){
+      privacyOpen = !privacyOpen;
+      t.setAttribute('aria-expanded', String(privacyOpen));
+      const box = document.getElementById('fpr-onboard-privacy');
+      if (box) box.hidden = !privacyOpen;
+    });
+    return t;
+  }
+  // After dismissing, move focus to the next sensible Home element
+  // (only if focus was inside the card).
+  function hideAndRefocus(){
+    const hadFocus = card.contains(document.activeElement);
+    wrap.hidden = true;
+    card.replaceChildren();
+    if (hadFocus) {
+      const next = document.querySelector('#home-counter h2');
+      if (next) { next.setAttribute('tabindex', '-1'); try { next.focus({ preventScroll: true }); } catch(e){} }
+    }
+  }
+
+  function renderGuest(){
+    if (sGet(GUEST_KEY)) { wrap.hidden = true; card.replaceChildren(); return; }
+    card.replaceChildren();
+    const h = el('h2', null, 'New here? Start here'); h.id = 'fpr-onboard-title';
+    card.appendChild(h);
+    const ul = el('ul', 'onboard-list');
+    [
+      [navButton('Check in today.', 'checkin'), 'No account is needed, and your check-in stays on this device.'],
+      [navButton('Your recovery counter is private.', 'home', 'home-counter'), 'It stays on this device too.'],
+      [navButton('Rough day?', 'roughday'), 'Help is one tap away any time using the Rough day button.'],
+      [navButton('Read the Community.', 'community'), 'Anyone can read it. Signing in is free and optional, and is only needed to post or interact.'],
+    ].forEach(function(row){
+      const li = el('li', 'onboard-item');
+      li.appendChild(el('span', 'onboard-mark', '•')).setAttribute('aria-hidden', 'true');
+      const body = el('span', 'onboard-item-body');
+      body.appendChild(row[0]);
+      body.appendChild(el('span', 'onboard-item-text', row[1]));
+      li.appendChild(body);
+      ul.appendChild(li);
+    });
+    card.appendChild(ul);
+    const actions = el('div', 'onboard-actions');
+    const got = el('button', 'btn btn-primary', 'Got it'); got.type = 'button';
+    got.addEventListener('click', function(){ sSet(GUEST_KEY, '1'); hideAndRefocus(); });
+    actions.appendChild(got);
+    actions.appendChild(privacyToggle('What’s private?'));
+    card.appendChild(actions);
+    card.appendChild(privacyPanel(false));
+    wrap.hidden = false;
+  }
+
+  function renderMember(){
+    const pid = profile && profile.public_id;
+    if (!pid) { wrap.hidden = true; card.replaceChildren(); return; } // profile not loaded (yet)
+    if (sGet(accountKey(pid)) || notNowFor === pid) { wrap.hidden = true; card.replaceChildren(); return; }
+    card.replaceChildren();
+    const h = el('h2', null, 'Welcome to the porch'); h.id = 'fpr-onboard-title';
+    card.appendChild(h);
+    const items = [
+      { done: checkedInToday(), title: 'Check in today.', action: function(b){ b.setAttribute('data-nav', 'checkin'); } },
+      { done: !!profile.display_name && profile.display_name !== 'New member', title: 'Choose a display name.', action: function(b){ b.addEventListener('click', openAccount); } },
+      { done: !!profile.handle, title: 'Optional: pick a @handle.', text: 'It helps other members mention you.', optional: true, action: function(b){ b.addEventListener('click', openAccount); } },
+      { done: sGet(communityKey(pid)) === '1', title: 'Visit the Community.', action: function(b){ b.setAttribute('data-nav', 'community'); } },
+    ];
+    const ul = el('ul', 'onboard-list');
+    ul.setAttribute('aria-label', 'Getting started checklist');
+    items.forEach(function(it){
+      const li = el('li', 'onboard-item' + (it.done ? ' onboard-done' : ''));
+      li.appendChild(el('span', 'onboard-mark', it.done ? '✓' : '○')).setAttribute('aria-hidden', 'true');
+      const body = el('span', 'onboard-item-body');
+      if (it.done) {
+        const t = el('span', 'onboard-item-title', it.title);
+        t.appendChild(el('span', 'onboard-done-label', '(done)'));
+        body.appendChild(t);
+      } else {
+        const b = el('button', 'onboard-item-title', it.title);
+        b.type = 'button';
+        it.action(b);
+        body.appendChild(b);
+      }
+      if (it.text) body.appendChild(el('span', 'onboard-item-text', it.text));
+      li.appendChild(body);
+      ul.appendChild(li);
+    });
+    card.appendChild(ul);
+    const actions = el('div', 'onboard-actions');
+    const done = el('button', 'btn btn-primary', 'Done'); done.type = 'button';
+    done.addEventListener('click', function(){ sSet(accountKey(pid), '1'); hideAndRefocus(); });
+    const later = el('button', 'btn btn-outline', 'Not now'); later.type = 'button';
+    later.addEventListener('click', function(){ notNowFor = pid; hideAndRefocus(); });
+    actions.appendChild(done);
+    actions.appendChild(later);
+    actions.appendChild(privacyToggle('What’s visible to others?'));
+    card.appendChild(actions);
+    card.appendChild(privacyPanel(true));
+    wrap.hidden = false;
+  }
+
+  function render(){ if (signedIn) renderMember(); else renderGuest(); }
+
+  async function loadProfile(){
+    const seq = ++profileSeq;
+    if (!client || !signedIn) return;
+    try {
+      const { data, error } = await client.rpc('get_my_profile');
+      if (seq !== profileSeq || !signedIn) return;
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row || !row.public_id) throw new Error('No profile');
+      let handle = null;
+      try {
+        const res = await client.from('community_member_profiles_public').select('handle').eq('public_id', row.public_id).maybeSingle();
+        if (!res.error && res.data) handle = res.data.handle || null;
+      } catch(e){ /* handle is optional */ }
+      if (seq !== profileSeq || !signedIn) return;
+      profile = { public_id: row.public_id, display_name: row.display_name || '', handle: handle };
+    } catch(err){
+      if (seq !== profileSeq) return;
+      profile = null; // can't identify the account -> no per-account card this time
+    }
+    render();
+  }
+
+  let sessionUser = null;      // identity the current state belongs to (in memory only)
+  function onSession(session){
+    const nowSignedIn = !!(session && session.user);
+    const nowUser = nowSignedIn ? session.user.id : null;
+    // Same identity (e.g. a token refresh): just re-derive. A different
+    // account always starts fresh, so no state carries across accounts.
+    if (nowUser === sessionUser && nowSignedIn === signedIn && (!nowSignedIn || profile)) { render(); return; }
+    sessionUser = nowUser;
+    signedIn = nowSignedIn;
+    profile = null;
+    notNowFor = null;
+    privacyOpen = false;
+    profileSeq++;
+    if (signedIn) { wrap.hidden = true; card.replaceChildren(); loadProfile(); }
+    else render();
+  }
+
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    // Defer RPC work out of Supabase's auth callback.
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  } else {
+    render();
+  }
+
+  // Profile/handle saved in Account -> refresh derived items.
+  document.addEventListener('fpr:profilechange', function(){ if (signedIn) loadProfile(); });
+  // Page changes: mark a signed-in Community visit; re-derive on Home.
+  document.addEventListener('fpr:pagechange', function(e){
+    const page = e && e.detail && e.detail.page;
+    if (page === 'community' && signedIn && profile && profile.public_id) sSet(communityKey(profile.public_id), '1');
+    if (page === 'home') render();
+  });
+
+  // Replay: Account window (signed in) and footer "Getting started".
+  function replay(){
+    if (signedIn && profile && profile.public_id) { sDel(accountKey(profile.public_id)); notNowFor = null; }
+    else if (!signedIn) sDel(GUEST_KEY);
+    render();
+  }
+  const accountReplay = document.getElementById('account-onboard-replay');
+  if (accountReplay) accountReplay.addEventListener('click', function(){
+    replay();
+    const close = document.querySelector('#account-modal [data-account-action="close"]');
+    if (close) close.click();
+    if (typeof goTo === 'function') goTo('home', { scrollTarget: 'fpr-onboard' });
+  });
+  // Runs before the body-level data-nav handler, so the card is rendered
+  // by the time goTo('home', { scrollTarget }) scrolls to it.
+  const footerReplay = document.getElementById('footer-onboard-replay');
+  if (footerReplay) footerReplay.addEventListener('click', replay);
+})();
+
 /* ---------- Community celebration cards (separate from recovery badges) ----------
    One card design, scaled by milestone tier. Every tier keeps the same
    layout (FPR logo, COMMUNITY MILESTONE, the number, MEMBERS STRONG, a
