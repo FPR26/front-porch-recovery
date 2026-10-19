@@ -2072,6 +2072,10 @@
       <span id="member-profile-following-label" class="member-profile-following-label" hidden>&#10003; Following</span>
       <button type="button" class="btn btn-primary" id="member-profile-follow-btn">Follow</button>
     </div>
+    <div id="member-profile-mute" class="member-profile-block" hidden>
+      <span id="member-profile-muted-label" class="member-profile-blocked-label" hidden>You’ve muted this member</span>
+      <button type="button" class="member-block-link" id="member-profile-mute-btn">Mute member</button>
+    </div>
     <div id="member-profile-block" class="member-profile-block" hidden>
       <span id="member-profile-blocked-label" class="member-profile-blocked-label" hidden>You've blocked this member</span>
       <button type="button" class="member-block-link" id="member-profile-block-btn">Block member</button>
@@ -2196,6 +2200,14 @@
         <p class="status-msg" id="account-blocked-status" role="status" aria-live="polite"></p>
         <ul id="account-blocked-list" class="account-following-list"></ul>
         <p id="account-blocked-empty" class="hint" style="font-size:.88rem; color:var(--charcoal-soft); margin-top:8px;" hidden>You haven't blocked anyone.</p>
+      </section>
+
+      <section id="account-muted" class="account-profile" aria-labelledby="account-muted-title">
+        <h3 class="account-profile-title" id="account-muted-title">Muted members</h3>
+        <p class="hint" style="font-size:.82rem; color:var(--charcoal-soft);">Only you can see this list. Muted members aren't told. Their posts are hidden from your feed and search, their comments are collapsed, and their notifications are hidden. Following and other interactions stay the same.</p>
+        <p class="status-msg" id="account-muted-status" role="status" aria-live="polite"></p>
+        <ul id="account-muted-list" class="account-following-list"></ul>
+        <p id="account-muted-empty" class="hint" style="font-size:.88rem; color:var(--charcoal-soft); margin-top:8px;" hidden>You haven't muted anyone.</p>
       </section>
 
       <button type="button" class="btn btn-outline btn-block" style="margin-top:14px;" data-account-action="signout">Sign out</button>
@@ -9152,7 +9164,7 @@ const FPRBadge = (function(){
     if (client) emailInput.focus();
     if (profileUserId) loadProfile(); // Phase 7B: always show the current saved profile
     if (profileUserId) loadFollowing(); // Phase 8A
-    if (profileUserId) loadBlocked(); // Phase 9A-3
+    if (profileUserId) { loadBlocked(); loadMuted(); }
   }
   function closeModal(){
     modal.hidden = true;
@@ -9194,7 +9206,8 @@ const FPRBadge = (function(){
       resetProfile();
       resetFollowing();
       resetBlocked();
-      if (userId && !modal.hidden) { loadProfile(); loadFollowing(); loadBlocked(); }
+      resetMuted();
+      if (userId && !modal.hidden) { loadProfile(); loadFollowing(); loadBlocked(); loadMuted(); }
     }
   }
 
@@ -9835,6 +9848,113 @@ const FPRBadge = (function(){
   });
 
   resetBlocked();
+
+  // Phase 9B-3: private muted members management.
+  const mutedSection = document.getElementById('account-muted');
+  const mutedList = document.getElementById('account-muted-list');
+  const mutedEmpty = document.getElementById('account-muted-empty');
+  const mutedStatus = document.getElementById('account-muted-status');
+  let mutedLoadSeq = 0;
+
+  function resetMuted(){
+    mutedLoadSeq++;
+    mutedList.replaceChildren();
+    mutedEmpty.hidden = true;
+    setMsg(mutedStatus, '', '');
+    mutedSection.hidden = !profileUserId;
+  }
+
+  function buildMutedItem(m){
+    const li = document.createElement('li');
+    li.className = 'account-blocked-item';
+    const name = m.display_name || 'Community member';
+    const initial = document.createElement('span');
+    initial.className = 'member-avatar-sm';
+    initial.setAttribute('aria-hidden', 'true');
+    initial.textContent = name.trim().charAt(0).toUpperCase() || '?';
+    li.appendChild(initial);
+    const url = m.avatar_path ? avatarPublicUrl(m.avatar_path) : '';
+    if (url) {
+      const img = document.createElement('img');
+      img.className = 'member-avatar-sm';
+      img.alt = '';
+      img.setAttribute('aria-hidden', 'true');
+      img.onerror = function(){ if (img.isConnected) img.replaceWith(initial); };
+      img.src = url;
+      initial.replaceWith(img);
+    }
+    const text = document.createElement('span');
+    const nameEl = document.createElement('span');
+    nameEl.className = 'account-following-name';
+    nameEl.textContent = name;
+    text.appendChild(nameEl);
+    const bits = [];
+    if (m.handle) bits.push('@' + m.handle);
+    if (m.muted_at) {
+      let since = '';
+      try { since = new Date(m.muted_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); } catch(err){}
+      if (since) bits.push('Muted ' + since);
+    }
+    if (bits.length) {
+      const meta = document.createElement('span');
+      meta.className = 'account-following-since';
+      meta.textContent = bits.join(' · ');
+      text.appendChild(meta);
+    }
+    li.appendChild(text);
+    const unmuteBtn = document.createElement('button');
+    unmuteBtn.type = 'button';
+    unmuteBtn.className = 'member-block-link';
+    unmuteBtn.textContent = 'Unmute';
+    unmuteBtn.setAttribute('aria-label', 'Unmute ' + name);
+    unmuteBtn.addEventListener('click', async function(){
+      if (!client || !profileUserId || unmuteBtn.disabled) return;
+      const userId = profileUserId;
+      if (!window.confirm('Unmute ' + name + '? Their posts, comments, and notifications will appear normally again.')) return;
+      unmuteBtn.disabled = true;
+      setMsg(mutedStatus, '', '');
+      try {
+        const { error } = await client.rpc('unmute_member', { target_public_id: m.public_id });
+        if (error) throw error;
+        if (userId !== profileUserId) return;
+        try { document.dispatchEvent(new CustomEvent('fpr:mutechange', { detail: { publicId: m.public_id, muted: false, source: 'account' } })); } catch(err){}
+      } catch(err){
+        if (userId !== profileUserId) return;
+        unmuteBtn.disabled = false;
+        setMsg(mutedStatus, 'error', "That member couldn't be unmuted right now. Please try again.");
+      }
+    });
+    li.appendChild(unmuteBtn);
+    return li;
+  }
+
+  async function loadMuted(){
+    if (!client || !profileUserId) { resetMuted(); return; }
+    const seq = ++mutedLoadSeq;
+    mutedSection.hidden = false;
+    setMsg(mutedStatus, 'info', 'Loading...');
+    try {
+      const { data, error } = await client.rpc('get_my_muted_members');
+      if (seq !== mutedLoadSeq) return;
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      mutedList.replaceChildren();
+      rows.forEach(function(m){ mutedList.appendChild(buildMutedItem(m)); });
+      mutedEmpty.hidden = rows.length !== 0;
+      setMsg(mutedStatus, '', '');
+    } catch(err){
+      if (seq !== mutedLoadSeq) return;
+      setMsg(mutedStatus, 'error', "Your Muted members list couldn't be loaded right now.");
+    }
+  }
+
+  // Listeners only reload; they never dispatch, so there's no refresh loop.
+  document.addEventListener('fpr:mutechange', function(){
+    if (!profileUserId) return;
+    loadMuted();
+  });
+
+  resetMuted();
 
   /* Explicit magic-link callback handling. Supabase can send a user back
      here two different ways, and both must be supported without relying
@@ -10696,6 +10816,47 @@ const FPRBadge = (function(){
   const blockBtn = document.getElementById('member-profile-block-btn');
   const blockedLabel = document.getElementById('member-profile-blocked-label');
   let blockBusy = false;
+  const muteWrap = document.getElementById('member-profile-mute');
+  const muteBtn = document.getElementById('member-profile-mute-btn');
+  const mutedLabel = document.getElementById('member-profile-muted-label');
+  let muteBusy = false;
+
+  function renderMuteControl(){
+    if (!followState || followState.is_self || !currentSession || !followTargetId) { muteWrap.hidden = true; return; }
+    const muted = mutedMemberIds.has(followTargetId);
+    muteWrap.hidden = false;
+    mutedLabel.hidden = !muted;
+    muteBtn.textContent = muted ? 'Unmute' : 'Mute member';
+    muteBtn.setAttribute('aria-label', (muted ? 'Unmute ' : 'Mute ') + (memberName.textContent || 'this member'));
+    muteBtn.disabled = muteBusy;
+  }
+
+  muteBtn.addEventListener('click', async function(){
+    if (muteBusy || !followTargetId || !followState || followState.is_self || !client || !currentSession) return;
+    const targetId = followTargetId;
+    const userId = currentSession.user.id;
+    const muting = !mutedMemberIds.has(targetId);
+    const name = memberName.textContent || 'this member';
+    if (!window.confirm(muting
+      ? 'Mute ' + name + '? Their posts will be hidden from your feed and search, their comments will be collapsed, and their notifications will be hidden. They won’t be told. Following and other interactions stay the same.'
+      : 'Unmute ' + name + '? Their posts, comments, and notifications will appear normally again.')) return;
+    muteBusy = true;
+    renderMuteControl();
+    setStatus(followStatus, '', '');
+    try {
+      const { error } = await client.rpc(muting ? 'mute_member' : 'unmute_member', { target_public_id: targetId });
+      if (error) throw error;
+      if (!currentSession || currentSession.user.id !== userId) return;
+      if (followTargetId === targetId) setStatus(followStatus, 'info', muting ? 'Muted.' : 'Unmuted.');
+      document.dispatchEvent(new CustomEvent('fpr:mutechange', { detail: { publicId: targetId, muted: muting, source: 'panel' } }));
+      await waitForMuteCache();
+    } catch(err){
+      if (followTargetId === targetId) setStatus(followStatus, 'error', 'This member couldn’t be ' + (muting ? 'muted' : 'unmuted') + ' right now. Please try again.');
+    } finally {
+      muteBusy = false;
+      renderMuteControl();
+    }
+  });
 
   function renderBlockControl(){
     if (!followState || followState.is_self || !currentSession) { blockWrap.hidden = true; return; }
@@ -10709,6 +10870,7 @@ const FPRBadge = (function(){
 
   function renderFollowControl(){
     renderBlockControl();
+    renderMuteControl();
     if (!followState || followState.is_self || !currentSession || followState.blocked_by_me
         || !(followState.can_follow || followState.following)) { followWrap.hidden = true; return; }
     const following = !!followState.following;
@@ -10727,6 +10889,7 @@ const FPRBadge = (function(){
     blockBusy = false;
     followWrap.hidden = true;
     blockWrap.hidden = true;
+    muteWrap.hidden = true;
     setStatus(followStatus, '', '');
   }
 
@@ -10738,11 +10901,14 @@ const FPRBadge = (function(){
       if (error) throw error;
       followTargetId = publicId;
       followState = (Array.isArray(data) ? data[0] : data) || null;
+      await waitForMuteCache();
+      if (seq !== memberProfileSeq) return;
       renderFollowControl();
     } catch(err){
       if (seq !== memberProfileSeq) return;
       followWrap.hidden = true; // follow/block are optional; the profile itself still shows
       blockWrap.hidden = true;
+      muteWrap.hidden = true;
     }
   }
 
@@ -12156,6 +12322,7 @@ const FPRBadge = (function(){
     feedEl.innerHTML = '';
     commentUI.forEach(function(ui){ ui.listEl.innerHTML = ''; });
     muteReady.then(function(){
+      renderMuteControl();
       if (feedLoaded) loadFeed();
       refreshUnreadCount();
       if (notifOpen) loadNotifications();
