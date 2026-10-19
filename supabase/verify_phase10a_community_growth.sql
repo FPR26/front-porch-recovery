@@ -3,8 +3,8 @@
 -- and invokes the real trigger on a temporary probe table. Rollback restores
 -- the real count function and removes all test events/read receipts.
 begin;
-create temporary table growth_trigger_probe(id integer);
-create trigger growth_probe_after_insert after insert on growth_trigger_probe
+create temporary table pg_temp.growth_trigger_probe(id integer);
+create trigger growth_probe_after_insert after insert on pg_temp.growth_trigger_probe
   for each row execute function public.record_community_growth_milestones();
 
 do $$
@@ -48,10 +48,10 @@ begin
   delete from public.community_growth_milestones where member_count=threshold;
   execute format('create or replace function public.get_community_member_count() returns bigint language sql stable security definer set search_path=public,pg_temp as %L',
     'select ' || threshold::text || '::bigint');
-  insert into growth_trigger_probe values(1);
+  insert into pg_temp.growth_trigger_probe values(1);
   select reached_at into original_time from public.community_growth_milestones where member_count=threshold and announce;
   if original_time is null then raise exception 'FAIL: trigger did not record threshold'; end if;
-  insert into growth_trigger_probe values(2);
+  insert into pg_temp.growth_trigger_probe values(2);
   if (select count(*) from public.community_growth_milestones where member_count=threshold) <> 1
     or (select reached_at from public.community_growth_milestones where member_count=threshold) <> original_time then
     raise exception 'FAIL: repeated threshold changed announcement'; end if;
