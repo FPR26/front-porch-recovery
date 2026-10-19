@@ -57,3 +57,11 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - @handle autocomplete for signed-in members in the post, comment and reply boxes
 
 Database migrations are in `supabase/migrations/`; backend details are in `supabase/README.md`.
+
+## Community growth (prepared; database deployment pending)
+
+The Community header displays the aggregate number of confirmed FPR accounts with profiles. Facebook membership, visits, and activity are not included. No individual browsing tracking was added. Milestones are 10, 25, 50, 100, 250, 500, 1,000, 2,500, 5,000, and 10,000.
+
+The migration records already-passed thresholds silently at setup. Future milestones create one durable announcement per threshold. It remains recorded if the current count later decreases. Existing confirmed members can read it in a separate Community milestones section inside Notifications, with private, idempotent read receipts. It does not affect unread replies/reactions or Mark all as read. People who confirm after a milestone do not receive that older announcement. There is no email, push notification, polling, or per-member announcement fanout.
+
+Apply supabase/migrations/phase10a_community_growth.sql and run supabase/verify_phase10a_community_growth.sql before publishing. The verification simulates a threshold inside a rollback transaction; the real count function is restored before the final result is selected. Frontend checks passed for counts, failure handling, milestone read state, and existing mute/report behavior. Database checks and phone layout verification remain pending.

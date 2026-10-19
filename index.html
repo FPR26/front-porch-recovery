@@ -67,6 +67,13 @@
     *{scroll-behavior:auto !important;}
   }
 
+  .community-growth-line{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:18px; color:var(--gray); font-size:.9rem; line-height:1.6;}
+  .community-growth-count{display:inline-block; padding:4px 12px; border:1px solid rgba(255,255,255,.4); border-radius:999px; color:var(--white); font-weight:700;}
+  .community-milestones{border-bottom:1px solid var(--line); padding-bottom:16px; margin-bottom:16px;}
+  .community-milestone{background:var(--cream); border-left:4px solid var(--amber); padding:12px; border-radius:var(--radius-s); margin-top:10px;}
+  .community-milestone p{margin:6px 0 10px; font-size:.9rem; line-height:1.6; overflow-wrap:anywhere;}
+  #community-growth-badge{font-size:.78rem; margin-left:8px;}
+
   /* Community: visible search and readable member safety guidance. */
   .community-search-box{padding:20px; background:var(--white); border:1.5px solid var(--sage-deep); border-radius:var(--radius-m); margin-bottom:18px;}
   .community-search-label{display:block; font-weight:700; font-size:1rem; margin-bottom:8px;}
@@ -1545,6 +1552,8 @@
       <p class="hero-eyebrow" style="color:#A7B8A8;">Community</p>
       <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Front Porch Recovery Community</h1>
       <p style="color:var(--gray); margin-top:10px; max-width:56ch;">A place to talk with people rebuilding life, not another place to perform recovery perfectly.</p>
+      <p class="community-growth-line">Growing one honest day at a time.<span class="community-growth-count" id="community-member-count" hidden></span></p>
+      <p style="color:var(--gray); margin-top:8px; font-size:.88rem;">You don’t have to wait for a big crowd to belong here.</p>
     </div>
   </section>
 
@@ -1558,14 +1567,20 @@
 
       <!-- Signed-in: in-app notifications (Phase 6C). Hidden until a session is confirmed. -->
       <div id="community-notif-wrap" style="display:none; margin-bottom:16px;">
-        <button type="button" class="btn btn-outline" id="community-notif-toggle" aria-expanded="false" aria-controls="community-notif-panel" style="padding:6px 16px; font-size:.85rem; display:inline-flex; align-items:center; width:auto;">Notifications<span id="community-notif-badge" aria-hidden="true" style="display:none; margin-left:8px; min-width:20px; padding:1px 7px; border-radius:999px; background:var(--amber); color:var(--charcoal); font-size:.75rem; font-weight:700; text-align:center;"></span></button>
+        <button type="button" class="btn btn-outline" id="community-notif-toggle" aria-expanded="false" aria-controls="community-notif-panel" style="padding:6px 16px; font-size:.85rem; display:inline-flex; align-items:center; width:auto;">Notifications<span id="community-growth-badge" hidden></span><span id="community-notif-badge" aria-hidden="true" style="display:none; margin-left:8px; min-width:20px; padding:1px 7px; border-radius:999px; background:var(--amber); color:var(--charcoal); font-size:.75rem; font-weight:700; text-align:center;"></span></button>
         <div class="form-card" id="community-notif-panel" style="display:none; margin-top:10px; padding:14px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <strong style="font-size:.95rem;">Notifications</strong>
             <button type="button" class="btn-link" id="community-notif-markall" style="font-size:.85rem;">Mark all as read</button>
           </div>
+          <section class="community-milestones" id="community-milestones" aria-labelledby="community-milestones-title" hidden>
+            <strong id="community-milestones-title">Community milestones</strong>
+            <p style="font-size:.82rem; margin-top:4px;">Celebrating our growth. Separate from your reply and reaction notifications.</p>
+            <p id="community-milestones-status" role="status" aria-live="polite"></p>
+            <div id="community-milestones-list"></div>
+          </section>
           <p id="community-notif-status" class="status-msg" role="status" aria-live="polite" style="margin-top:8px;"></p>
-          <p id="community-notif-empty" style="display:none; color:var(--charcoal-soft); font-size:.85rem; margin-top:8px;">No notifications yet. Replies to your comments, reactions to your posts and comments, @mentions of you, and new followers will show up here.</p>
+          <p id="community-notif-empty" style="display:none; color:var(--charcoal-soft); font-size:.85rem; margin-top:8px;">No reply, reaction, mention, or follow notifications yet. They’ll show up here when you have some.</p>
           <div id="community-notif-list" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;"></div>
         </div>
       </div>
@@ -10300,6 +10315,100 @@ const FPRBadge = (function(){
   let notifOpen = false;
   let notifReqSeq = 0;
 
+  // Growth announcements are broadcasts with private per-member read receipts.
+  // They never change the existing reply/reaction unread badge or mark-all action.
+  const growthCountEl = document.getElementById('community-member-count');
+  const growthBadge = document.getElementById('community-growth-badge');
+  const milestonesWrap = document.getElementById('community-milestones');
+  const milestonesList = document.getElementById('community-milestones-list');
+  const milestonesStatus = document.getElementById('community-milestones-status');
+  let growthSeq = 0;
+  let milestonesSeq = 0;
+
+  async function loadCommunityMemberCount(){
+    const seq = ++growthSeq;
+    if (!readClient) return;
+    try {
+      const { data, error } = await readClient.rpc('get_community_member_count');
+      if (seq !== growthSeq) return;
+      const count = Number(data);
+      if (error || data === null || !Number.isSafeInteger(count) || count < 0) throw new Error('Count unavailable');
+      growthCountEl.textContent = count.toLocaleString() + (count === 1 ? ' member' : ' members');
+      growthCountEl.title = 'Confirmed Front Porch Recovery accounts; Facebook membership is separate.';
+      growthCountEl.hidden = false;
+    } catch(err){ if (seq === growthSeq) growthCountEl.hidden = true; }
+  }
+
+  function clearCommunityMilestones(){
+    milestonesSeq++;
+    milestonesList.replaceChildren();
+    milestonesStatus.textContent = '';
+    milestonesWrap.hidden = true;
+    growthBadge.hidden = true;
+  }
+
+  async function loadCommunityMilestones(){
+    if (!client || !currentSession) { clearCommunityMilestones(); return; }
+    const userId = currentSession.user.id;
+    const seq = ++milestonesSeq;
+    await Promise.resolve(); // keep RPC work outside the auth callback
+    if (seq !== milestonesSeq || !currentSession || currentSession.user.id !== userId) return;
+    try {
+      const { data, error } = await client.rpc('list_my_community_milestones');
+      if (seq !== milestonesSeq || !currentSession || currentSession.user.id !== userId) return;
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      milestonesList.replaceChildren();
+      milestonesStatus.textContent = '';
+      milestonesWrap.hidden = rows.length === 0;
+      const unread = rows.filter(function(m){ return !m.read_at; }).length;
+      growthBadge.textContent = unread ? '· ' + unread + (unread === 1 ? ' new milestone' : ' new milestones') : '';
+      growthBadge.hidden = unread === 0;
+      rows.forEach(function(m){
+        const item = document.createElement('div');
+        item.className = 'community-milestone';
+        const heading = document.createElement('strong');
+        heading.textContent = 'We reached ' + Number(m.member_count).toLocaleString() + ' members!';
+        item.appendChild(heading);
+        const message = document.createElement('p');
+        message.textContent = 'Thanks for helping this porch grow—one honest day at a time.';
+        item.appendChild(message);
+        if (!m.read_at) {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'btn btn-outline';
+          button.textContent = 'Mark milestone as read';
+          button.addEventListener('click', async function(){
+            if (button.disabled || !currentSession || currentSession.user.id !== userId) return;
+            button.disabled = true;
+            try {
+              const { error } = await client.rpc('mark_community_milestone_read', { p_member_count: m.member_count });
+              if (error) throw error;
+              if (currentSession && currentSession.user.id === userId) await loadCommunityMilestones();
+            } catch(err){
+              if (currentSession && currentSession.user.id === userId) {
+                milestonesStatus.textContent = 'Couldn’t mark this milestone as read. Please try again.';
+                button.disabled = false;
+              }
+            }
+          });
+          item.appendChild(button);
+        } else {
+          const read = document.createElement('span');
+          read.textContent = 'Read';
+          item.appendChild(read);
+        }
+        milestonesList.appendChild(item);
+      });
+    } catch(err){
+      if (seq === milestonesSeq) {
+        milestonesWrap.hidden = false;
+        growthBadge.hidden = true;
+        milestonesStatus.textContent = 'Milestones couldn’t be loaded. Reopen Notifications to try again.';
+      }
+    }
+  }
+
   const REACTIONS = [
     { key: 'support', label: 'Support', icon: '\u{1F91D}' },
     { key: 'heart', label: 'Heart', icon: '❤️' },
@@ -11595,7 +11704,7 @@ const FPRBadge = (function(){
     notifOpen = !notifOpen;
     notifPanel.style.display = notifOpen ? 'block' : 'none';
     notifToggle.setAttribute('aria-expanded', notifOpen ? 'true' : 'false');
-    if (notifOpen) loadNotifications();
+    if (notifOpen) { loadNotifications(); loadCommunityMilestones(); }
   });
 
   let markingAll = false;
@@ -12330,6 +12439,7 @@ const FPRBadge = (function(){
     loadMuteCache(currentSession);
     resolveInitialAuth();
     if (previousUserId !== (currentSession && currentSession.user.id)) {
+      clearCommunityMilestones();
       closeMemberProfile(); // discard report drafts when switching accounts
       feedEl.innerHTML = '';
       commentUI.forEach(function(ui){ ui.listEl.innerHTML = ''; });
@@ -12340,9 +12450,12 @@ const FPRBadge = (function(){
     notifWrap.style.display = signedIn ? 'block' : 'none';
     if (!signedIn) resetFollowControl(); // Phase 8A: no follow control when signed out
     if (signedIn) {
+      loadCommunityMilestones();
+      if (location.hash === '#community') loadCommunityMemberCount();
       refreshUnreadCount();
       if (notifOpen) loadNotifications();
     } else {
+      clearCommunityMilestones();
       resetNotifications();
     }
     commentUI.forEach(function(ui){
@@ -12460,6 +12573,10 @@ const FPRBadge = (function(){
   // avoidable network request. Repeat visits don't re-fetch except
   // after a post/edit, handled explicitly above.
   document.addEventListener('fpr:pagechange', function(e){
+    if (e && e.detail && e.detail.page === 'community') {
+      loadCommunityMemberCount();
+      if (currentSession) loadCommunityMilestones();
+    }
     if (e && e.detail && e.detail.page === 'community' && !feedLoaded){
       loadFeed();
     }
@@ -12470,7 +12587,7 @@ const FPRBadge = (function(){
   });
   // A direct link/bookmark to #community fires goTo() before this
   // listener exists, so check once on startup too.
-  if (location.hash === '#community') { loadFeed(); }
+  if (location.hash === '#community') { loadFeed(); loadCommunityMemberCount(); }
   // Phase 8C-4: one unread-count refresh when the tab comes back into
   // view on the Community page (signed in only). No polling, no realtime,
   // nothing while hidden, and the open panel isn't reloaded.
