@@ -598,7 +598,7 @@ Further details (Phase 9B-4 closeout):
   - A muted member's profile, including Recent Posts, stays visible when it's opened on purpose.
   - All-muted feeds and searches show a mute-aware empty state. The search backend limit (50) is unchanged, so muted rows can make a search show fewer than 50 results.
 - **Independence from blocking:** blocking doesn't mute and muting doesn't block. Unblocking keeps a mute, unmuting keeps a block, and both can exist at once.
-- **Migration history:** `phase9b1_member_mutes` was applied manually in the SQL Editor and is **not** in `supabase_migrations.schema_migrations`. Seven migrations have now been applied manually and are missing from the history table: 8A, 8B-1, 8C-1, 8C-3, 9A, 9B-1, and 9C-1 (`phase9c1_member_reports`, below). Re-checked live on 2026-10-19, the table still has 9 rows, ending at `phase7d_admin_avatar_removal`. No rows have been added by hand.
+- **Migration history:** `phase9b1_member_mutes` was applied manually in the SQL Editor and is **not** in `supabase_migrations.schema_migrations`. See the Phase 9C section for the full list of manually applied migrations. Re-checked live on 2026-10-19, the table still has 9 rows, ending at `phase7d_admin_avatar_removal`. No rows have been added by hand.
 
 Verification: backend rollback tests were reported complete in the Phase 9B-1 handoff. During this session, live tests with JUSTIN and MAXOM confirmed feed/search filtering, comment/reply collapse and Show, persistence after refresh, account-list unmuting, restored search results, and notification hiding/restoration. Cache/identity races and failure fallback were covered by focused local tests, not by the live walkthrough.
 
@@ -616,7 +616,28 @@ Migration: migrations/phase9c1_member_reports.sql. Applied manually in the SQL E
 
 Verification: signed-out/self/unknown-target/null-or-invalid-reason/overlong-details rejection, authenticated submission, duplicate-open-report protection, private report reads, non-admin moderation rejection, and stored receipt fields passed rollback SQL checks. Frontend tests covered validation, double submission, error recovery, existing content-report RPCs, and safe admin rendering. Live tests covered member submission, duplicate rejection, new submission after dismissal, admin target/details, Dismiss, Resolve, and dismissal persistence after refresh. Success-state Close labeling and a concurrent database race were not separately exercised live.
 
-The manual migration application does not add a Supabase migration-history row automatically. Re-checked live on 2026-10-19 (Phase 9B-4), the history table still has 9 rows and does not include `phase9c1_member_reports`.
+Closeout notes (Phase 9C, verified live 2026-10-19):
+
+- **Table:** `community_reports` holds post, comment and member reports. The `community_reports_exactly_one_target_check` constraint requires exactly one of `post_id`, `comment_id` or `member_public_id`.
+  - **Reasons** (CHECK): `harassment`, `hate_or_abuse`, `dangerous_content`, `spam`, `privacy`, `other`.
+  - **Details:** optional, at most 500 characters, and trimmed (blank is stored as NULL).
+  - **Status:** `open`, `resolved` or `dismissed`, plus `reviewed_at`/`reviewed_by`.
+  - **Foreign keys:** `reporter_user_id` references `auth.users` and `member_public_id` references `profiles(public_id)`, both `ON DELETE CASCADE`.
+- **Access:** RLS is on with one policy, `community_reports_select`, which is SELECT `using is_admin()`. `authenticated` holds only a SELECT grant, so non-admins see no rows; there are no INSERT/UPDATE/DELETE grants. Members write only through `report_member` or `report_community_content`. Both are `security definer` with `search_path = public, pg_temp`, executable by authenticated users only (not anon), and return just a receipt id.
+- **Duplicates:** there's one *open* report per reporter per target. Partial unique indexes cover posts, comments and members, and `report_member` turns a violation into "You already have an open report for this member." (`23505`). After a report is resolved or dismissed, the same reporter can report again.
+- **Reporter privacy:** the reported member gets no notification (there's no trigger and no notification type for reports), and there's no public count, view or history. Only admins can read reports. The admin Reports tab shows the reporter's display name (looked up by admin) and the reported member's name and public id. All member-written text is rendered with `textContent`.
+- **Moderation:** `moderate_community_report(id, 'resolve' | 'dismiss')` is admin-only and works on open reports only. It records the review and applies no penalty. Reporting never blocks, mutes, unfollows or removes content.
+- **Migration history (re-checked live, 2026-10-19):** `supabase_migrations.schema_migrations` still has its original 9 rows (through `phase7d_admin_avatar_removal`). **Eight** migrations were applied manually in the SQL Editor and are not recorded there:
+  - 8A `phase8a_member_follows`
+  - 8B-1 `phase8b1_handles_mentions_foundation`
+  - 8C-1 `phase8c1_mention_notifications`
+  - 8C-3 `phase8c3_follow_notifications`
+  - 9A `phase9a_blocking_foundation`
+  - 9B-1 `phase9b1_member_mutes`
+  - 9C-1 `phase9c1_member_reports`
+  - 10A `phase10a_community_growth` (community growth/milestones; its tables and functions are live)
+
+  No history rows have been added by hand. The files in `supabase/migrations/` are the record.
 
 ## What's next
 
