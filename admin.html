@@ -1592,7 +1592,7 @@
     top.className = 'story-top';
     const title = document.createElement('div');
     title.className = 'story-title';
-    title.textContent = (report.post_id ? 'Post report' : 'Comment report') + ' — ' + (REPORT_REASON_LABELS[report.reason] || report.reason);
+    title.textContent = (report.member_public_id ? 'Member report' : (report.post_id ? 'Post report' : 'Comment report')) + ' — ' + (REPORT_REASON_LABELS[report.reason] || report.reason);
     const meta = document.createElement('div');
     meta.className = 'story-meta';
     let metaText = 'reported ' + fmtDate(report.created_at) + ' by ' + (report.reporter_display_name || 'a member');
@@ -1604,14 +1604,16 @@
     const targetPreview = document.createElement('div');
     targetPreview.className = 'report-target-preview';
     let targetBody = '(content not loaded)';
-    if (report.post_id) {
+    if (report.member_public_id) {
+      targetBody = (report.member_display_name || 'Community member') + ' · Public profile ID: ' + report.member_public_id;
+    } else if (report.post_id) {
       const p = communityPosts.find(p => p.id === report.post_id);
       targetBody = p ? (p.body || '') : '(post no longer available)';
     } else if (report.comment_id) {
       const c = communityComments.find(c => c.id === report.comment_id);
       targetBody = c ? (c.body || '') : '(comment not loaded — open the Community Comments tab first)';
     }
-    targetPreview.textContent = 'Reported content: ' + targetBody.slice(0, 300);
+    targetPreview.textContent = (report.member_public_id ? 'Reported member: ' : 'Reported content: ') + targetBody.slice(0, 300);
 
     const detailsEl = document.createElement('div');
     detailsEl.className = 'community-post-body';
@@ -1674,7 +1676,7 @@
     // the spec defaults to not showing it.
     const { data, error } = await client
       .from('community_reports')
-      .select('id, reporter_user_id, post_id, comment_id, reason, details, status, created_at, reviewed_at, reviewed_by')
+      .select('id, reporter_user_id, post_id, comment_id, member_public_id, reason, details, status, created_at, reviewed_at, reviewed_by')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -1692,6 +1694,12 @@
       reporter_display_name: (r.reporter_user_id && displayNameById[r.reporter_user_id]) || 'a member',
     }));
 
+    const memberIds = Array.from(new Set(communityReports.map(r => r.member_public_id).filter(Boolean)));
+    if (memberIds.length) {
+      const { data: members } = await client.from('profiles').select('public_id, display_name').in('public_id', memberIds);
+      const names = new Map((members || []).map(m => [m.public_id, m.display_name]));
+      communityReports = communityReports.map(r => Object.assign({}, r, { member_display_name: names.get(r.member_public_id) || 'Community member' }));
+    }
     els.reportsRefreshNote.textContent = communityReports.length + ' total · loaded ' + new Date().toLocaleTimeString();
     reportsLoaded = true;
     renderReportsFilters();

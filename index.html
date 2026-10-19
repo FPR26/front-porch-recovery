@@ -2118,6 +2118,12 @@
       <span id="member-profile-following-label" class="member-profile-following-label" hidden>&#10003; Following</span>
       <button type="button" class="btn btn-primary" id="member-profile-follow-btn">Follow</button>
     </div>
+    <div id="member-profile-report" hidden>
+      <div class="member-profile-block">
+        <button type="button" class="member-block-link" id="member-profile-report-btn" aria-expanded="false" aria-controls="member-profile-report-form">Report member</button>
+      </div>
+      <div id="member-profile-report-form"></div>
+    </div>
     <div id="member-profile-mute" class="member-profile-block" hidden>
       <span id="member-profile-muted-label" class="member-profile-blocked-label" hidden>You’ve muted this member</span>
       <button type="button" class="member-block-link" id="member-profile-mute-btn">Mute member</button>
@@ -10361,7 +10367,7 @@ const FPRBadge = (function(){
     let postReportFormEl = null;
     reportBtn.addEventListener('click', function(){
       if (!client || !currentSession){
-        openInlineNotice(card, 'Please sign in to report content.');
+        openInlineNotice(card, 'Please sign in to submit a report.');
         return;
       }
       if (postReportFormEl) { postReportFormEl.remove(); postReportFormEl = null; return; }
@@ -10873,6 +10879,26 @@ const FPRBadge = (function(){
   const muteBtn = document.getElementById('member-profile-mute-btn');
   const mutedLabel = document.getElementById('member-profile-muted-label');
   let muteBusy = false;
+  const memberReportWrap = document.getElementById('member-profile-report');
+  const memberReportBtn = document.getElementById('member-profile-report-btn');
+  const memberReportForm = document.getElementById('member-profile-report-form');
+
+  function renderMemberReportControl(){
+    memberReportWrap.hidden = !currentSession || !followTargetId || !followState || !!followState.is_self;
+  }
+  memberReportBtn.addEventListener('click', function(){
+    if (memberReportWrap.hidden) return;
+    if (memberReportForm.children.length) {
+      memberReportForm.replaceChildren();
+      memberReportBtn.setAttribute('aria-expanded', 'false');
+      return;
+    }
+    const form = buildReportForm('member', followTargetId);
+    memberReportForm.appendChild(form);
+    memberReportBtn.setAttribute('aria-expanded', 'true');
+    const reason = form.querySelector('select');
+    if (reason) reason.focus();
+  });
 
   function renderMuteControl(){
     if (!followState || followState.is_self || !currentSession || !followTargetId) { muteWrap.hidden = true; return; }
@@ -10924,6 +10950,7 @@ const FPRBadge = (function(){
   function renderFollowControl(){
     renderBlockControl();
     renderMuteControl();
+    renderMemberReportControl();
     if (!followState || followState.is_self || !currentSession || followState.blocked_by_me
         || !(followState.can_follow || followState.following)) { followWrap.hidden = true; return; }
     const following = !!followState.following;
@@ -10943,6 +10970,9 @@ const FPRBadge = (function(){
     followWrap.hidden = true;
     blockWrap.hidden = true;
     muteWrap.hidden = true;
+    memberReportWrap.hidden = true;
+    memberReportForm.replaceChildren();
+    memberReportBtn.setAttribute('aria-expanded', 'false');
     setStatus(followStatus, '', '');
   }
 
@@ -10962,6 +10992,7 @@ const FPRBadge = (function(){
       followWrap.hidden = true; // follow/block are optional; the profile itself still shows
       blockWrap.hidden = true;
       muteWrap.hidden = true;
+      memberReportWrap.hidden = true;
     }
   }
 
@@ -11591,12 +11622,13 @@ const FPRBadge = (function(){
     wrap.style.padding = '12px';
 
     const label = document.createElement('label');
-    label.textContent = 'Report this ' + (targetType === 'post' ? 'post' : 'comment');
+    label.textContent = 'Report this ' + (targetType === 'member' ? 'member' : (targetType === 'post' ? 'post' : 'comment'));
     label.style.fontSize = '.85rem';
     label.style.fontWeight = '600';
     wrap.appendChild(label);
 
     const select = document.createElement('select');
+    select.setAttribute('aria-label', 'Report reason');
     select.style.width = '100%';
     select.style.margin = '6px 0 8px';
     [
@@ -11612,14 +11644,28 @@ const FPRBadge = (function(){
       o.textContent = opt[1];
       select.appendChild(o);
     });
+    if (targetType === 'member') {
+      const prompt = document.createElement('option');
+      prompt.value = '';
+      prompt.textContent = 'Choose a reason';
+      select.insertBefore(prompt, select.firstChild);
+      select.value = '';
+    }
     wrap.appendChild(select);
 
     const details = document.createElement('textarea');
     details.maxLength = 500;
+    details.setAttribute('aria-label', 'Optional report details, up to 500 characters');
     details.style.minHeight = '60px';
     details.style.width = '100%';
     details.placeholder = 'Optional details (max 500 characters)';
     wrap.appendChild(details);
+    if (targetType === 'member') {
+      const note = document.createElement('p');
+      note.className = 'hint';
+      note.textContent = 'Only admins can review reports. This member won’t be notified. Reporting does not automatically block or mute them.';
+      wrap.appendChild(note);
+    }
 
     const errEl = document.createElement('p');
     errEl.className = 'field-error';
@@ -11644,7 +11690,13 @@ const FPRBadge = (function(){
     cancelBtn.type = 'button';
     cancelBtn.className = 'btn btn-outline';
     cancelBtn.textContent = 'Cancel';
-    cancelBtn.addEventListener('click', function(){ wrap.remove(); });
+    cancelBtn.addEventListener('click', function(){
+      wrap.remove();
+      if (targetType === 'member') {
+        memberReportBtn.setAttribute('aria-expanded', 'false');
+        memberReportBtn.focus();
+      }
+    });
 
     btnRow.appendChild(submitBtn);
     btnRow.appendChild(cancelBtn);
@@ -11655,6 +11707,11 @@ const FPRBadge = (function(){
       if (submitting) return;
       errEl.textContent = '';
       const detailsVal = details.value.trim();
+      if (targetType === 'member' && !select.value) {
+        errEl.textContent = 'Choose a report reason.';
+        select.focus();
+        return;
+      }
       if (detailsVal.length > 500){
         errEl.textContent = 'Details must be 500 characters or fewer.';
         return;
@@ -11668,8 +11725,10 @@ const FPRBadge = (function(){
       setStatus(statusEl, 'info', 'Submitting report...');
       try {
         const params = { p_reason: select.value, p_details: detailsVal || null };
-        if (targetType === 'post') params.p_post_id = targetId; else params.p_comment_id = targetId;
-        const { error } = await client.rpc('report_community_content', params);
+        if (targetType === 'member') params.p_target_public_id = targetId;
+        else if (targetType === 'post') params.p_post_id = targetId;
+        else params.p_comment_id = targetId;
+        const { error } = await client.rpc(targetType === 'member' ? 'report_member' : 'report_community_content', params);
         if (error) throw error;
         setStatus(statusEl, 'success', 'Thanks — this has been reported for review.');
         select.disabled = true;
@@ -12220,6 +12279,7 @@ const FPRBadge = (function(){
     loadMuteCache(currentSession);
     resolveInitialAuth();
     if (previousUserId !== (currentSession && currentSession.user.id)) {
+      closeMemberProfile(); // discard report drafts when switching accounts
       feedEl.innerHTML = '';
       commentUI.forEach(function(ui){ ui.listEl.innerHTML = ''; });
     }
