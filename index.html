@@ -10029,6 +10029,37 @@ const FPRBadge = (function(){
   let myCommentIds = new Set();
   let currentSession = null;
   let editingPostId = null;
+  // Phase 9B-2: one cache per signed-in identity, shared by all renders.
+  let mutedMemberIds = new Set();
+  let muteUserId = null;
+  let muteRevision = 0;
+  let muteReady = Promise.resolve();
+  let resolveInitialAuth;
+  const initialAuthReady = new Promise(function(resolve){ resolveInitialAuth = resolve; });
+
+  function loadMuteCache(session, force){
+    const userId = session && session.user ? session.user.id : null;
+    if (!force && userId === muteUserId) return muteReady;
+    muteUserId = userId;
+    const revision = ++muteRevision;
+    mutedMemberIds = new Set();
+    // Defer RPC work out of Supabase's auth callback.
+    muteReady = Promise.resolve().then(async function(){
+      if (!userId || !client) return;
+      try {
+        const { data, error } = await client.rpc('get_my_muted_members');
+        if (error) throw error;
+        if (revision === muteRevision) mutedMemberIds = new Set((data || []).map(function(m){ return m.public_id; }));
+      } catch(err){ /* fail open; never prevent Community from rendering */ }
+    });
+    return muteReady;
+  }
+
+  async function waitForMuteCache(){
+    await initialAuthReady;
+    let pending;
+    do { pending = muteReady; await pending; } while (pending !== muteReady);
+  }
   // Phase 6B: comments/replies/reports. One entry per post whose
   // "Comments" section has ever been opened — { post, listEl, notice,
   // empty, loaded, composeSigninNotice, composeTextarea, composeBtn }.
@@ -11441,6 +11472,26 @@ const FPRBadge = (function(){
   // approach as a post body — never innerHTML — so the same
   // script-tag-looking input renders as plain, inert text here too.
   function buildCommentCard(comment, opts){
+    if (!opts.revealed && mutedMemberIds.has(comment.author_public_id)) {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'card';
+      placeholder.setAttribute('data-comment-id', comment.id);
+      placeholder.style.marginLeft = opts.isReply ? '22px' : '0';
+      placeholder.style.padding = '10px 14px';
+      placeholder.appendChild(document.createTextNode((opts.isReply ? 'Reply' : 'Comment') + ' from a muted member · '));
+      const show = document.createElement('button');
+      show.type = 'button';
+      show.className = 'btn-link';
+      show.textContent = 'Show';
+      show.setAttribute('aria-expanded', 'false');
+      show.addEventListener('click', function(){
+        placeholder.replaceWith(buildCommentCard(comment, Object.assign({}, opts, { revealed: true })));
+        loadAuthorAvatars([comment.author_public_id]);
+        loadMentions('comment', [comment.id]);
+      });
+      placeholder.appendChild(show);
+      return placeholder;
+    }
     const row = document.createElement('div');
     row.className = 'card';
     row.setAttribute('data-comment-id', comment.id);
@@ -11781,7 +11832,7 @@ const FPRBadge = (function(){
     });
 
     const ui = {
-      post, listEl, notice, empty, loaded: false,
+      post, listEl, notice, empty, loaded: false, opened: false, toggleBtn,
       composeSigninNotice, composeTextarea, composeBtn,
     };
     commentUI.set(post.id, ui);
@@ -11789,6 +11840,7 @@ const FPRBadge = (function(){
     let opened = false;
     toggleBtn.addEventListener('click', function(){
       opened = !opened;
+      ui.opened = opened;
       body.style.display = opened ? 'block' : 'none';
       toggleBtn.textContent = opened ? 'Hide comments' : 'Comments';
       if (opened) { ui.loaded = true; loadCommentsForPost(ui); }
@@ -11798,7 +11850,10 @@ const FPRBadge = (function(){
   }
 
   async function loadCommentsForPost(ui){
+    const requestId = ui.requestId = (ui.requestId || 0) + 1;
     ui.listEl.innerHTML = '';
+    await waitForMuteCache();
+    if (requestId !== ui.requestId) return;
     ui.notice.style.display = 'none';
     ui.empty.style.display = 'none';
     try {
@@ -11809,6 +11864,8 @@ const FPRBadge = (function(){
         .eq('post_id', ui.post.id)
         .order('created_at', { ascending: true });
       if (error) throw error;
+      await waitForMuteCache();
+      if (requestId !== ui.requestId || !ui.listEl.isConnected) return;
       const comments = data || [];
       if (comments.length === 0) { ui.empty.style.display = 'block'; return; }
       const topLevel = comments.filter(function(c){ return !c.parent_comment_id; });
@@ -11825,6 +11882,7 @@ const FPRBadge = (function(){
       loadAuthorAvatars(comments.map(function(c){ return c.author_public_id; }));
       loadMentions('comment', comments.map(function(c){ return c.id; }));
     } catch(err){
+      if (requestId !== ui.requestId) return;
       ui.notice.style.display = 'block';
     }
   }
@@ -11846,6 +11904,9 @@ const FPRBadge = (function(){
   }
 
   function renderFeed(posts){
+    const openPostIds = new Set();
+    commentUI.forEach(function(ui, id){ if (ui.opened) openPostIds.add(id); });
+    commentUI.clear();
     feedEl.innerHTML = ''; // clearing only; every node re-added below is built via createElement/textContent
     reactionBars = new Map(); // the old cards (and their bars) are gone
     authorAvatarEls = new Map(); // and their author avatars
@@ -11859,6 +11920,10 @@ const FPRBadge = (function(){
     }
     feedEmpty.style.display = 'none';
     posts.forEach(p => feedEl.appendChild(buildPostCard(p)));
+    openPostIds.forEach(function(id){
+      const ui = commentUI.get(id);
+      if (ui) ui.toggleBtn.click();
+    });
   }
 
   async function loadFeed(){
@@ -11878,7 +11943,9 @@ const FPRBadge = (function(){
       const { data, error } = await request;
       if (reqId !== feedReqSeq) return; // a newer feed/search load superseded this one
       if (error) throw error;
-      const posts = data || [];
+      await waitForMuteCache();
+      if (reqId !== feedReqSeq) return;
+      const posts = (data || []).filter(function(p){ return !mutedMemberIds.has(p.author_public_id); });
       feedNotice.style.display = 'none';
       renderFeed(posts);
       feedLoaded = true;
@@ -11929,7 +11996,14 @@ const FPRBadge = (function(){
   editBody.addEventListener('input', function(){ editCharcount.textContent = String(editBody.value.length); });
 
   function updateSignedInUI(session){
+    const previousUserId = currentSession && currentSession.user.id;
     currentSession = (session && session.user) ? session : null;
+    loadMuteCache(currentSession);
+    resolveInitialAuth();
+    if (previousUserId !== (currentSession && currentSession.user.id)) {
+      feedEl.innerHTML = '';
+      commentUI.forEach(function(ui){ ui.listEl.innerHTML = ''; });
+    }
     const signedIn = !!currentSession;
     signedOutNotice.style.display = signedIn ? 'none' : 'block';
     postForm.style.display = signedIn ? 'block' : 'none';
@@ -11956,7 +12030,7 @@ const FPRBadge = (function(){
       if (feedLoaded) loadFeed();
       reloadOpenComments();
     } else {
-      Promise.all([refreshMyPosts(), refreshMyComments()]).then(function(){
+      Promise.all([muteReady, refreshMyPosts(), refreshMyComments()]).then(function(){
         if (feedLoaded) loadFeed();
         reloadOpenComments();
       });
@@ -11964,9 +12038,10 @@ const FPRBadge = (function(){
   }
 
   if (client) {
-    client.auth.getSession().then(({ data }) => updateSignedInUI(data.session));
+    client.auth.getSession().then(({ data }) => updateSignedInUI(data.session)).catch(function(){ updateSignedInUI(null); });
     client.auth.onAuthStateChange((_event, session) => updateSignedInUI(session));
   } else {
+    resolveInitialAuth();
     signedOutNotice.style.display = 'block';
     postForm.style.display = 'none';
   }
@@ -12073,6 +12148,18 @@ const FPRBadge = (function(){
     if (document.visibilityState !== 'visible' || !currentSession) return;
     const communityPage = document.getElementById('page-community');
     if (communityPage && communityPage.classList.contains('active')) refreshUnreadCount();
+  });
+
+  document.addEventListener('fpr:mutechange', function(){
+    loadMuteCache(currentSession, true);
+    // Immediately hide old content while the updated preference is loading.
+    feedEl.innerHTML = '';
+    commentUI.forEach(function(ui){ ui.listEl.innerHTML = ''; });
+    muteReady.then(function(){
+      if (feedLoaded) loadFeed();
+      refreshUnreadCount();
+      if (notifOpen) loadNotifications();
+    });
   });
 
   // Phase 7B: the member changed their own display name/photo in the
