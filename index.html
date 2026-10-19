@@ -759,6 +759,40 @@
   }
   .daily-not-written .tag{margin-bottom:10px;}
   .daily-not-written p{color:var(--charcoal-soft); opacity:.8; margin-top:8px;}
+  /* Daily Porch v1 (Phase 11B) */
+  .dp-title{font-size:1.45rem; margin-top:10px;}
+  .dp-section{margin-top:18px;}
+  .dp-section h3{font-size:.8rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--sage-text);}
+  .dp-section p{margin-top:6px; color:var(--charcoal-soft); line-height:1.7;}
+  .dp-move{background:var(--amber-soft); border-radius:12px; padding:14px 16px;}
+  .dp-move h3{color:#6b4e18;}
+  .dp-move p{color:#4a3613; font-weight:600;}
+  .dp-save-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:18px; padding-top:16px; border-top:1px solid var(--line);}
+  .dp-save{display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:10px 16px; border-radius:999px; border:1.5px solid var(--charcoal); background:var(--white); color:var(--charcoal); font:inherit; font-weight:600; font-size:.9rem; cursor:pointer;}
+  .dp-save svg{width:18px; height:18px; flex:none;}
+  .dp-save[aria-pressed="true"]{background:var(--charcoal); color:var(--white);}
+  .dp-save[aria-pressed="true"] svg path{fill:currentColor;}
+  .dp-save-note{font-size:.82rem; color:var(--charcoal-soft);}
+  .dp-card{margin-top:16px;}
+  .dp-card h2{font-size:1.2rem;}
+  .dp-card-head{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  .dp-private{font-size:.75rem; font-weight:700; color:var(--sage-text); background:rgba(167,184,168,.25); border-radius:999px; padding:3px 10px;}
+  .dp-card label{display:block; font-weight:600; font-size:.95rem; margin-bottom:8px;}
+  .dp-row{display:flex; justify-content:space-between; gap:8px; margin-top:4px; min-height:1.2em;}
+  .dp-status{font-size:.82rem; font-weight:600; color:var(--sage-text);}
+  .dp-status.dirty{color:#7a5a1e;}
+  .dp-write .btn{margin-top:10px;}
+  .dp-signin p{color:var(--charcoal-soft); font-size:.92rem;}
+  .dp-signin .btn{margin-top:10px;}
+  .dp-evening-porch{font-size:.92rem; color:var(--charcoal-soft); line-height:1.65; margin-bottom:12px;}
+  .dp-evening-porch strong{color:var(--charcoal);}
+  .dp-mine{display:inline-block; margin-left:6px; font-size:.75rem; font-weight:700; color:var(--sage-text);}
+  .dp-subhead{font-size:.95rem; margin-top:18px;}
+  .dp-saved-list{list-style:none; padding:0; margin:8px 0 0; display:flex; flex-wrap:wrap; gap:8px;}
+  .dp-saved-list button{border:1.5px solid var(--line); background:var(--white); border-radius:999px; padding:8px 14px; min-height:40px; font:inherit; font-size:.85rem; cursor:pointer; color:var(--charcoal);}
+  .dp-myrecovery{margin-top:22px; text-align:center; color:var(--charcoal-soft); font-size:.92rem;}
+  .dp-myrecovery .btn{margin-top:10px;}
+  .dp-viewing{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:12px; font-size:.85rem; font-weight:600; color:var(--sage-text);}
 
   /* ---------- Recovery Toolbox: search + resource detail ---------- */
   .toolbox-search-wrap{margin-bottom:22px; max-width:440px;}
@@ -1089,9 +1123,9 @@
       <div class="grid grid-3">
         <div class="card">
           <span class="tag">Daily Porch</span>
-          <h3>Latest reflection</h3>
-          <p>A new short reflection lands here as soon as it's posted.</p>
-          <button class="card-link" data-nav="daily" style="background:none; border:none; padding:0; cursor:pointer; text-align:left;">Read today's entry</button>
+          <h3>Today’s Daily Porch</h3>
+          <p id="home-daily-title">A short reflection for today.</p>
+          <button class="card-link" data-nav="daily" style="background:none; border:none; padding:0; cursor:pointer; text-align:left;">Read today’s reflection →</button>
         </div>
         <div class="card">
           <span class="tag amber">Featured book</span>
@@ -1589,16 +1623,67 @@
 <!-- ================= DAILY PORCH ================= -->
 <section class="page" id="page-daily">
   <section class="block bg-charcoal tight">
-    <div class="wrap">
-      <p class="hero-eyebrow" style="color:#A7B8A8;">The Daily Porch</p>
-      <h1 id="daily-page-heading" style="font-size:1.9rem; color:#fff; margin-top:8px;">Today's Porch</h1>
-      <p style="color:var(--gray); margin-top:10px; max-width:56ch;">365 daily reflections, one for every day of the year. Jump to any day, or use Prev/Next to read through in order.</p>
+    <div class="wrap" style="max-width:680px;">
+      <p class="hero-eyebrow" style="color:#A7B8A8;" id="daily-eyebrow">Daily Porch</p>
+      <h1 id="daily-page-heading" style="font-size:1.9rem; color:#fff; margin-top:8px;">Today</h1>
+      <p style="color:var(--gray); margin-top:10px; max-width:56ch;" id="daily-page-sub">Something to carry through the day.</p>
     </div>
   </section>
 
   <section class="block bg-cream">
     <div class="wrap" style="max-width:680px;">
-      <div class="daily-nav-bar">
+      <!-- Daily Porch v1 (Phase 11B). Content: CONFIG.dailyEntries (public).
+           Private parts below are filled by the Daily Porch private script. -->
+      <article class="form-card" id="daily-entry" aria-live="polite"></article>
+
+      <section class="form-card dp-card" id="dp-morning" aria-labelledby="dp-morning-title">
+        <div class="dp-card-head"><h2 id="dp-morning-title">Morning Reflection</h2><span class="dp-private">Private to you</span></div>
+        <div class="dp-write" data-part="morning">
+          <label for="dp-morning-text">What do I want to carry into today?</label>
+          <textarea id="dp-morning-text" maxlength="500" rows="3"></textarea>
+          <div class="dp-row"><span class="dp-status" id="dp-morning-status" role="status" aria-live="polite"></span><span class="mr-count" id="dp-morning-count"></span></div>
+          <p class="field-error" id="dp-morning-error" role="alert"></p>
+          <button type="button" class="btn btn-primary" id="dp-morning-save">Save morning reflection</button>
+        </div>
+        <p class="mr-muted dp-privacy-line">Saved privately to your account.</p>
+        <div class="dp-signin" hidden>
+          <p>Sign in to write a private morning reflection. It’s saved privately to your account, so you can read it on any device.</p>
+          <button type="button" class="btn btn-outline dp-signin-btn">Sign in</button>
+        </div>
+        <p class="mr-empty dp-readonly" hidden></p>
+      </section>
+
+      <section class="form-card dp-card" id="dp-evening" aria-labelledby="dp-evening-title">
+        <div class="dp-card-head"><h2 id="dp-evening-title">Evening Reflection</h2><span class="dp-private">Private to you</span></div>
+        <div id="dp-evening-porch"></div>
+        <div class="dp-write" data-part="evening">
+          <label for="dp-evening-text">What did today teach me?</label>
+          <textarea id="dp-evening-text" maxlength="500" rows="3"></textarea>
+          <div class="dp-row"><span class="dp-status" id="dp-evening-status" role="status" aria-live="polite"></span><span class="mr-count" id="dp-evening-count"></span></div>
+          <p class="field-error" id="dp-evening-error" role="alert"></p>
+          <button type="button" class="btn btn-primary" id="dp-evening-save">Save evening reflection</button>
+        </div>
+        <p class="mr-muted dp-privacy-line">Saved privately to your account.</p>
+        <div class="dp-signin" hidden>
+          <p>Sign in to write a private evening reflection. It’s saved privately to your account.</p>
+          <button type="button" class="btn btn-outline dp-signin-btn">Sign in</button>
+        </div>
+        <p class="mr-empty dp-readonly" hidden></p>
+      </section>
+
+      <section class="form-card dp-card" id="dp-recent" aria-labelledby="dp-recent-title">
+        <h2 id="dp-recent-title">Recent Daily Porch</h2>
+        <ul class="mr-history-list" id="dp-recent-list"></ul>
+        <div id="dp-saved-wrap" hidden>
+          <h3 class="dp-subhead">Your saved days</h3>
+          <ul class="dp-saved-list" id="dp-saved-list"></ul>
+        </div>
+      </section>
+
+      <section class="form-card dp-card" id="dp-browse" aria-labelledby="dp-browse-title">
+        <h2 id="dp-browse-title">Browse all 365 days</h2>
+        <p class="mr-muted">One reflection for every day of the year.</p>
+      <div class="daily-nav-bar" style="margin-top:12px;">
         <button type="button" class="btn btn-outline" id="daily-prev" aria-label="Previous day">&lsaquo; Prev</button>
         <form class="daily-jump" id="daily-jump-form">
           <label for="daily-day-input" class="sr-only">Jump to day (1–365)</label>
@@ -1609,15 +1694,15 @@
         <button type="button" class="btn btn-outline" id="daily-next" aria-label="Next day">Next &rsaquo;</button>
       </div>
       <p class="field-error" id="daily-jump-error" role="alert"></p>
-      <div style="margin:-4px 0 16px; text-align:center;">
-        <button type="button" class="card-link daily-today-btn" id="daily-today-top" aria-label="Today's Porch — jump to today's entry" style="background:none; border:none; cursor:pointer; margin:0 auto;">Today's Porch</button>
+      <div style="margin-top:4px; text-align:center;">
+        <button type="button" class="card-link daily-today-btn" id="daily-back-to-today" style="background:none; border:none; cursor:pointer; margin:0 auto;">Back to today’s Daily Porch</button>
       </div>
+      </section>
 
-      <div class="form-card" id="daily-entry" role="status" aria-live="polite"></div>
-
-      <div style="margin-top:18px; text-align:center;">
-        <button type="button" class="card-link daily-today-btn" id="daily-back-to-today" aria-label="Today's Porch — jump to today's entry" style="background:none; border:none; cursor:pointer; margin:0 auto;">Today's Porch</button>
-      </div>
+      <section class="dp-myrecovery" aria-label="My Recovery">
+        <p>Daily Porch gives you something to carry through the day. My Recovery is where you track how you’re doing.</p>
+        <button type="button" class="btn btn-outline" data-nav="myrecovery">Open My Recovery</button>
+      </section>
     </div>
   </section>
 </section>
@@ -2096,7 +2181,7 @@
           <li>Front Porch Recovery has no ads, no analytics, and no tracking pixels, and it does not set its own cookies. Signing in is optional.</li>
           <li>The Daily Check-In and Recovery Counter save a small amount of information <strong>in your own browser</strong>. It is never sent to Front Porch Recovery, and we can't see it.</li>
           <li>If you sign in, your account and Community profile are saved on our servers: your display name and anything you choose to add — a short bio, a profile photo, and a recovery date with who can see it. The profile recovery date is separate from the Recovery Counter.</li>
-        <li>If you use My Recovery, your daily entries and current goal are saved privately with your account so they're available on any device you sign in on.</li>
+        <li>If you use My Recovery, or write a Daily Porch reflection or save a Daily Porch day, that's saved privately with your account so it's available on any device you sign in on.</li>
           <li>If you use the Contact form, your message is delivered to us through a service called Formspree.</li>
           <li>We don't sell or rent your information, and we don't share it for advertising.</li>
           <li>Our web host and a few outside services receive basic technical information when the site loads.</li>
@@ -2139,6 +2224,9 @@
         <li>FPR's admin tools have no screen for My Recovery, and we don't review it.</li>
         <li>My Recovery never copies your Daily Check-In or Recovery Counter. Those stay in your browser unless you choose to type something into My Recovery yourself.</li>
       </ul>
+
+      <h2>Daily Porch reflections and saved days (private to your account)</h2>
+      <p>Anyone can read the Daily Porch without an account. If you sign in, you can write a private morning and evening reflection for a day and save days you want to come back to. These are saved with your account and follow the same rules as My Recovery: only you can see them in the site, they never appear in the Community, on your profile, or in notifications, there are no public save counts, and FPR's admin tools have no screen for them. Nothing is stored on your device when you're signed out.</p>
 
       <h2>Blocking members</h2>
       <p>Blocking is a safety tool that limits how you and another member can interact. When either of you has blocked the other:</p>
@@ -7161,46 +7249,113 @@ function getTodaysPorchDay(date){
 }
 
 let currentDailyDay = getTodaysPorchDay();
+let currentDailyDate = null; // local 'YYYY-MM-DD' when the view is tied to a calendar date
 
-function renderDaily(day){
+/* Daily Porch v1 (Phase 11B) date helpers. A view is either a calendar
+   date (today or one of the previous 7 days; private reflections attach
+   to it) or a bare day number from the 1-365 browser. A browsed day that
+   matches today or a recent date is treated as that date. */
+function dpYMD(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function dpDateFrom(ymd){ const p = String(ymd).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function dpRecentDates(){ // today first, then the previous 7 days (local)
+  const out = [], now = new Date();
+  for(let i = 0; i <= 7; i++){ out.push(dpYMD(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i))); }
+  return out;
+}
+function dpLongDate(ymd){
+  try { return dpDateFrom(ymd).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
+  catch(err){ return ymd; }
+}
+
+/* Renders the public Daily Porch content for a day (CONFIG only, built
+   with textContent). Private reflections/saved state are filled in by the
+   Daily Porch private script, which listens for 'fpr:dailyview'. */
+function renderDaily(day, dateStr){
+  if(dateStr){ day = getTodaysPorchDay(dpDateFrom(dateStr)); }
   if(typeof day !== 'number' || !isFinite(day)) day = getTodaysPorchDay();
   day = Math.min(365, Math.max(1, Math.round(day)));
+  if(!dateStr){ dateStr = dpRecentDates().find(d => getTodaysPorchDay(dpDateFrom(d)) === day) || null; }
   currentDailyDay = day;
+  currentDailyDate = dateStr;
+  const today = dpYMD(new Date());
+  const isToday = dateStr === today;
 
-  const isFeatured = day === getTodaysPorchDay();
+  const eyebrow = document.getElementById('daily-eyebrow');
   const heading = document.getElementById('daily-page-heading');
-  if(heading) heading.textContent = isFeatured ? 'Today’s Porch' : `Day ${day}`;
+  const sub = document.getElementById('daily-page-sub');
+  if(eyebrow) eyebrow.textContent = 'Daily Porch';
+  if(heading) heading.textContent = dateStr ? dpLongDate(dateStr) : 'Day ' + day;
+  if(sub) sub.textContent = 'Day ' + day + ' of 365' + (isToday ? ' · Something to carry through the day.' : '');
 
   const input = document.getElementById('daily-day-input');
   if(input) input.value = day;
 
   const entry = CONFIG.dailyEntries[day];
   const container = document.getElementById('daily-entry');
+  const mk = (tag, cls, text) => { const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
+  container.replaceChildren();
+
+  if(!isToday){
+    const bar = mk('div', 'dp-viewing');
+    bar.appendChild(mk('span', null, dateStr ? 'Viewing ' + dpLongDate(dateStr) : 'Viewing Day ' + day));
+    const back = mk('button', 'card-link daily-today-btn', 'Back to today');
+    back.type = 'button';
+    back.style.cssText = 'background:none; border:none; cursor:pointer; padding:0;';
+    back.addEventListener('click', () => { renderDaily(getTodaysPorchDay()); });
+    bar.appendChild(back);
+    container.appendChild(bar);
+  }
+
+  const evening = document.getElementById('dp-evening-porch');
+  if(evening) evening.replaceChildren();
 
   if(entry){
-    container.innerHTML = `
-      <span class="tag">${isFeatured ? 'Today’s Porch · Day ' + day : 'Day ' + day}${entry.title ? ' — ' + entry.title : ''}</span>
-      <h3 style="margin-top:12px;">Morning Porch</h3>
-      <p style="margin-top:6px; color:var(--charcoal-soft);">${entry.morningThought}</p>
-      <p style="margin-top:14px;"><strong>Something to think about:</strong></p>
-      <p style="color:var(--charcoal-soft);">${entry.question}</p>
-      <p style="margin-top:14px;"><strong>Today's small move:</strong></p>
-      <p style="color:var(--charcoal-soft);">${entry.action}</p>
-      <hr class="divider" style="margin:20px 0;">
-      <h3>Evening Porch</h3>
-      <p style="margin-top:6px; color:var(--charcoal-soft);">${entry.eveningThought}</p>
-      <p style="margin-top:14px;"><strong>Gratitude prompt:</strong></p>
-      <p style="color:var(--charcoal-soft);">${entry.gratitude}</p>
-    `;
+    container.appendChild(mk('span', 'tag', 'Day ' + day));
+    const title = mk('h2', 'dp-title', entry.title || ('Day ' + day));
+    title.id = 'daily-entry-title';
+    container.setAttribute('aria-labelledby', 'daily-entry-title');
+    container.appendChild(title);
+    [[isToday ? 'Today’s reflection' : 'Reflection', entry.morningThought, 'dp-section'],
+     ['Something to think about', entry.question, 'dp-section'],
+     [isToday ? 'Today’s small move' : 'Small move', entry.action, 'dp-section dp-move']].forEach(s => {
+      const sec = mk('section', s[2]);
+      sec.appendChild(mk('h3', null, s[0]));
+      sec.appendChild(mk('p', null, s[1]));
+      container.appendChild(sec);
+    });
+    const saveSlot = mk('div', 'dp-save-row');
+    saveSlot.id = 'dp-save-slot';
+    container.appendChild(saveSlot);
+    if(evening && entry.eveningThought){
+      const p = mk('p', 'dp-evening-porch');
+      p.appendChild(mk('strong', null, 'Evening Porch: '));
+      p.appendChild(document.createTextNode(entry.eveningThought));
+      evening.appendChild(p);
+      if(entry.gratitude){
+        const g = mk('p', 'dp-evening-porch');
+        g.appendChild(mk('strong', null, 'Gratitude prompt: '));
+        g.appendChild(document.createTextNode(entry.gratitude));
+        evening.appendChild(g);
+      }
+    }
   } else {
-    container.innerHTML = `
-      <div class="daily-not-written">
-        <span class="tag coming-soon-badge">Day ${day}</span>
-        <p style="margin-top:10px; font-weight:600;">This day hasn’t been written yet.</p>
-        <p>We’re working through all 365 Front Porch Recovery reflections. Check back as more days are added, or use Prev/Next to browse what’s written so far.</p>
-      </div>
-    `;
+    const box = mk('div', 'daily-not-written');
+    box.appendChild(mk('span', 'tag coming-soon-badge', 'Day ' + day));
+    const p1 = mk('p', null, 'This day hasn’t been written yet.'); p1.style.cssText = 'margin-top:10px; font-weight:600;';
+    box.appendChild(p1);
+    box.appendChild(mk('p', null, 'We’re working through all 365 Front Porch Recovery reflections. Check back as more days are added.'));
+    container.appendChild(box);
   }
+  try { document.dispatchEvent(new CustomEvent('fpr:dailyview', { detail: { day: day, date: dateStr } })); } catch(err){}
+}
+
+/* Home: "Today's Daily Porch" card shows today's title. */
+function renderHomeDaily(){
+  const el = document.getElementById('home-daily-title');
+  if(!el) return;
+  const day = getTodaysPorchDay();
+  const entry = CONFIG.dailyEntries[day];
+  el.textContent = entry && entry.title ? entry.title : 'A short reflection for today.';
 }
 
 function initDailyNav(){
@@ -7689,7 +7844,7 @@ function renderBrandAssets(){
   }
 }
 
-renderHome(); renderPorch(); renderBooks(); renderShop(); renderToolbox(); renderDaily(getTodaysPorchDay()); initDailyNav(); renderMusic(); renderStories(); loadDbStories(); renderFooterLinks(); renderFacebookLinks(); renderRoughDayReachOut(); renderLegalPages(); renderBrandAssets();
+renderHome(); renderPorch(); renderBooks(); renderShop(); renderToolbox(); renderDaily(getTodaysPorchDay()); initDailyNav(); renderHomeDaily(); renderMusic(); renderStories(); loadDbStories(); renderFooterLinks(); renderFacebookLinks(); renderRoughDayReachOut(); renderLegalPages(); renderBrandAssets();
 document.getElementById('year').textContent = new Date().getFullYear();
 
 /* ---------- Navigation ---------- */
@@ -7702,6 +7857,7 @@ const mobileNav = document.getElementById('mobile-nav');
 function goTo(pageId, opts){
   opts = opts || {};
   if(pageId === 'daily'){ try { renderDaily(getTodaysPorchDay()); } catch(err){} }
+  if(pageId === 'home'){ try { renderHomeDaily(); } catch(err){} }
   try {
     pages.forEach(p => p.classList.toggle('active', p.id === 'page-' + pageId));
     document.querySelectorAll('[data-nav]').forEach(b => b.classList.toggle('current', b.dataset.nav === pageId));
@@ -13679,6 +13835,261 @@ const FPRBadge = (function(){
   // Coming back to the tab (e.g. the next morning): refresh dates and data.
   document.addEventListener('visibilitychange', function(){
     if (document.visibilityState === 'visible' && signedIn && pageActive() && !dirty) load();
+  });
+})();
+
+/* ---------- Daily Porch private parts (Phase 11B) ----------
+   The public Daily Porch content is rendered by renderDaily(); this adds
+   what belongs to the signed-in member: the Save toggle, the private
+   morning/evening reflections for today and the previous 7 days, and the
+   member's saved days. Data comes only from the *_daily_* RPCs (own rows,
+   no ids). Signed out, the content stays fully readable and these parts
+   invite sign-in; nothing is stored on the device. Member text is
+   rendered with textContent / textarea values only, and all of it is
+   dropped from memory on sign-out or account switch. */
+(function(){
+  const page = document.getElementById('page-daily');
+  if (!page || typeof renderDaily !== 'function') return;
+  const client = window.__fprSupabaseClient || null;
+  const $ = function(id){ return document.getElementById(id); };
+  const PARTS = ['morning', 'evening'];
+  const recentList = $('dp-recent-list'), savedWrap = $('dp-saved-wrap'), savedList = $('dp-saved-list');
+  const HEART = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-9.3-8.8A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.3 4.8C19 15.6 12 20 12 20Z"/></svg>';
+
+  let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0, loaded = false, loadFailed = false;
+  let reflections = {};      // date -> { morning_text, evening_text, updated_at }
+  let saved = [];            // day numbers, newest first
+  let drafts = {};           // 'date|part' -> unsaved text
+  let busy = {};             // 'save' | 'morning' | 'evening' -> true while a call is running
+  let view = { day: currentDailyDay, date: currentDailyDate };
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function openAccount(){ const b = $('header-account-btn'); if (b) b.click(); }
+  function shortDate(ymd){ try { return dpDateFrom(ymd).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); } catch(e){ return ymd; } }
+  function editableDate(d){ return !!d && dpRecentDates().indexOf(d) !== -1; }
+  function errMsg(err, fallback){
+    const code = err && err.code;
+    if (code === '42501') return 'Please sign in again.';
+    if (code === '22023') return (err && err.message) || fallback;
+    return fallback;
+  }
+  function showErr(node, msg){ node.textContent = msg || ''; node.classList.toggle('show', !!msg); }
+
+  // ---- Save / favorite ----
+  function renderSave(){
+    const slot = $('dp-save-slot');
+    if (!slot) return;
+    slot.replaceChildren();
+    const day = view.day;
+    if (!signedIn) {
+      const b = el('button', 'dp-save'); b.type = 'button';
+      b.innerHTML = HEART; // fixed icon markup only
+      b.appendChild(el('span', null, 'Save this day'));
+      b.addEventListener('click', openAccount);
+      slot.appendChild(b);
+      slot.appendChild(el('span', 'dp-save-note', 'Sign in to save days you want to come back to.'));
+      return;
+    }
+    const isSaved = saved.indexOf(day) !== -1;
+    const b = el('button', 'dp-save'); b.type = 'button'; b.id = 'dp-save';
+    b.innerHTML = HEART; // fixed icon markup only
+    b.appendChild(el('span', null, isSaved ? 'Saved ✓' : 'Save this day'));
+    b.setAttribute('aria-pressed', String(isSaved));
+    b.setAttribute('aria-label', isSaved ? 'Saved: Day ' + day + '. Select to unsave.' : 'Save Day ' + day);
+    b.disabled = !loaded || !!busy.save;
+    b.addEventListener('click', function(){ toggleSaved(day, !isSaved); });
+    slot.appendChild(b);
+    const note = el('span', 'dp-save-note', 'Only you can see what you save.');
+    note.id = 'dp-save-note';
+    slot.appendChild(note);
+  }
+  async function toggleSaved(day, want){
+    if (!client || !signedIn || busy.save) return;
+    const mySeq = seq;
+    busy.save = true; renderSave();
+    let failed = false;
+    try {
+      const { data, error } = await client.rpc('set_daily_porch_saved', { p_day: day, p_saved: want });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      saved = saved.filter(function(d){ return d !== day; });
+      if (row && row.saved) saved.unshift(day);
+    } catch(err){
+      if (mySeq !== seq) return;
+      failed = true;
+    } finally {
+      if (mySeq === seq) {
+        busy.save = false; renderSave(); renderSaved();
+        const note = $('dp-save-note');
+        if (failed && note) note.textContent = 'Couldn’t update right now. Please try again.';
+        const b = $('dp-save'); if (b) { try { b.focus({ preventScroll: true }); } catch(e){} }
+      }
+    }
+  }
+
+  // ---- Morning / evening reflections ----
+  function key(date, part){ return date + '|' + part; }
+  function savedText(date, part){ const r = reflections[date]; return (r && r[part + '_text']) || ''; }
+  function renderPart(part){
+    const card = $('dp-' + part);
+    const write = card.querySelector('.dp-write'), signin = card.querySelector('.dp-signin');
+    const readonly = card.querySelector('.dp-readonly'), privacy = card.querySelector('.dp-privacy-line');
+    const ta = $('dp-' + part + '-text'), status = $('dp-' + part + '-status'), btn = $('dp-' + part + '-save');
+    const label = card.querySelector('label');
+    signin.hidden = signedIn;
+    const canWrite = signedIn && editableDate(view.date);
+    write.hidden = !canWrite;
+    privacy.hidden = !canWrite;
+    readonly.hidden = !(signedIn && !canWrite);
+    if (signedIn && !canWrite) readonly.textContent = 'Private reflections are for today and the past 7 days. Pick a day under Recent Daily Porch to look back.';
+    if (!canWrite) return;
+    const isToday = view.date === dpYMD(new Date());
+    label.textContent = part === 'morning'
+      ? (isToday ? 'What do I want to carry into today?' : 'What did I want to carry into ' + shortDate(view.date) + '?')
+      : (isToday ? 'What did today teach me?' : 'What did ' + shortDate(view.date) + ' teach me?');
+    const k = key(view.date, part);
+    const has = Object.prototype.hasOwnProperty.call(drafts, k);
+    ta.value = has ? drafts[k] : savedText(view.date, part);
+    ta.disabled = !loaded;
+    btn.disabled = !loaded || !!busy[part];
+    status.classList.toggle('dirty', has);
+    status.textContent = !loaded ? (loadFailed ? '' : 'Loading…')
+      : has ? 'Unsaved changes'
+      : savedText(view.date, part) ? 'Saved privately ✓' : '';
+    $('dp-' + part + '-count').textContent = ta.value.length ? ta.value.length + ' / 500' : '';
+  }
+  function renderParts(){ PARTS.forEach(renderPart); }
+  PARTS.forEach(function(part){
+    const ta = $('dp-' + part + '-text'), btn = $('dp-' + part + '-save'), errNode = $('dp-' + part + '-error');
+    ta.addEventListener('input', function(){
+      if (!view.date) return;
+      const k = key(view.date, part);
+      if (ta.value === savedText(view.date, part)) delete drafts[k]; else drafts[k] = ta.value;
+      showErr(errNode, '');
+      const status = $('dp-' + part + '-status');
+      const dirty = Object.prototype.hasOwnProperty.call(drafts, k);
+      status.classList.toggle('dirty', dirty);
+      status.textContent = dirty ? 'Unsaved changes' : (savedText(view.date, part) ? 'Saved privately ✓' : '');
+      $('dp-' + part + '-count').textContent = ta.value.length ? ta.value.length + ' / 500' : '';
+    });
+    btn.addEventListener('click', async function(){
+      if (!client || !signedIn || !loaded || busy[part] || !editableDate(view.date)) return;
+      const date = view.date, mySeq = seq, text = ta.value.trim();
+      if (text.length > 500) { showErr(errNode, 'Reflections can be up to 500 characters.'); return; }
+      busy[part] = true; btn.disabled = true; showErr(errNode, '');
+      try {
+        const { data, error } = await client.rpc('save_my_daily_reflection', { p_date: date, p_part: part, p_text: text });
+        if (mySeq !== seq) return;
+        if (error) throw error;
+        const row = Array.isArray(data) ? data[0] : data;
+        if (row) reflections[date] = { morning_text: row.morning_text, evening_text: row.evening_text, updated_at: row.updated_at };
+        delete drafts[key(date, part)];
+        busy[part] = false;
+        if (view.date === date) renderPart(part);
+        renderRecent();
+      } catch(err){
+        if (mySeq !== seq) return;
+        busy[part] = false; btn.disabled = false;
+        showErr(errNode, errMsg(err, 'Couldn’t save right now. Please try again.'));
+      }
+    });
+  });
+  document.querySelectorAll('#page-daily .dp-signin-btn').forEach(function(b){ b.addEventListener('click', openAccount); });
+
+  // ---- Recent days + saved days ----
+  function dayTitle(day){ const e = CONFIG.dailyEntries[day]; return e && e.title ? e.title : 'Day ' + day; }
+  function goView(day, date){
+    renderDaily(day, date);
+    const h = $('daily-page-heading');
+    try { window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' }); } catch(e){}
+    if (h) { h.setAttribute('tabindex', '-1'); try { h.focus({ preventScroll: true }); } catch(e){} }
+  }
+  function renderRecent(){
+    recentList.replaceChildren();
+    dpRecentDates().slice(1).forEach(function(date){
+      const day = getTodaysPorchDay(dpDateFrom(date));
+      const li = el('li');
+      const b = el('button', 'mr-day'); b.type = 'button';
+      if (view.date === date) b.setAttribute('aria-current', 'true');
+      const top = el('span', 'mr-day-top');
+      const when = el('span', null, shortDate(date));
+      const r = signedIn && reflections[date];
+      if (r && (r.morning_text || r.evening_text)) when.appendChild(el('span', 'dp-mine', '· Your reflection'));
+      top.appendChild(when);
+      top.appendChild(el('span', 'mr-day-nums', 'Day ' + day));
+      b.appendChild(top);
+      b.appendChild(el('span', 'mr-day-preview', dayTitle(day)));
+      b.addEventListener('click', function(){ goView(day, date); });
+      li.appendChild(b);
+      recentList.appendChild(li);
+    });
+  }
+  function renderSaved(){
+    savedList.replaceChildren();
+    savedWrap.hidden = !(signedIn && saved.length);
+    if (savedWrap.hidden) return;
+    saved.forEach(function(day){
+      const li = el('li');
+      const b = el('button', null, 'Day ' + day + ' — ' + dayTitle(day)); b.type = 'button';
+      b.addEventListener('click', function(){ goView(day, null); });
+      li.appendChild(b);
+      savedList.appendChild(li);
+    });
+  }
+  function renderAll(){ renderSave(); renderParts(); renderRecent(); renderSaved(); }
+
+  document.addEventListener('fpr:dailyview', function(e){
+    view = { day: e.detail.day, date: e.detail.date };
+    renderAll();
+  });
+
+  // ---- Loading / session ----
+  async function load(){
+    if (!client || !signedIn) return;
+    const mySeq = seq, myLoad = ++loadSeq;
+    try {
+      const since = dpRecentDates()[7];
+      const res = await Promise.all([
+        client.rpc('list_my_daily_reflections', { p_since: since }),
+        client.rpc('list_my_saved_daily_porch')
+      ]);
+      if (mySeq !== seq || myLoad !== loadSeq) return;
+      if (res[0].error) throw res[0].error;
+      if (res[1].error) throw res[1].error;
+      const map = {};
+      (res[0].data || []).forEach(function(r){ map[r.reflection_date] = { morning_text: r.morning_text, evening_text: r.evening_text, updated_at: r.updated_at }; });
+      reflections = map;
+      saved = (res[1].data || []).map(function(r){ return Number(r.day_number); });
+      loaded = true; loadFailed = false;
+    } catch(err){
+      if (mySeq !== seq || myLoad !== loadSeq) return;
+      loadFailed = true;
+      PARTS.forEach(function(p){ showErr($('dp-' + p + '-error'), 'Couldn’t load your reflections right now. Reload to try again.'); });
+    }
+    renderAll();
+  }
+  function reset(){
+    seq++; loaded = false; loadFailed = false;
+    reflections = {}; saved = []; drafts = {}; busy = {};
+    PARTS.forEach(function(p){ $('dp-' + p + '-text').value = ''; showErr($('dp-' + p + '-error'), ''); });
+  }
+  function pageActive(){ return page.classList.contains('active'); }
+  function onSession(session){
+    const nowUser = session && session.user ? session.user.id : null;
+    if (nowUser === sessionUser) return;
+    sessionUser = nowUser;
+    signedIn = !!nowUser;
+    reset(); // never carry one account's reflections or saves into another
+    renderAll();
+    if (signedIn && pageActive()) load();
+  }
+  renderAll();
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  }
+  document.addEventListener('fpr:pagechange', function(e){
+    if (e && e.detail && e.detail.page === 'daily' && signedIn) load();
   });
 })();
 

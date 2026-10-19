@@ -28,6 +28,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 9D — Safety polish** — complete: Mute · Block · Report share one subdued row in the profile panel, the account window groups Blocked and Muted members under "Safety & visibility", confirmation copy is consistent across the three, and the admin Reports tab adds a type filter (All/Member/Post/Comment) with Open as the default status.
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
+- **Daily Porch v1 (Phase 11B)** — complete: the existing 365-day Daily Porch page upgraded with today's date view, private morning/evening reflections, saved days, and recent days (see below).
 - **Admin mobile layout** — deployed and checked on a phone: wrapping tabs, readable text, account header, and filters. Current checkpoint: main at e9ad981 on 2026-10-19.
 
 ## My Recovery
@@ -43,6 +44,22 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Not connected to anything else:** no Community, profile, badge, follower, notification or admin exposure; no AI, points or streak rankings. Member text is rendered as plain text.
 
 The backend is `supabase/migrations/phase11a_my_recovery_v1.sql` (applied; see `supabase/README.md`).
+
+## Daily Porch
+
+The Daily Porch (`#daily`, "Daily Porch" in the nav) gives everyone something to carry through the day. It's the same page and the same content as before, upgraded rather than duplicated.
+
+- **Content:** `CONFIG.dailyEntries` in `index.html`, all 365 days written. Each entry has `title`, `morningThought` (shown as the reflection), `question` ("Something to think about"), `action` ("Today's small move"), `eveningThought` and `gratitude` (shown in the Evening Reflection card). To edit or replace content, change those entries only; the rendering doesn't need to change.
+- **Date:** `getTodaysPorchDay()` maps the device's local calendar date to Day 1–365, so the same day shows all day and across reloads. In leap years Feb 29 reuses Day 59. The page heading is today's date with "Day N of 365".
+- **Reading is open to everyone.** Signed out, the reflection, question, small move, recent days and the 1–365 browser all work. Private writing and saving invite sign-in, and nothing is stored on the device.
+- **Signed in, private to the account:**
+  - **Reflections:** a Morning Reflection ("What do I want to carry into today?") and an Evening Reflection ("What did today teach me?"), each up to 500 characters, saved separately and editable for today and the previous 7 days.
+  - **Save this day:** a heart toggle with "Saved ✓" text and `aria-pressed`. Saved days are listed under "Your saved days". There are no counts and no notifications.
+- **Recent Daily Porch:** the previous 7 dates, each opening that date's content and, for its owner, that date's private reflections. Prev/Next and "jump to day" browse all 365 days. A browsed day outside the last week shows no reflection fields.
+- **Home:** the "From the porch" Daily Porch card shows today's title with "Read today’s reflection →".
+- **My Recovery** stays separate: Daily Porch is for something to carry through the day, and My Recovery tracks how you're doing. The page links to it. There's no mood, cravings or goal here, and no AI, interpretation or scoring.
+
+The backend is `supabase/migrations/phase11b_daily_porch_v1.sql` (applied; see `supabase/README.md`).
 
 ## Community features
 

@@ -673,6 +673,37 @@ Migration: `migrations/phase11a_my_recovery_v1.sql`. It's additive only (no DROP
 - **Browser fixture suite (77 checks):** signed-out view, local Check-In and Counter, save/update/reload, the 7-day summary, 7/30-day history, editing past entries, the goal lifecycle, account switch and sign-out clearing, the error/retry path, no XSS, no recovery calls from Community, mobile (390px) and desktop header fit, and admin load.
 - **Real data** was untouched: the new tables are empty after testing, and there are still 5 users, 2 posts, 4 comments and 1 notification.
 
+## Phase 11B — Daily Porch v1
+
+Migration: `migrations/phase11b_daily_porch_v1.sql`. It's additive only (no DROP, ALTER or DELETE). It was applied through the normal migration tool on 2026-10-19, so it **is** recorded in `schema_migrations` (row 11, `phase11b_daily_porch_v1`). The Daily Porch content isn't in the database: it's public app content in `CONFIG.dailyEntries`.
+
+- **`recovery_daily_reflections`:**
+  - Columns: `id`, `user_id` (references `auth.users`, `ON DELETE CASCADE`), `reflection_date`, `morning_text`, `evening_text` (each 1–500 characters or NULL), `created_at`, `updated_at`.
+  - `unique (user_id, reflection_date)` gives one row per member per local date.
+  - It's deliberately separate from `recovery_daily_logs`, so reflections never count as My Recovery entries or change its rules.
+- **`saved_daily_porch`:**
+  - Columns: `user_id` (`ON DELETE CASCADE`), `day_number` (1–365), `saved`, `saved_at`, `updated_at`. The primary key is `(user_id, day_number)`.
+  - Unsave sets `saved = false` (the row is kept), which keeps the migration free of DELETE.
+- **Access:** RLS is on with **no policies**, and `public`, `anon` and `authenticated` have **no table privileges**. Members use only these RPCs:
+  - `save_my_daily_reflection(date, p_part 'morning'|'evening', text)` sets one part and leaves the other untouched. Blank text clears that part.
+  - `list_my_daily_reflections(p_since date)` returns non-empty rows only, newest first, at most 60.
+  - `set_daily_porch_saved(p_day int, p_saved bool)` is idempotent and keeps the original `saved_at` on a repeat save.
+  - `list_my_saved_daily_porch()`.
+
+  Each is `security definer` with `search_path = public, pg_temp`, executable by `authenticated` only. Each acts on `auth.uid()`'s rows and returns no `id` or `user_id`. Errors use `42501` for no session and `22023` for validation (bad part, more than 500 characters, a date more than a day ahead or more than 366 days back, a day outside 1–365).
+- **No other paths:** there's no admin policy or RPC, no view, no trigger, no public counts, and no link to Community, profiles or notifications.
+
+**Verification (2026-10-19):**
+- **Privileges:** `has_table_privilege` is false for anon and authenticated on both tables, and EXECUTE is authenticated-only.
+- **Rollback DO block** (two throwaway users). These passed:
+  - anon RPC and table access are denied, and direct table access as authenticated is denied;
+  - morning and evening save independently, an update keeps one row per date, blank clears a part, and empty rows are hidden from the list;
+  - validation rejects a bad part, 501 characters, a future date and days 0 or 366, and accepts 500 characters;
+  - save is idempotent, and unsave hides the day from the list;
+  - member B sees none of A's reflections or saves, and B's writes don't touch A's;
+  - My Recovery logs and Community post, comment and notification counts are unchanged.
+- **Browser fixture suite:** 72 checks passed (see the Daily Porch section of the main README).
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -701,4 +732,4 @@ Migration: `migrations/phase11a_my_recovery_v1.sql`. It's additive only (no DROP
 
 **Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and on-site payment processing. Optional Support FPR contributions use an external Cash App link; no payment credentials or transaction records are stored by this website.
 
-Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
