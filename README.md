@@ -29,6 +29,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
 - **My Recovery Plan v1 (Phase 11C)** — complete: a private, signed-in plan for hard moments (see below).
+- **Resources v2** — complete: a searchable national recovery-resource directory built from one shared catalog (see below).
 - **Journal v1 (Phase 11J)** — complete: a private freeform journal with search and tags (see below).
 - **Weekly Review v1 (Phase 11I)** — complete: a factual Monday–Sunday summary plus a private weekly reflection (see below).
 - **Milestones & Wins v1 (Phase 11H)** — complete: calculated recovery milestones plus private personal wins in one timeline (see below).
@@ -143,6 +144,67 @@ The backend is `supabase/migrations/phase11d_toolbox_pins_v1.sql` (applied; see 
   - **No new storage and no migration.** One parallel batch of 8 existing RPCs per load: `list_my_recovery_logs`, `get_my_recovery_goal`, `list_my_saved_daily_porch`, `list_my_support_items`, `list_my_support_checkins`, `get_my_recovery_plan`, `list_my_toolbox_pins`, `get_my_profile`.
   - **Caching:** results are reused until something changes. The other features dispatch `fpr:recoverychange` (log/goal), `fpr:dailysavedchange`, `fpr:pinschange`, `fpr:planchange` and `fpr:supportchange`, and `fpr:profilechange` already existed. The cache is also dropped when the local date changes (checked on each Today visit and when the tab becomes visible) or when the account changes.
   - **No timers or polling.** Signing out or switching accounts clears everything.
+
+## Resources (national directory)
+
+"Resources" (`#resources`) answers "What kind of help do I need, and where can I find it?". It's public, needs no account, uses no location, and stores nothing. It's in the mobile menu and footer, linked from the Toolbox's "Guides and resources", and from Meetings & Support's Find Support ("More meeting finders in Resources →" opens the Meetings category, plus "Browse all resources →"). The desktop nav is unchanged, and Rough Day's crisis resources are unchanged.
+
+- **Page order:**
+  1. **Need immediate help?** — 911 and 988 (call or text), and **Rough Day →**.
+  2. **What do you need help with?** — ten need buttons, e.g. Find a meeting, Find treatment, Housing.
+  3. **Search resources** — name, organization, description, category and tags; case-insensitive, partial words, every word must match.
+  4. **Category chips** — All plus 10 categories, with `aria-pressed` and a ✓; combines with search.
+  5. **Results** — grouped by category when showing All, otherwise emergency services first.
+- **When nothing matches:** "No resources found" with **Show all resources**.
+- **Cards:** name, organization, labels (audience such as "For family & loved ones" or "Veterans", and the scope, e.g. "Utah only"), a short plain description, availability, and only the actions that exist:
+  - **Call** (`tel:`) and **Text** (`sms:`), digits only;
+  - **Website** (http/https only), opening in a new tab with `rel="noopener noreferrer"` and an accessible "opens the organization's site in a new tab" label.
+
+  Anything else is never rendered as a link.
+- **How to use this directory:** a short note that FPR doesn't operate or endorse these services and that availability can change.
+
+### Maintaining the catalog
+
+- **One catalog:** `CONFIG.resourceCatalog` in `index.html` is the only list of outside resources. `CONFIG.resourceCategories` lists the categories: `crisis`, `meetings`, `treatment`, `housing`, `food`, `employment`, `legal`, `family`, `veterans`, `peer`.
+  - **Toolbox guides** reference entries with `{"ref": "<key>", "note": "guide-specific context"}` in their `external` lists, through `CONFIG.sharedResources`, which is generated from the catalog.
+  - **Meetings & Support's Find Support** uses the Finding Meetings guide's refs.
+
+  Change a link once, in the catalog, and every place updates.
+- **To add a resource**, add an object to `resourceCatalog`:
+
+  ```js
+  { key: 'unique_key', name: 'Name people know', organization: 'Who runs it', category: 'housing', also: ['food'],
+    description: 'One or two plain sentences in our own words.', website_url: 'https://…', button_label: 'Visit …',
+    phone: '18005551234', phone_label: 'Call 1-800-555-1234', text_number: '12345', text_label: 'Text HELLO to 12345',
+    availability: '24/7', audience: 'family', scope: 'national', tags: ['search', 'words'], featured: false, emergency: false }
+  ```
+
+  - **Required fields:** `key`, `name`, `description`, `category`, `scope`, and normally `website_url`. Everything else is optional.
+  - **Values:** `phone` and `text_number` are digits only. `audience` is one of `recovery`, `family`, `veterans`, `reentry`, `anyone` or `professionals`.
+  - **Emergency entries:** `emergency: true` marks a crisis service, which is listed first in filtered views.
+- **Scopes (ready for state and local listings):**
+  - `scope: 'national'` is the default for v2.
+  - `scope: 'state'` needs `state` (e.g. `'UT'`) and shows a "Utah only" label.
+  - `scope: 'local'` needs `state` plus `county` and/or `city`, and shows that as its label.
+
+  There's no location detection or ZIP logic yet. A later version can add a state/local filter without replacing the national catalog.
+- **Verification rules:** every new URL and number must be checked on the organization's own site before it's added. Check that the page loads over HTTPS, that it's the organization it claims to be, that there's no redirect to a commercial lead service, and that the phone and text numbers appear on the official page.
+  - **Use:** government, official program and established nonprofit sources.
+  - **Don't use:** lead-generation, affiliate or paid-placement treatment directories.
+  - **Writing:** paraphrase descriptions rather than copying them.
+- **Current catalog (verified 2026-10-19):** 35 entries, 34 national plus USARA (Utah).
+  - **Mental health & crisis:** 988 Lifeline, Crisis Text Line, NAMI HelpLine, National Domestic Violence Hotline, Poison Help, SAMHSA Find Support.
+  - **Meetings:** AA, NA, SMART Recovery, Celebrate Recovery, Recovery Dharma, LifeRing, Women for Sobriety.
+  - **Peer services:** Faces & Voices of Recovery, USARA.
+  - **Treatment:** FindTreatment.gov, SAMHSA National Helpline.
+  - **Housing:** HUD Find Shelter, 211.
+  - **Food:** USDA National Hunger Hotline, Feeding America food bank finder, USA.gov Benefits.
+  - **Employment:** American Job Center Finder, CareerOneStop for justice-impacted people.
+  - **Legal & reentry:** LawHelp.org, LSC Find Legal Aid, National Reentry Resource Center.
+  - **Family:** Al-Anon, Nar-Anon, SMART Recovery Family & Friends, Partnership to End Addiction.
+  - **Veterans:** Veterans Crisis Line, VA substance use treatment, Find VA locations, VA homeless programs.
+- **Not in the catalog:** the guides' existing Psychology Today Therapist Finder and In The Rooms links are commercial directories and platforms, so they stay as plain guide links.
+- **No database:** this is public reference content, so there's no table or migration.
 
 ## Journal
 

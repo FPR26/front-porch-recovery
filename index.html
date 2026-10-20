@@ -923,6 +923,47 @@
   .td-progress-link{margin-top:16px; text-align:center; font-size:.95rem;}
   .td-progress-link .td-strong{font-weight:800;}
 
+  /* ---------- Resources v2 ---------- */
+  .rs-wrap{max-width:900px;}
+  #page-resources [hidden]{display:none !important;}
+  .rs-emergency{background:var(--amber-soft); border-radius:var(--radius-m); padding:16px 18px; color:#4a3613;}
+  .rs-emergency h2{font-size:1.05rem; color:#4a3613;}
+  .rs-emergency ul{list-style:none; padding:0; margin:8px 0 0; display:flex; flex-direction:column; gap:8px;}
+  .rs-emergency li{display:flex; gap:12px; align-items:flex-start; font-size:.9rem; line-height:1.5;}
+  .rs-em-num{flex:none; min-width:64px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; background:#4a3613; color:#fff; font-weight:800; font-size:1.05rem; text-decoration:none;}
+  .rs-em-link{color:#4a3613; font-weight:700; text-decoration:underline;}
+  .rs-emergency .btn{margin-top:12px; min-height:44px;}
+  .rs-needs{margin-top:24px;}
+  .rs-needs h2, .rs-about h2{font-size:1.3rem;}
+  .rs-need-grid{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-top:12px;}
+  @media(min-width:760px){ .rs-need-grid{grid-template-columns:repeat(5, minmax(0,1fr));} }
+  .rs-need{min-height:64px; padding:12px; border-radius:12px; border:1.5px solid var(--line); background:var(--white); color:var(--charcoal); font:inherit; font-weight:700; font-size:.92rem; text-align:left; cursor:pointer; line-height:1.3;}
+  .rs-need:hover, .rs-need[aria-pressed="true"]{border-color:var(--charcoal);}
+  .rs-need.all{background:var(--charcoal); color:var(--white); border-color:var(--charcoal);}
+  .rs-browse{margin-top:24px;}
+  .rs-chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+  .rs-chip{min-height:44px; padding:8px 14px; border-radius:999px; border:1.5px solid var(--line); background:var(--white); color:var(--charcoal); font:inherit; font-size:.88rem; font-weight:600; cursor:pointer;}
+  .rs-chip[aria-pressed="true"]{background:var(--charcoal); border-color:var(--charcoal); color:var(--white);}
+  .rs-chip[aria-pressed="true"]::before{content:"✓ ";}
+  .rs-count{font-size:.9rem; font-weight:600; margin-top:14px; color:var(--charcoal-soft);}
+  .rs-group{margin-top:22px;}
+  .rs-group h3{font-size:1.1rem;}
+  .rs-list{list-style:none; padding:0; margin:10px 0 0; display:grid; grid-template-columns:1fr; gap:12px;}
+  @media(min-width:760px){ .rs-list{grid-template-columns:repeat(2, minmax(0,1fr));} }
+  .rs-card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:16px; display:flex; flex-direction:column; gap:6px; height:100%;}
+  .rs-card.emergency{border:2px solid var(--amber);}
+  .rs-card h4{font-size:1.05rem; overflow-wrap:anywhere;}
+  .rs-org{font-size:.8rem; color:var(--charcoal-soft);}
+  .rs-labels{display:flex; flex-wrap:wrap; gap:6px;}
+  .rs-label{font-size:.72rem; font-weight:700; border-radius:999px; padding:2px 9px; background:var(--gray); color:var(--charcoal-soft);}
+  .rs-label.scope{background:rgba(167,184,168,.3); color:var(--sage-text);}
+  .rs-desc{font-size:.92rem; color:var(--charcoal-soft); line-height:1.55;}
+  .rs-avail{font-size:.82rem; font-weight:700; color:var(--sage-text);}
+  .rs-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:auto; padding-top:6px;}
+  .rs-actions .btn{flex:1 1 auto; min-height:46px; padding:10px 14px; font-size:.88rem; white-space:normal; text-align:center;}
+  .rs-about{margin-top:28px; font-size:.92rem; color:var(--charcoal-soft); line-height:1.6;}
+  .rs-about p{margin-top:8px;}
+
   /* ---------- Journal (Phase 11J) ---------- */
   .jr-wrap{max-width:720px;}
   .jr-search{margin-top:16px;}
@@ -1237,6 +1278,7 @@
     <button data-nav="books">Books</button>
     <button data-nav="shop">Shop</button>
     <button data-nav="toolbox">Recovery Toolbox</button>
+    <button data-nav="resources">Resources</button>
     <button data-nav="daily">Daily Porch</button>
     <button data-nav="music">Music</button>
     <button data-nav="stories">Porch Stories</button>
@@ -2078,6 +2120,64 @@
   </section>
 </section>
 
+<!-- ================= RESOURCES v2 =================
+     Public national directory built from CONFIG.resourceCatalog (the one
+     outside-resource catalog, shared with Toolbox guides and Find Support).
+     No account, no location, no storage. Built by the Resources script
+     (textContent only; links validated before rendering). -->
+<section class="page" id="page-resources">
+  <section class="block bg-charcoal tight">
+    <div class="wrap rs-wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;">National recovery resources</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Resources</h1>
+      <p style="color:var(--gray); margin-top:10px; max-width:60ch;">What kind of help do you need, and where can you find it? Start with a need below, or search.</p>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap rs-wrap">
+      <aside class="rs-emergency" aria-labelledby="rs-emergency-title">
+        <h2 id="rs-emergency-title">Need immediate help?</h2>
+        <ul>
+          <li><a href="tel:911" class="rs-em-num">911</a> <span>If you’re in immediate danger, having a medical emergency, or at risk of harming yourself or someone else.</span></li>
+          <li><a href="tel:988" class="rs-em-num" aria-label="Call 988, the Suicide &amp; Crisis Lifeline">988</a> <span>Suicide &amp; Crisis Lifeline. Call or <a href="sms:988" class="rs-em-link">text 988</a>, free and confidential, 24/7.</span></li>
+        </ul>
+        <button type="button" class="btn btn-amber" data-nav="roughday">Rough Day →</button>
+      </aside>
+
+      <section class="rs-needs" aria-labelledby="rs-needs-title">
+        <h2 id="rs-needs-title">What do you need help with?</h2>
+        <div class="rs-need-grid" id="rs-need-grid"></div>
+      </section>
+
+      <section class="rs-browse" id="rs-browse" aria-labelledby="rs-browse-title" tabindex="-1">
+        <h2 id="rs-browse-title" class="sr-only">Browse resources</h2>
+        <form class="jr-search" id="rs-search-form" role="search" novalidate>
+          <label for="rs-search">Search resources</label>
+          <div class="jr-search-row">
+            <input type="search" id="rs-search" maxlength="80" autocomplete="off" placeholder="Try “meetings”, “rent”, “jobs”, “family”">
+            <button type="submit" class="btn btn-outline">Search</button>
+          </div>
+        </form>
+        <div class="rs-chips" id="rs-chips" role="group" aria-label="Filter by category"></div>
+        <p class="rs-count" id="rs-count" role="status" aria-live="polite"></p>
+        <div id="rs-results"></div>
+        <div class="form-card mr-card" id="rs-none" hidden>
+          <h3>No resources found</h3>
+          <p>Try a different word, or browse all resources.</p>
+          <button type="button" class="btn btn-outline" id="rs-reset">Show all resources</button>
+        </div>
+      </section>
+
+      <section class="rs-about" aria-labelledby="rs-about-title">
+        <h2 id="rs-about-title">How to use this directory</h2>
+        <p>Front Porch Recovery does not operate or endorse these outside services. Availability can change. Contact the organization directly for current information.</p>
+        <p>Every link opens the organization’s own site in a new tab. For guides on cravings, meetings, boundaries and more, see the <button type="button" class="mr-link" data-nav="toolbox">Recovery Toolbox</button>. To plan the support you use each week, see <button type="button" class="mr-link" data-nav="meetings">Meetings &amp; Support</button>.</p>
+      </section>
+    </div>
+  </section>
+</section>
+
 <!-- ================= MY RECOVERY PLAN (Phase 11C) =================
      The member's own private plan for hard moments. Not clinical or
      emergency care; Rough Day and crisis resources stay separate and
@@ -2287,6 +2387,7 @@
         <h2 id="ms-find-title">Find Support</h2>
         <p class="mr-muted">Meeting finders and recovery resources. Links open the organization’s own site in a new tab.</p>
         <ul class="ms-links" id="ms-links"></ul>
+        <p class="mr-muted"><button type="button" class="mr-link" data-nav="resources" data-res-cat="meetings">More meeting finders in Resources →</button> · <button type="button" class="mr-link" data-nav="resources">Browse all resources →</button></p>
         <p class="mr-muted"><button type="button" class="mr-link" data-resource="finding-meetings">Read our guide to finding meetings</button></p>
         <p class="mr-muted">If you’re in crisis, call or text <a class="ms-crisis" href="tel:988">988</a>. In an emergency, call <a class="ms-crisis" href="tel:911">911</a>.</p>
       </section>
@@ -2450,6 +2551,7 @@
   <section class="block bg-cream" style="padding-top:0;">
     <div class="wrap">
       <h2 class="tb-library-title" id="tb-library-title">Guides and resources</h2>
+      <p class="tb-group-sub" style="margin:-6px 0 14px;">Looking for outside help like meetings, treatment, housing, or jobs? <button type="button" class="mr-link" data-nav="resources">Browse the national resource directory →</button></p>
       <div class="toolbox-search-wrap">
         <label for="toolbox-search" class="sr-only">Search the recovery toolbox</label>
         <input type="text" id="toolbox-search" placeholder="Search the recovery toolbox…" autocomplete="off">
@@ -3605,6 +3707,7 @@
           <li><a href="#" data-nav="meetings">Meetings &amp; Support</a></li>
           <li><a href="#" data-nav="porch">The Porch</a></li>
           <li><a href="#" data-nav="toolbox">Recovery Toolbox</a></li>
+          <li><a href="#" data-nav="resources">Resources</a></li>
           <li><a href="#" data-nav="daily">Daily Porch</a></li>
           <li><a href="#home" data-nav="home" data-scroll-target="fpr-onboard" id="footer-onboard-replay">Getting started</a></li>
         </ul>
@@ -4079,19 +4182,175 @@ const CONFIG = {
     {title:"Stay. Embroidered Hat", desc:"Minimalist recovery dad cap (Yupoong 6245CM). Black, Green Camo, Khaki, Light Blue, or Pink. One size.", tag:"Headwear", link:"https://frontporchrecovery.etsy.com/listing/4505291125/stay-embroidered-hat-minimalist-recovery"},
   ],
   /* Add "resourceLink" (a real PDF or page URL) to make "View resource" live for that item. */
-  /* Shared trusted outside resources. Defined once here and surfaced in any
-     Toolbox resource's "external" list via {"ref": "<key>", "note": "..."},
-     so one record can appear in several sections with section-specific
-     context. Keywords feed the Toolbox search for every resource that
-     references it. */
-  sharedResources: {
-    "usara": {
-      "title": "USARA — Utah Support Advocates for Recovery Awareness",
-      "description": "Utah-based peer recovery support, recovery community centers, meetings, family support, and other recovery resources.",
-      "buttonLabel": "Visit USARA",
-      "url": "https://www.myusara.com/",
-      "keywords": ["usara", "utah", "peer support", "peer recovery", "recovery support", "recovery community", "community", "family support"]
-    }
+  /* ---------- Resources v2: the ONE outside-resource catalog ----------
+     Every outside recovery resource lives here once. The Resources
+     directory (#resources) renders it, Toolbox guides reference entries
+     with {"ref": "<key>", "note": "..."} in their "external" lists, and
+     Meetings & Support's Find Support uses the same refs.
+     Fields: key (unique), name, organization, category (one of
+     resourceCategories), also (more categories), description (short,
+     plain, paraphrased), website_url (https), button_label, phone (digits
+     for tel:), phone_label, text_number (for sms:), text_label,
+     availability, audience (recovery|family|veterans|reentry|anyone|
+     professionals), scope ('national' | 'state' | 'local'), state (e.g.
+     'UT'), county, city, tags, featured, emergency.
+     Every URL and number was checked on the organization's own site
+     (2026-10-19). Add only official / established nonprofit sources; no
+     lead-generation or paid-placement directories. See README. */
+  resourceCategories: [
+    { id: 'crisis', label: 'Mental health & crisis', chip: 'Mental health' },
+    { id: 'meetings', label: 'Meetings & peer support', chip: 'Meetings' },
+    { id: 'treatment', label: 'Treatment & detox', chip: 'Treatment' },
+    { id: 'housing', label: 'Housing & shelter', chip: 'Housing' },
+    { id: 'food', label: 'Food & basic needs', chip: 'Food' },
+    { id: 'employment', label: 'Employment & job support', chip: 'Employment' },
+    { id: 'legal', label: 'Legal & reentry', chip: 'Legal/Reentry' },
+    { id: 'family', label: 'Family & loved ones', chip: 'Family' },
+    { id: 'veterans', label: 'Veterans', chip: 'Veterans' },
+    { id: 'peer', label: 'Recovery community & peer services', chip: 'Peer support' }
+  ],
+  resourceCatalog: [
+    // ---- Mental health & crisis ----
+    { key: 'lifeline_988', name: '988 Suicide & Crisis Lifeline', organization: '988 Lifeline', category: 'crisis', also: ['veterans'],
+      description: 'Call, text, or chat with a trained crisis counselor for free, any time, about suicidal thoughts, a mental health crisis, or substance use.',
+      website_url: 'https://988lifeline.org', button_label: 'Visit 988 Lifeline', phone: '988', phone_label: 'Call 988', text_number: '988', text_label: 'Text 988',
+      availability: '24/7, free and confidential', audience: 'anyone', scope: 'national', tags: ['suicide', 'crisis', 'emotional distress', 'mental health', 'substance use', 'chat'], featured: true, emergency: true },
+    { key: 'crisis_text_line', name: 'Crisis Text Line', organization: 'Crisis Text Line', category: 'crisis',
+      description: 'Text with a trained volunteer crisis counselor when you are struggling and would rather not talk on the phone.',
+      website_url: 'https://www.crisistextline.org', button_label: 'Visit Crisis Text Line', text_number: '741741', text_label: 'Text HOME to 741741',
+      availability: '24/7, free', audience: 'anyone', scope: 'national', tags: ['text', 'crisis', 'mental health', 'anxiety', 'depression'], emergency: true },
+    { key: 'nami_helpline', name: 'NAMI HelpLine', organization: 'National Alliance on Mental Illness', category: 'crisis', also: ['family'],
+      description: 'Free information, support, and referrals for people living with mental health conditions and the people who care about them. Not a crisis line.',
+      website_url: 'https://www.nami.org/nami-helpline/', button_label: 'Visit NAMI HelpLine', phone: '18009506264', phone_label: 'Call 1-800-950-6264', text_number: '62640', text_label: 'Text “helpline” to 62640',
+      audience: 'anyone', scope: 'national', tags: ['mental health', 'information', 'support', 'referral', 'nami'] },
+    { key: 'dv_hotline', name: 'National Domestic Violence Hotline', organization: 'National Domestic Violence Hotline', category: 'crisis', also: ['family'],
+      description: 'Confidential support, safety planning, and local referrals if someone is hurting, threatening, or controlling you.',
+      website_url: 'https://www.thehotline.org', button_label: 'Visit The Hotline', phone: '18007997233', phone_label: 'Call 1-800-799-7233', text_number: '88788', text_label: 'Text START to 88788',
+      audience: 'anyone', scope: 'national', tags: ['domestic violence', 'abuse', 'safety', 'relationship', 'safety plan'] },
+    { key: 'poison_help', name: 'Poison Help', organization: 'U.S. Health Resources & Services Administration', category: 'crisis',
+      description: 'Call your local poison center for expert advice about a possible poisoning or overdose, including medicines and drugs. Call 911 if someone isn’t breathing or won’t wake up.',
+      website_url: 'https://poisonhelp.hrsa.gov', button_label: 'Visit Poison Help', phone: '18002221222', phone_label: 'Call 1-800-222-1222',
+      audience: 'anyone', scope: 'national', tags: ['poison', 'overdose', 'medication', 'poison control'] },
+    { key: 'samhsa_find_support', name: 'Find Support (SAMHSA)', organization: 'Substance Abuse and Mental Health Services Administration', category: 'crisis', also: ['treatment'],
+      description: 'A plain guide to finding mental health and substance use help, including what kinds of care exist and how to pay for it.',
+      website_url: 'https://www.samhsa.gov/find-support', button_label: 'Visit Find Support', audience: 'anyone', scope: 'national', tags: ['mental health', 'insurance', 'paying for care', 'therapy', 'guide'] },
+
+    // ---- Meetings & peer support ----
+    { key: 'aa', name: 'Alcoholics Anonymous', organization: 'Alcoholics Anonymous', category: 'meetings',
+      description: 'Find AA meetings near you or online.', website_url: 'https://www.aa.org/find-aa', button_label: 'Find AA meetings',
+      audience: 'recovery', scope: 'national', tags: ['aa', '12 step', 'twelve step', 'alcohol', 'meeting finder', 'online meetings'], featured: true },
+    { key: 'na', name: 'Narcotics Anonymous', organization: 'Narcotics Anonymous World Services', category: 'meetings',
+      description: 'Find NA meetings near you or online.', website_url: 'https://www.na.org/meetingsearch/', button_label: 'Find NA meetings',
+      audience: 'recovery', scope: 'national', tags: ['na', '12 step', 'twelve step', 'drugs', 'meeting finder', 'online meetings'], featured: true },
+    { key: 'smart_recovery', name: 'SMART Recovery', organization: 'SMART Recovery', category: 'meetings',
+      description: 'Science-based, self-empowering mutual support meetings, in person and online.', website_url: 'https://smartrecovery.org', button_label: 'Visit SMART Recovery',
+      audience: 'recovery', scope: 'national', tags: ['smart', 'self-empowerment', 'cbt', 'meeting finder', 'online meetings'], featured: true },
+    { key: 'celebrate_recovery', name: 'Celebrate Recovery', organization: 'Celebrate Recovery', category: 'meetings',
+      description: 'Christ-centered recovery groups, usually hosted by local churches, with a group finder.', website_url: 'https://www.celebraterecovery.com', button_label: 'Visit Celebrate Recovery',
+      audience: 'recovery', scope: 'national', tags: ['faith', 'christian', 'church', 'group finder'] },
+    { key: 'recovery_dharma', name: 'Recovery Dharma', organization: 'Recovery Dharma', category: 'meetings',
+      description: 'Peer-led recovery meetings that use Buddhist practices like meditation, in person and online.', website_url: 'https://recoverydharma.org', button_label: 'Visit Recovery Dharma',
+      audience: 'recovery', scope: 'national', tags: ['buddhist', 'meditation', 'mindfulness', 'online meetings'] },
+    { key: 'lifering', name: 'LifeRing Secular Recovery', organization: 'LifeRing Secular Recovery', category: 'meetings',
+      description: 'Secular, abstinence-based peer support meetings, in person and online.', website_url: 'https://lifering.org', button_label: 'Visit LifeRing',
+      audience: 'recovery', scope: 'national', tags: ['secular', 'non-religious', 'abstinence', 'online meetings'] },
+    { key: 'women_for_sobriety', name: 'Women for Sobriety', organization: 'Women for Sobriety', category: 'meetings',
+      description: 'Peer support groups for women in recovery from substance use.', website_url: 'https://www.womenforsobriety.org/', button_label: 'Visit Women for Sobriety',
+      audience: 'recovery', scope: 'national', tags: ['women', 'support groups', 'online meetings'] },
+
+    // ---- Recovery community & peer services ----
+    { key: 'faces_voices', name: 'Faces & Voices of Recovery', organization: 'Faces & Voices of Recovery', category: 'peer',
+      description: 'National recovery advocacy group with a directory of local recovery community organizations and peer support.', website_url: 'https://facesandvoicesofrecovery.org', button_label: 'Visit Faces & Voices',
+      audience: 'anyone', scope: 'national', tags: ['recovery community organization', 'peer support', 'advocacy', 'rco'] },
+    { key: 'usara', name: 'USARA — Utah Support Advocates for Recovery Awareness', organization: 'USARA (Utah Recovers)', category: 'peer', also: ['meetings', 'family'],
+      description: 'Utah-based peer recovery support, recovery community centers, meetings, family support, and other recovery resources.', website_url: 'https://www.utahrecovers.org/', button_label: 'Visit USARA',
+      audience: 'anyone', scope: 'state', state: 'UT', tags: ['usara', 'utah', 'peer support', 'peer recovery', 'recovery support', 'recovery community', 'community', 'family support'] },
+
+    // ---- Treatment & detox ----
+    { key: 'findtreatment', name: 'FindTreatment.gov', organization: 'Substance Abuse and Mental Health Services Administration', category: 'treatment',
+      description: 'The official federal search for licensed treatment programs near you, including detox, medication for opioid use disorder, and mental health care. Filter by payment and insurance.',
+      website_url: 'https://findtreatment.gov', button_label: 'Visit FindTreatment.gov', audience: 'anyone', scope: 'national', tags: ['samhsa', 'treatment', 'detox', 'rehab', 'medication', 'mat', 'moud', 'insurance', 'locator'], featured: true },
+    { key: 'samhsa_helpline', name: 'SAMHSA National Helpline', organization: 'Substance Abuse and Mental Health Services Administration', category: 'treatment', also: ['crisis', 'family'],
+      description: 'Free, confidential treatment referral and information for substance use and mental health, in English and Spanish.',
+      website_url: 'https://www.samhsa.gov/find-help/helplines/national-helpline', button_label: 'Visit SAMHSA National Helpline', phone: '18006624357', phone_label: 'Call 1-800-662-4357',
+      availability: '24/7, 365 days a year', audience: 'anyone', scope: 'national', tags: ['samhsa', 'helpline', 'referral', 'treatment', 'spanish', 'mental health'], featured: true },
+
+    // ---- Housing & shelter ----
+    { key: 'hud_shelter', name: 'Find Shelter (HUD)', organization: 'U.S. Department of Housing and Urban Development', category: 'housing',
+      description: 'Find local shelters, housing help, health clinics, and food resources by city and state.', website_url: 'https://www.hud.gov/findshelter', button_label: 'Find shelter near you',
+      audience: 'anyone', scope: 'national', tags: ['shelter', 'homeless', 'housing', 'hud', 'clinic'] },
+    { key: 'united_way_211', name: '211', organization: 'United Way 211', category: 'housing', also: ['food'],
+      description: 'Call or search 211 to find local programs for housing, utilities, food, and other everyday needs.', website_url: 'https://211.org', button_label: 'Visit 211',
+      phone: '211', phone_label: 'Call 211', audience: 'anyone', scope: 'national', tags: ['211', 'utilities', 'rent', 'bills', 'local programs', 'referral'], featured: true },
+
+    // ---- Food & basic needs ----
+    { key: 'usda_hunger_hotline', name: 'National Hunger Hotline', organization: 'U.S. Department of Agriculture', category: 'food',
+      description: 'Call to find food near you, such as food banks, meal sites, and food assistance programs.', website_url: 'https://www.fna.usda.gov/national-hunger-hotline', button_label: 'Visit the Hunger Hotline',
+      phone: '18663486479', phone_label: 'Call 1-866-348-6479', audience: 'anyone', scope: 'national', tags: ['food', 'hunger', 'meals', 'food bank', 'snap', 'spanish'] },
+    { key: 'feeding_america', name: 'Find Your Local Food Bank', organization: 'Feeding America', category: 'food',
+      description: 'Find the food bank that serves your area and the food pantries and programs it supports.', website_url: 'https://www.feedingamerica.org/find-your-local-foodbank', button_label: 'Find a food bank',
+      audience: 'anyone', scope: 'national', tags: ['food bank', 'pantry', 'food', 'groceries'] },
+    { key: 'usa_benefits', name: 'Government benefits', organization: 'USAGov', category: 'food', also: ['housing'],
+      description: 'Find government benefits you may qualify for, like food, health care, housing, and help with bills, and how to apply.', website_url: 'https://www.usa.gov/benefits', button_label: 'Visit USA.gov Benefits',
+      audience: 'anyone', scope: 'national', tags: ['benefits', 'snap', 'medicaid', 'assistance', 'apply'] },
+
+    // ---- Employment & job support ----
+    { key: 'american_job_centers', name: 'American Job Center Finder', organization: 'CareerOneStop (U.S. Department of Labor)', category: 'employment',
+      description: 'Find your local American Job Center for free help with job searching, résumés, and training.', website_url: 'https://www.careeronestop.org/LocalHelp/AmericanJobCenters/find-american-job-centers.aspx', button_label: 'Find a job center',
+      phone: '18778725627', phone_label: 'Call 1-877-872-5627', audience: 'anyone', scope: 'national', tags: ['jobs', 'job search', 'resume', 'training', 'workforce', 'careeronestop'] },
+    { key: 'careeronestop_justice', name: 'Job help for justice-impacted people', organization: 'CareerOneStop (U.S. Department of Labor)', category: 'employment', also: ['legal'],
+      description: 'Job search help and tools for people with a criminal record, including how to talk about your past with employers.', website_url: 'https://www.careeronestop.org/JusticeImpacted/default.aspx', button_label: 'Visit CareerOneStop',
+      audience: 'reentry', scope: 'national', tags: ['reentry', 'criminal record', 'felony', 'jobs', 'returning citizens'] },
+
+    // ---- Legal & reentry ----
+    { key: 'lawhelp', name: 'LawHelp.org', organization: 'LawHelp.org', category: 'legal',
+      description: 'Find free legal aid programs in your state and plain information about your legal rights.', website_url: 'https://www.lawhelp.org', button_label: 'Visit LawHelp.org',
+      audience: 'anyone', scope: 'national', tags: ['legal aid', 'lawyer', 'free legal help', 'rights', 'eviction'] },
+    { key: 'lsc_legal_aid', name: 'Find Legal Aid (LSC)', organization: 'Legal Services Corporation', category: 'legal',
+      description: 'Find a free civil legal aid organization near you if you can’t afford a lawyer.', website_url: 'https://www.lsc.gov/about-lsc/what-legal-aid/i-need-legal-help', button_label: 'Find legal aid',
+      audience: 'anyone', scope: 'national', tags: ['legal aid', 'lawyer', 'civil legal', 'low income'] },
+    { key: 'reentry_resource_center', name: 'National Reentry Resource Center', organization: 'National Reentry Resource Center', category: 'legal',
+      description: 'Information and resources about returning home after incarceration, including links to reentry help in each state.', website_url: 'https://nationalreentryresourcecenter.org', button_label: 'Visit the Reentry Resource Center',
+      audience: 'reentry', scope: 'national', tags: ['reentry', 'incarceration', 'prison', 'jail', 'returning citizens', 'record'] },
+
+    // ---- Family & loved ones ----
+    { key: 'al_anon', name: 'Al-Anon Family Groups', organization: 'Al-Anon Family Groups', category: 'family',
+      description: 'Mutual support meetings for people affected by someone else’s drinking, in person and online.', website_url: 'https://al-anon.org', button_label: 'Visit Al-Anon',
+      audience: 'family', scope: 'national', tags: ['family', 'alateen', 'loved one', 'drinking', 'meetings'] },
+    { key: 'nar_anon', name: 'Nar-Anon Family Groups', organization: 'Nar-Anon Family Groups', category: 'family',
+      description: 'Twelve-step support meetings for family and friends of someone who uses drugs.', website_url: 'https://www.nar-anon.org', button_label: 'Visit Nar-Anon',
+      audience: 'family', scope: 'national', tags: ['family', 'loved one', 'drugs', 'meetings', '12 step'] },
+    { key: 'smart_family', name: 'SMART Recovery Family & Friends', organization: 'SMART Recovery', category: 'family',
+      description: 'Meetings and tools for people supporting a loved one, based on SMART Recovery and CRAFT.', website_url: 'https://smartrecovery.org/family', button_label: 'Visit SMART Family & Friends',
+      audience: 'family', scope: 'national', tags: ['family', 'craft', 'loved one', 'meetings'] },
+    { key: 'partnership_helpline', name: 'Partnership to End Addiction', organization: 'Partnership to End Addiction', category: 'family',
+      description: 'Free support for families worried about a loved one’s substance use, including a helpline and guides on how to help.', website_url: 'https://drugfree.org', button_label: 'Visit Partnership to End Addiction',
+      phone: '18553784373', phone_label: 'Call 1-855-378-4373', audience: 'family', scope: 'national', tags: ['family', 'parents', 'helpline', 'loved one', 'teens'] },
+
+    // ---- Veterans ----
+    { key: 'veterans_crisis_line', name: 'Veterans Crisis Line', organization: 'U.S. Department of Veterans Affairs', category: 'veterans', also: ['crisis'],
+      description: 'Confidential crisis support for Veterans, service members, and the people who support them. You don’t have to be enrolled in VA care.',
+      website_url: 'https://www.veteranscrisisline.net', button_label: 'Visit Veterans Crisis Line', phone: '988', phone_label: 'Dial 988, then press 1', text_number: '838255', text_label: 'Text 838255',
+      availability: '24/7, free and confidential', audience: 'veterans', scope: 'national', tags: ['veterans', 'military', 'crisis', 'suicide', 'va'], emergency: true },
+    { key: 'va_substance_use', name: 'VA substance use treatment', organization: 'U.S. Department of Veterans Affairs', category: 'veterans', also: ['treatment'],
+      description: 'How Veterans can get treatment for alcohol and drug use through VA health care.', website_url: 'https://www.va.gov/health-care/health-needs-conditions/substance-use-problems/', button_label: 'Visit VA.gov',
+      audience: 'veterans', scope: 'national', tags: ['veterans', 'va', 'treatment', 'substance use', 'alcohol', 'drugs'] },
+    { key: 'va_locations', name: 'Find VA locations', organization: 'U.S. Department of Veterans Affairs', category: 'veterans',
+      description: 'Find VA health facilities, Vet Centers, and benefit offices near you.', website_url: 'https://www.va.gov/find-locations', button_label: 'Find VA locations',
+      audience: 'veterans', scope: 'national', tags: ['veterans', 'va', 'vet center', 'locator', 'clinic'] },
+    { key: 'va_homeless', name: 'VA homeless programs', organization: 'U.S. Department of Veterans Affairs', category: 'veterans', also: ['housing'],
+      description: 'Help for Veterans who are homeless or at risk, through the National Call Center for Homeless Veterans.', website_url: 'https://department.va.gov/homeless/', button_label: 'Visit VA Homeless Programs',
+      phone: '18774243838', phone_label: 'Call 1-877-424-3838', audience: 'veterans', scope: 'national', tags: ['veterans', 'homeless', 'housing', 'shelter', 'va'] }
+  ],
+  /* Toolbox guides and Find Support resolve {"ref": "<key>"} through this
+     view of the catalog (title, description, buttonLabel, url, keywords),
+     so each link exists once. */
+  get sharedResources(){
+    const out = {};
+    (this.resourceCatalog || []).forEach(r => {
+      out[r.key] = { title: r.name, description: r.description, buttonLabel: r.button_label || ('Visit ' + r.name), url: r.website_url, keywords: (r.tags || []).concat([r.organization || '']) };
+    });
+    return out;
   },
 
   toolboxResources: [
@@ -4142,18 +4401,15 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "SAMHSA National Helpline",
-        "url": "https://www.samhsa.gov/find-help/national-helpline",
+        "ref": "samhsa_helpline",
         "note": "Free, confidential, 24/7 treatment referral and information service, in English and Spanish."
       },
       {
-        "label": "FindTreatment.gov",
-        "url": "https://findtreatment.gov",
+        "ref": "findtreatment",
         "note": "SAMHSA's directory to locate treatment facilities, including medical detox programs, near you."
       },
       {
-        "label": "988 Suicide & Crisis Lifeline",
-        "url": "https://988lifeline.org",
+        "ref": "lifeline_988",
         "note": "Call or text 988 for free, confidential crisis support, 24/7."
       }
     ],
@@ -4199,13 +4455,11 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "SMART Recovery",
-        "url": "https://www.smartrecovery.org",
+        "ref": "smart_recovery",
         "note": "Tools and meetings built around urge-coping and behavior change, including techniques specifically for cravings."
       },
       {
-        "label": "SAMHSA National Helpline",
-        "url": "https://www.samhsa.gov/find-help/national-helpline",
+        "ref": "samhsa_helpline",
         "note": "Free, confidential support and referrals, 24/7."
       },
       {
@@ -4257,8 +4511,7 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "SAMHSA National Helpline",
-        "url": "https://www.samhsa.gov/find-help/national-helpline",
+        "ref": "samhsa_helpline",
         "note": "Free, confidential support and referrals, 24/7, including help finding a therapist or counselor."
       },
       {
@@ -4309,13 +4562,11 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "Al-Anon Family Groups",
-        "url": "https://al-anon.org",
+        "ref": "al_anon",
         "note": "Support and resources for people affected by someone else's drinking, including guidance on healthy boundaries."
       },
       {
-        "label": "National Domestic Violence Hotline",
-        "url": "https://www.thehotline.org",
+        "ref": "dv_hotline",
         "note": "Confidential support, 24/7, if a relationship in your life feels unsafe, not just difficult."
       }
     ],
@@ -4361,13 +4612,11 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "SAMHSA National Helpline",
-        "url": "https://www.samhsa.gov/find-help/national-helpline",
+        "ref": "samhsa_helpline",
         "note": "Free, confidential support and treatment referrals, 24/7."
       },
       {
-        "label": "988 Suicide & Crisis Lifeline",
-        "url": "https://988lifeline.org",
+        "ref": "lifeline_988",
         "note": "Call or text 988 for free, confidential crisis support, 24/7."
       }
     ],
@@ -4413,13 +4662,11 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "988 Suicide & Crisis Lifeline",
-        "url": "https://988lifeline.org",
+        "ref": "lifeline_988",
         "note": "Call or text 988 for free, confidential crisis support, 24/7."
       },
       {
-        "label": "SAMHSA National Helpline",
-        "url": "https://www.samhsa.gov/find-help/national-helpline",
+        "ref": "samhsa_helpline",
         "note": "Free, confidential support and referrals, 24/7."
       }
     ],
@@ -4466,8 +4713,7 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "SAMHSA National Helpline",
-        "url": "https://www.samhsa.gov/find-help/national-helpline",
+        "ref": "samhsa_helpline",
         "note": "Free, confidential support and referrals, 24/7."
       },
       {
@@ -4522,28 +4768,23 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "Alcoholics Anonymous",
-        "url": "https://www.aa.org",
+        "ref": "aa",
         "note": "Meeting finder and information for AA groups worldwide."
       },
       {
-        "label": "Narcotics Anonymous",
-        "url": "https://www.na.org",
+        "ref": "na",
         "note": "Meeting finder and information for NA groups worldwide."
       },
       {
-        "label": "SMART Recovery",
-        "url": "https://www.smartrecovery.org",
+        "ref": "smart_recovery",
         "note": "Meeting finder for SMART Recovery's self-empowerment approach, including online meetings."
       },
       {
-        "label": "Celebrate Recovery",
-        "url": "https://www.celebraterecovery.com",
+        "ref": "celebrate_recovery",
         "note": "Christ-centered recovery groups, usually hosted by local churches, with a group finder."
       },
       {
-        "label": "FindTreatment.gov",
-        "url": "https://findtreatment.gov",
+        "ref": "findtreatment",
         "note": "SAMHSA's directory for treatment programs and additional support options."
       },
       {
@@ -4592,8 +4833,7 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "SAMHSA National Helpline",
-        "url": "https://www.samhsa.gov/find-help/national-helpline",
+        "ref": "samhsa_helpline",
         "note": "Free, confidential support and referrals, 24/7, including help finding a therapist who specializes in shame and self-worth."
       },
       {
@@ -4645,18 +4885,15 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "SAMHSA National Helpline",
-        "url": "https://www.samhsa.gov/find-help/national-helpline",
+        "ref": "samhsa_helpline",
         "note": "Free, confidential treatment referral and information, including medication-assisted treatment options."
       },
       {
-        "label": "FindTreatment.gov",
-        "url": "https://findtreatment.gov",
+        "ref": "findtreatment",
         "note": "SAMHSA's directory of treatment programs, including MAT providers, by location."
       },
       {
-        "label": "SMART Recovery",
-        "url": "https://www.smartrecovery.org",
+        "ref": "smart_recovery",
         "note": "A self-empowerment based, non-12-step pathway with in-person and online meetings."
       },
       {
@@ -4705,13 +4942,11 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "Al-Anon Family Groups",
-        "url": "https://al-anon.org",
+        "ref": "al_anon",
         "note": "Support for family members and loved ones affected by someone else's substance use, including guidance on rebuilding relationships."
       },
       {
-        "label": "SAMHSA National Helpline",
-        "url": "https://www.samhsa.gov/find-help/national-helpline",
+        "ref": "samhsa_helpline",
         "note": "Free, confidential support and referrals, 24/7, including family and relationship counseling resources."
       }
     ],
@@ -4757,13 +4992,11 @@ const CONFIG = {
     ],
     "external": [
       {
-        "label": "SAMHSA National Helpline",
-        "url": "https://www.samhsa.gov/find-help/national-helpline",
+        "ref": "samhsa_helpline",
         "note": "Free, confidential support and referrals, 24/7."
       },
       {
-        "label": "988 Suicide & Crisis Lifeline",
-        "url": "https://988lifeline.org",
+        "ref": "lifeline_988",
         "note": "Call or text 988 for free, confidential crisis support, 24/7."
       }
     ],
@@ -8086,7 +8319,6 @@ function openToolboxResource(slug){
         html += `<li>
         <p style="font-weight:600; font-size:.95rem;">${shared.title}</p>
         <p style="margin-top:4px; font-size:.87rem; color:var(--charcoal-soft); opacity:.8;">${ext.note || shared.description}</p>
-        ${ext.note ? `<p style="margin-top:4px; font-size:.87rem; color:var(--charcoal-soft); opacity:.8;">${shared.description}</p>` : ''}
         <a class="card-link" href="${shared.url}" target="_blank" rel="noopener noreferrer" aria-label="${shared.buttonLabel} (leaves Front Porch Recovery, opens in a new tab)">${shared.buttonLabel} &#8599;</a>
         <p style="margin-top:2px; font-size:.78rem; color:var(--charcoal-soft); opacity:.8; font-style:italic;">You'll be leaving Front Porch Recovery.</p>
       </li>`;
@@ -17476,6 +17708,135 @@ const FPRBadge = (function(){
   if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
     client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
   }
+})();
+
+/* ---------- Resources v2 (national directory) ----------
+   Renders CONFIG.resourceCatalog: need buttons, a client-side search
+   (name, organization, description, category, tags; case-insensitive,
+   partial) that combines with one category filter, and cards with only
+   the actions a resource really has. Website links must be http(s) and
+   open in a new tab with noopener/noreferrer; tel:/sms: use digits only.
+   Nothing is stored and no location is used. Elements anywhere with
+   data-res-cat="<category>" open Resources on that category. */
+(function(){
+  const page = document.getElementById('page-resources');
+  if (!page || typeof CONFIG === 'undefined' || !Array.isArray(CONFIG.resourceCatalog)) return;
+  const $ = function(id){ return document.getElementById(id); };
+  const CATS = CONFIG.resourceCategories || [];
+  const CAT = {}; CATS.forEach(function(c){ CAT[c.id] = c; });
+  const CHIP_ORDER = ['meetings', 'treatment', 'crisis', 'housing', 'food', 'employment', 'legal', 'family', 'veterans', 'peer'];
+  const NEEDS = [
+    ['meetings', 'Find a meeting'], ['treatment', 'Find treatment'], ['crisis', 'Mental health / crisis help'],
+    ['housing', 'Housing'], ['food', 'Food / basic needs'], ['employment', 'Work / employment'],
+    ['legal', 'Legal / reentry'], ['family', 'Help for family'], ['veterans', 'Veterans'], ['all', 'Browse all resources']
+  ];
+  const AUDIENCE = { recovery: 'For people in recovery', family: 'For family & loved ones', veterans: 'Veterans', reentry: 'Justice / reentry', professionals: 'Professionals' };
+  const STATE_NAMES = { UT: 'Utah' };
+  let cat = 'all', query = '';
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function cats(r){ return [r.category].concat(r.also || []); }
+  function safeWeb(u){ try { const x = new URL(String(u || '')); return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : null; } catch(e){ return null; } }
+  function digits(n){ const s = String(n || ''); return /^\d{3,15}$/.test(s) ? s : null; }
+  function haystack(r){
+    return [r.name, r.organization, r.description, r.availability].concat(cats(r).map(function(c){ return CAT[c] ? CAT[c].label + ' ' + CAT[c].chip : c; }), r.tags || []).join(' ').toLowerCase();
+  }
+  function matches(r){
+    if (cat !== 'all' && cats(r).indexOf(cat) === -1) return false;
+    if (!query) return true;
+    const h = haystack(r);
+    return query.toLowerCase().split(/\s+/).filter(Boolean).every(function(w){ return h.indexOf(w) !== -1; });
+  }
+  window.FPRResourceMatches = function(q, c){ const sq = query, sc = cat; query = q || ''; cat = c || 'all'; const out = CONFIG.resourceCatalog.filter(matches).map(function(r){ return r.key; }); query = sq; cat = sc; return out; };
+
+  function card(r){
+    const a = el('article', 'rs-card' + (r.emergency ? ' emergency' : ''));
+    a.setAttribute('aria-labelledby', 'rs-h-' + r.key);
+    const h = el('h4', null, r.name); h.id = 'rs-h-' + r.key; a.appendChild(h);
+    if (r.organization && r.organization !== r.name) a.appendChild(el('p', 'rs-org', r.organization));
+    const labels = el('div', 'rs-labels');
+    if (r.scope === 'state' && r.state) labels.appendChild(el('span', 'rs-label scope', (STATE_NAMES[r.state] || r.state) + ' only'));
+    if (r.scope === 'local') labels.appendChild(el('span', 'rs-label scope', [r.city, r.county, STATE_NAMES[r.state] || r.state].filter(Boolean).join(', ')));
+    if (AUDIENCE[r.audience]) labels.appendChild(el('span', 'rs-label', AUDIENCE[r.audience]));
+    if (labels.children.length) a.appendChild(labels);
+    a.appendChild(el('p', 'rs-desc', r.description));
+    if (r.availability) a.appendChild(el('p', 'rs-avail', r.availability));
+    const acts = el('div', 'rs-actions');
+    const tel = digits(r.phone), sms = digits(r.text_number), web = safeWeb(r.website_url);
+    if (tel) { const c = el('a', 'btn btn-primary', r.phone_label || 'Call'); c.href = 'tel:' + tel; c.setAttribute('aria-label', (r.phone_label || 'Call') + ' — ' + r.name); acts.appendChild(c); }
+    if (sms) { const t = el('a', 'btn btn-outline', r.text_label || 'Text'); t.href = 'sms:' + sms; t.setAttribute('aria-label', (r.text_label || 'Text') + ' — ' + r.name); acts.appendChild(t); }
+    if (web) {
+      const w = el('a', 'btn ' + (tel || sms ? 'btn-outline' : 'btn-primary'), (r.button_label || 'Visit website') + ' ↗');
+      w.href = web; w.target = '_blank'; w.rel = 'noopener noreferrer';
+      w.setAttribute('aria-label', (r.button_label || 'Visit website') + ' — ' + r.name + ' (opens the organization’s site in a new tab)');
+      acts.appendChild(w);
+    }
+    a.appendChild(acts);
+    return a;
+  }
+  function list(items){ const ul = el('ul', 'rs-list'); items.forEach(function(r){ const li = el('li'); li.appendChild(card(r)); ul.appendChild(li); }); return ul; }
+
+  function renderChips(){
+    const box = $('rs-chips'); box.replaceChildren();
+    [['all', 'All']].concat(CHIP_ORDER.filter(function(id){ return CAT[id]; }).map(function(id){ return [id, CAT[id].chip]; })).forEach(function(c){
+      const b = el('button', 'rs-chip', c[1]); b.type = 'button'; b.dataset.cat = c[0];
+      b.setAttribute('aria-pressed', String(cat === c[0]));
+      b.addEventListener('click', function(){ cat = c[0]; renderAll(); });
+      box.appendChild(b);
+    });
+  }
+  function renderNeeds(){
+    const g = $('rs-need-grid'); g.replaceChildren();
+    NEEDS.forEach(function(n){
+      const b = el('button', 'rs-need' + (n[0] === 'all' ? ' all' : ''), n[1]); b.type = 'button'; b.dataset.cat = n[0];
+      b.addEventListener('click', function(){
+        cat = n[0]; query = ''; $('rs-search').value = '';
+        renderAll();
+        const target = $('rs-browse');
+        try { target.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); target.focus({ preventScroll: true }); } catch(e){}
+      });
+      g.appendChild(b);
+    });
+  }
+  function renderResults(){
+    const box = $('rs-results'); box.replaceChildren();
+    const found = CONFIG.resourceCatalog.filter(matches);
+    const where = cat === 'all' ? '' : ' in ' + CAT[cat].label;
+    $('rs-count').textContent = query
+      ? found.length + (found.length === 1 ? ' resource' : ' resources') + ' for “' + query + '”' + where
+      : (cat === 'all' ? 'All ' + found.length + ' resources' : found.length + (found.length === 1 ? ' resource' : ' resources') + where);
+    $('rs-none').hidden = found.length > 0;
+    if (!found.length) return;
+    if (cat === 'all' && !query) {
+      ['crisis'].concat(CHIP_ORDER.filter(function(c){ return c !== 'crisis'; })).forEach(function(id){
+        const inCat = found.filter(function(r){ return r.category === id; });
+        if (!inCat.length || !CAT[id]) return;
+        const sec = el('section', 'rs-group'); sec.id = 'rs-group-' + id;
+        const h = el('h3', null, CAT[id].label); h.id = 'rs-group-title-' + id; sec.setAttribute('aria-labelledby', h.id);
+        sec.appendChild(h); sec.appendChild(list(inCat)); box.appendChild(sec);
+      });
+    } else {
+      // Emergency services first within any filtered view, otherwise catalog order.
+      box.appendChild(list(found.slice().sort(function(a, b){ return (b.emergency ? 1 : 0) - (a.emergency ? 1 : 0); })));
+    }
+  }
+  function renderAll(){ renderChips(); renderResults(); }
+
+  $('rs-search-form').addEventListener('submit', function(e){ e.preventDefault(); query = $('rs-search').value.trim().slice(0, 80); renderResults(); });
+  $('rs-search').addEventListener('input', function(){ query = $('rs-search').value.trim().slice(0, 80); renderResults(); });
+  $('rs-reset').addEventListener('click', function(){ cat = 'all'; query = ''; $('rs-search').value = ''; renderAll(); try { $('rs-search').focus(); } catch(e){} });
+  // data-res-cat links (e.g. from Meetings & Support) open a category. Runs in the
+  // capture phase, before the site's data-nav handler switches pages.
+  document.addEventListener('click', function(e){
+    const t = e.target.closest && e.target.closest('[data-res-cat]');
+    if (!t) return;
+    const c = t.getAttribute('data-res-cat');
+    cat = (c === 'all' || CAT[c]) ? c : 'all'; query = ''; $('rs-search').value = '';
+    renderAll();
+  }, true);
+
+  renderNeeds();
+  renderAll();
 })();
 
 /* ---------- Community celebration cards (separate from recovery badges) ----------
