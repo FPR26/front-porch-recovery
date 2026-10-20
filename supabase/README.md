@@ -801,6 +801,10 @@ Migration: `migrations/phase11e_meetings_support_v1.sql`. It's additive only (no
 
 Today is a read-only dashboard over the 11A–11E RPCs, plus `get_my_profile`. It adds **no tables, functions, grants or migration rows**; `schema_migrations` stays at 14. Its only write is the existing `set_my_support_checkin`. It reads `get_my_recovery_plan` only to check whether a plan exists, and never displays or keeps the plan's text. The Privacy Policy needs no new category, because no new data is stored.
 
+## Phase 11G — Progress v1 (no database change)
+
+Progress is computed in the browser from existing 11A, 11B, 11E and goal RPCs, using one 30-day batch. It adds **no tables, functions, grants or migration rows**; `schema_migrations` stays at 14. The existing RPCs already cover 30 days: logs return at most 60 rows, support ranges allow up to 62 days, and reflections at most 60 rows. Reflection text is reduced to "morning/evening present" as soon as it arrives. No new data is stored, so the Privacy Policy is unchanged.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.

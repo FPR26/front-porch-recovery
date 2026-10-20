@@ -888,7 +888,7 @@
      .tb-pin, ...) on the private pages and the Toolbox, like the other
      [hidden] rules above. */
   #page-myrecovery [hidden], #page-daily [hidden], #page-recoveryplan [hidden],
-  #page-toolbox [hidden], #page-meetings [hidden], #page-today [hidden], #roughday-plan-link[hidden],
+  #page-toolbox [hidden], #page-meetings [hidden], #page-today [hidden], #page-progress [hidden], #roughday-plan-link[hidden],
   #home-today[hidden]{display:none !important;}
 
   /* ---------- Today (Phase 11F) ---------- */
@@ -918,6 +918,41 @@
   .td-links{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
   .td-links .btn{flex:1 1 120px; min-height:44px;}
   #td-signedout .btn-primary{margin-top:12px;}
+  .td-progress-link{margin-top:16px; text-align:center; font-size:.95rem;}
+
+  /* ---------- Progress (Phase 11G) ---------- */
+  .pg-wrap{max-width:760px;}
+  .pg-card{margin-top:14px;}
+  .pg-range{display:inline-flex; border:1.5px solid var(--charcoal); border-radius:999px; overflow:hidden;}
+  .pg-range-btn{min-height:44px; padding:8px 20px; border:none; background:var(--white); color:var(--charcoal); font:inherit; font-weight:600; font-size:.9rem; cursor:pointer;}
+  .pg-range-btn[aria-pressed="true"]{background:var(--charcoal); color:var(--white);}
+  .pg-range-btn[aria-pressed="true"]::before{content:"✓ ";}
+  .pg-lead{font-size:.95rem !important; color:var(--charcoal) !important; font-weight:600;}
+  .pg-stats{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; margin-top:6px;}
+  @media(min-width:640px){ .pg-stats{grid-template-columns:repeat(5, minmax(0,1fr));} }
+  .pg-stat{background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:10px 8px; text-align:center;}
+  .pg-stat .n{font-size:1.2rem; font-weight:800; color:var(--sage-text);}
+  .pg-stat .l{font-size:.72rem; color:var(--charcoal-soft); margin-top:2px;}
+  .pg-chart-title{font-size:.9rem !important; font-weight:700; color:var(--charcoal) !important; margin-top:10px;}
+  .pg-bars{display:flex; align-items:flex-end; gap:2px; height:84px; border-bottom:1.5px solid var(--line); margin-top:6px; position:relative;}
+  .pg-bar{flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%;}
+  .pg-bar i{display:block; width:100%; max-width:22px; border-radius:3px 3px 0 0; background:var(--sage-dark);}
+  .pg-bars.cravings .pg-bar i{background:var(--amber);}
+  .pg-bar.gap::after{content:""; display:block; width:60%; max-width:10px; height:2px; background:var(--line); margin-bottom:2px;}
+  .pg-axis{display:flex; justify-content:space-between; font-size:.72rem; color:var(--charcoal-soft); margin-top:4px;}
+  .pg-legend{font-size:.78rem !important;}
+  .pg-values summary{cursor:pointer; font-weight:600; font-size:.88rem; margin-top:10px; min-height:32px;}
+  .pg-values table{width:100%; border-collapse:collapse; font-size:.85rem; margin-top:6px;}
+  .pg-values th, .pg-values td{text-align:left; padding:4px 6px; border-bottom:1px solid var(--line);}
+  .pg-cal{display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:4px; margin-top:6px;}
+  .pg-cal .wd{font-size:.7rem; text-align:center; color:var(--charcoal-soft); font-weight:700;}
+  .pg-day{min-height:44px; border-radius:8px; border:1px dashed var(--line); display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.75rem; color:var(--charcoal-soft); background:transparent; font-family:inherit; padding:2px;}
+  .pg-day b{font-size:.85rem; color:var(--charcoal);}
+  .pg-day.on{border-style:solid; border-color:var(--sage); background:rgba(167,184,168,.3); cursor:pointer; color:var(--charcoal);}
+  .pg-day.on:hover{border-color:var(--charcoal);}
+  .pg-list{list-style:none; padding:0; margin:4px 0 0;}
+  .pg-list li{display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid var(--line); font-size:.92rem;}
+  .pg-list li b{font-weight:700;}
   .home-today-card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:16px 18px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;}
   .home-today-card h2{font-size:1.15rem;}
   .home-today-card p{font-size:.9rem; color:var(--charcoal-soft); margin-top:2px;}
@@ -1118,6 +1153,7 @@
     <button data-nav="today">Today</button>
     <button data-nav="checkin">Check In</button>
     <button data-nav="myrecovery">My Recovery</button>
+    <button data-nav="progress">Progress</button>
     <button data-nav="recoveryplan">My Recovery Plan</button>
     <button data-nav="meetings">Meetings &amp; Support</button>
     <button data-nav="porch">The Porch</button>
@@ -1472,6 +1508,62 @@
   </section>
 </section>
 
+<!-- ================= PROGRESS (Phase 11G) =================
+     Private history view computed from existing data (no storage of its
+     own). Facts only: no scores, judgments or interpretation. Built by the
+     Progress script (textContent only). -->
+<section class="page" id="page-progress">
+  <section class="block bg-charcoal tight">
+    <div class="wrap td-wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;">Over time</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Progress</h1>
+      <p class="mr-private-pill" id="pg-private" hidden><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>Private to your account</p>
+      <p style="color:var(--gray); margin-top:10px; max-width:58ch;" id="pg-helper" hidden>Your progress is not public and does not appear in Community.</p>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap td-wrap pg-wrap">
+      <div class="form-card mr-card" id="pg-signedout">
+        <h2>Your progress, over time</h2>
+        <p>Sign in to see your private recovery history and patterns.</p>
+        <button type="button" class="btn btn-primary" id="pg-signin">Sign in</button>
+        <div class="td-links">
+          <button type="button" class="btn btn-outline" data-nav="checkin">Check-In</button>
+          <button type="button" class="btn btn-outline" data-nav="daily">Daily Porch</button>
+        </div>
+      </div>
+
+      <div id="pg-signedin" hidden>
+        <div class="pg-range" role="group" aria-label="Time range">
+          <button type="button" class="pg-range-btn" data-range="7" aria-pressed="false">7 days</button>
+          <button type="button" class="pg-range-btn" data-range="30" aria-pressed="true">30 days</button>
+        </div>
+        <div class="status-msg status-error" id="pg-load-error" role="alert"><span id="pg-load-error-text"></span> <button type="button" class="mr-link" id="pg-retry">Try again</button></div>
+        <p class="mr-state" id="pg-loading" role="status">Loading your progress…</p>
+
+        <div class="form-card mr-card" id="pg-empty" hidden>
+          <h2>Your progress will build over time</h2>
+          <p>Use My Recovery, Daily Porch, and Meetings &amp; Support, and your activity will start appearing here.</p>
+          <div class="mr-actions">
+            <button type="button" class="btn btn-primary" data-nav="myrecovery">Open My Recovery</button>
+            <button type="button" class="btn btn-outline" data-nav="daily">Open Daily Porch</button>
+          </div>
+        </div>
+
+        <div id="pg-sections" hidden>
+          <section class="td-card pg-card" id="pg-glance" aria-labelledby="pg-glance-title"><h2 id="pg-glance-title">Progress at a glance</h2><div class="pg-body"></div></section>
+          <section class="td-card pg-card" id="pg-trend" aria-labelledby="pg-trend-title"><h2 id="pg-trend-title">Mood and cravings</h2><div class="pg-body"></div></section>
+          <section class="td-card pg-card" id="pg-history" aria-labelledby="pg-history-title"><h2 id="pg-history-title">Logging history</h2><div class="pg-body"></div></section>
+          <section class="td-card pg-card" id="pg-support" aria-labelledby="pg-support-title"><h2 id="pg-support-title">Support this period</h2><div class="pg-body"></div></section>
+          <section class="td-card pg-card" id="pg-porch" aria-labelledby="pg-porch-title"><h2 id="pg-porch-title">Daily Porch</h2><div class="pg-body"></div></section>
+        </div>
+        <section class="td-card pg-card" id="pg-goal" aria-labelledby="pg-goal-title" hidden><h2 id="pg-goal-title">Current goal</h2><div class="pg-body"></div></section>
+      </div>
+    </div>
+  </section>
+</section>
+
 <!-- ================= TODAY (Phase 11F) =================
      Signed-in daily dashboard. Aggregates existing private data only
      (no storage of its own). Built by the Today script (textContent only). -->
@@ -1514,6 +1606,7 @@
             <div class="td-actions"><button type="button" class="btn btn-outline" data-nav="roughday">Open Rough Day</button></div>
           </section>
         </div>
+        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="progress">View my progress →</button></p>
       </div>
     </div>
   </section>
@@ -1590,6 +1683,7 @@
         <section class="form-card mr-card" id="mr-summary" aria-labelledby="mr-summary-title">
           <h2 id="mr-summary-title">Last 7 days</h2>
           <div id="mr-summary-body"></div>
+          <p class="mr-muted"><button type="button" class="mr-link" data-nav="progress">View Progress</button> for your last 7 or 30 days.</p>
         </section>
 
         <section class="form-card mr-card" id="mr-goal" aria-labelledby="mr-goal-title">
@@ -3135,6 +3229,7 @@
           <li><a href="#" data-nav="today">Today</a></li>
           <li><a href="#" data-nav="checkin">Check In</a></li>
           <li><a href="#" data-nav="myrecovery">My Recovery</a></li>
+          <li><a href="#" data-nav="progress">Progress</a></li>
           <li><a href="#" data-nav="recoveryplan">My Recovery Plan</a></li>
           <li><a href="#" data-nav="meetings">Meetings &amp; Support</a></li>
           <li><a href="#" data-nav="porch">The Porch</a></li>
@@ -14011,6 +14106,10 @@ const FPRBadge = (function(){
     return true;
   }
   backToday.addEventListener('click', function(){ if (editDate(null)) focusToday(); });
+  // Progress (Phase 11G): open a logged day here, using the same past-entry
+  // editing as Recent history. Applied once this page's data has loaded.
+  let pendingDate = null;
+  window.FPRMyRecoveryOpenDate = function(date){ pendingDate = date; goTo('myrecovery'); };
   function focusToday(){
     const card = $('mr-today');
     try { card.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); } catch(e){}
@@ -14244,6 +14343,7 @@ const FPRBadge = (function(){
       loaded = true;
       if (!dirty) fillForm(entryFor(currentDate()));
       renderAll();
+      if (pendingDate) { const want = pendingDate; pendingDate = null; if (editDate(want)) focusToday(); }
     } catch(err){
       if (mySeq !== seq || myLoad !== loadSeq) return;
       showLoadError(errMsg(err, 'We couldn’t load My Recovery right now.'));
@@ -14436,6 +14536,7 @@ const FPRBadge = (function(){
         if (error) throw error;
         const row = Array.isArray(data) ? data[0] : data;
         if (row) reflections[date] = { morning_text: row.morning_text, evening_text: row.evening_text, updated_at: row.updated_at };
+        try { document.dispatchEvent(new CustomEvent('fpr:dailyreflectionchange')); } catch(e){} // Progress refreshes
         delete drafts[key(date, part)];
         busy[part] = false;
         if (view.date === date) renderPart(part);
@@ -15778,6 +15879,273 @@ const FPRBadge = (function(){
     if (document.visibilityState === 'visible' && pageActive()) { renderHeader(); if (signedIn && loadedFor !== todayStr()) load(); }
   });
   renderAll();
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  }
+})();
+
+/* ---------- Progress (Phase 11G) ----------
+   A private history view computed in the browser from existing data, in
+   one parallel batch covering the last 30 days (the 7-day view reuses
+   it, so switching ranges makes no requests): My Recovery logs + goal,
+   Meetings & Support items + check-offs (for counts by stored category),
+   Daily Porch reflections (only whether a morning/evening entry exists;
+   the text is discarded right away) and saved days. Facts only: no
+   score, interpretation or judgment, and days without a log stay
+   "Not logged" with no value filled in. Cached until a feature reports a
+   change, the date changes, or the account changes. textContent only. */
+(function(){
+  const page = document.getElementById('page-progress');
+  if (!page) return;
+  const client = window.__fprSupabaseClient || null;
+  const $ = function(id){ return document.getElementById(id); };
+  const MOODS = { 1: 'Rough', 2: 'Struggling', 3: 'Okay', 4: 'Good', 5: 'Great' };
+
+  let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0;
+  let loaded = false, stale = true, loadedFor = null, range = 30;
+  let d = {};
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function navBtn(label, cls, nav){ const b = el('button', cls, label); b.type = 'button'; b.setAttribute('data-nav', nav); return b; }
+  function pad(n){ return String(n).padStart(2, '0'); }
+  function ymd(dt){ return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()); }
+  function todayStr(){ return ymd(new Date()); }
+  function fromYmd(s){ const p = String(s).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function addDays(s, n){ const t = fromYmd(s); t.setDate(t.getDate() + n); return ymd(t); }
+  function fmt(s, opts){ try { return fromYmd(s).toLocaleDateString('en-US', opts || { weekday: 'short', month: 'short', day: 'numeric' }); } catch(e){ return s; } }
+  function body(id){ const b = page.querySelector('#' + id + ' .pg-body'); b.replaceChildren(); return b; }
+  function rows(res){ return res && !res.error ? (Array.isArray(res.data) ? res.data : (res.data == null ? [] : [res.data])) : null; }
+  function days(n){ const out = [], t = todayStr(); for (let i = n - 1; i >= 0; i--) out.push(addDays(t, -i)); return out; }
+  function avg(list){ return list.length ? list.reduce(function(a, b){ return a + b; }, 0) / list.length : null; }
+  function plural(n, one, many){ return n + ' ' + (n === 1 ? one : many); }
+
+  // ---- Calculations for the selected range (pure) ----
+  function stats(){
+    const ds = days(range), from = ds[0], to = ds[ds.length - 1];
+    const inRange = function(x){ return x >= from && x <= to; };
+    const logs = (d.logs || []).filter(function(l){ return inRange(l.log_date); });
+    const moods = logs.filter(function(l){ return l.mood != null; }).map(function(l){ return Number(l.mood); });
+    const cravs = logs.filter(function(l){ return l.cravings != null; }).map(function(l){ return Number(l.cravings); });
+    const checks = (d.checks || []).filter(function(c){ return inRange(c.date); });
+    const refl = (d.refl || []).filter(function(r){ return inRange(r.date); });
+    const saved = (d.saved || []).filter(function(s){ return inRange(s.date); });
+    return {
+      ds: ds, logs: logs, byDate: logs.reduce(function(m, l){ m[l.log_date] = l; return m; }, {}),
+      moodAvg: avg(moods), cravAvg: avg(cravs), checks: checks,
+      morning: refl.filter(function(r){ return r.morning; }).length,
+      evening: refl.filter(function(r){ return r.evening; }).length,
+      saved: saved.length
+    };
+  }
+  function hasAnyData(){
+    return !!((d.logs && d.logs.length) || (d.checks && d.checks.length) || (d.refl && d.refl.length) || (d.saved && d.saved.length));
+  }
+
+  // ---- Sections ----
+  function renderGlance(s){
+    const b = body('pg-glance');
+    b.appendChild(el('p', 'pg-lead', 'You logged recovery entries on ' + s.logs.length + ' of the last ' + range + ' days.'));
+    const grid = el('div', 'pg-stats');
+    [[String(s.logs.length), s.logs.length === 1 ? 'day logged' : 'days logged'],
+     [s.moodAvg == null ? '—' : s.moodAvg.toFixed(1) + ' / 5', 'average mood'],
+     [s.cravAvg == null ? '—' : s.cravAvg.toFixed(1) + ' / 10', 'average cravings'],
+     [String(s.checks.length), s.checks.length === 1 ? 'support activity completed' : 'support activities completed'],
+     [String(s.morning + s.evening), (s.morning + s.evening) === 1 ? 'Daily Porch reflection' : 'Daily Porch reflections']
+    ].forEach(function(x){ const box = el('div', 'pg-stat'); box.appendChild(el('div', 'n', x[0])); box.appendChild(el('div', 'l', x[1])); grid.appendChild(box); });
+    b.appendChild(grid);
+    if (s.moodAvg == null || s.cravAvg == null) b.appendChild(el('p', 'pg-legend', '— means nothing was logged for that in this period.'));
+  }
+  function chart(parent, s, key, max, title, cls){
+    parent.appendChild(el('p', 'pg-chart-title', title));
+    const bars = el('div', 'pg-bars ' + cls);
+    bars.setAttribute('aria-hidden', 'true'); // exact values are in the table below
+    s.ds.forEach(function(date){
+      const l = s.byDate[date], v = l && l[key] != null ? Number(l[key]) : null;
+      const col = el('div', 'pg-bar' + (v == null ? ' gap' : ''));
+      if (v != null) { const i = el('i'); i.style.height = Math.max(4, Math.round((v / max) * 100)) + '%'; col.appendChild(i); }
+      col.title = fmt(date) + ': ' + (v == null ? 'Not logged' : v + ' / ' + max);
+      bars.appendChild(col);
+    });
+    parent.appendChild(bars);
+    const axis = el('div', 'pg-axis');
+    axis.appendChild(el('span', null, fmt(s.ds[0], { month: 'short', day: 'numeric' })));
+    axis.appendChild(el('span', null, 'Today'));
+    parent.appendChild(axis);
+  }
+  function renderTrend(s){
+    const b = body('pg-trend');
+    if (!d.logs) { b.appendChild(el('p', null, 'Couldn’t load this right now.')); return; }
+    b.appendChild(el('p', 'pg-legend', 'Taller bars are higher numbers. Days without a log are left empty.'));
+    chart(b, s, 'mood', 5, 'Mood (1–5)', 'mood');
+    chart(b, s, 'cravings', 10, 'Cravings (0–10)', 'cravings');
+    const det = el('details', 'pg-values');
+    det.appendChild(el('summary', null, 'Day-by-day values'));
+    const table = el('table');
+    const cap = el('caption', 'sr-only', 'Mood and cravings for each day in the last ' + range + ' days');
+    table.appendChild(cap);
+    const head = el('tr');
+    ['Day', 'Mood', 'Cravings'].forEach(function(h){ const th = el('th', null, h); th.scope = 'col'; head.appendChild(th); });
+    const thead = el('thead'); thead.appendChild(head); table.appendChild(thead);
+    const tb = el('tbody');
+    s.ds.slice().reverse().forEach(function(date){
+      const l = s.byDate[date], tr = el('tr');
+      const th = el('th', null, fmt(date)); th.scope = 'row'; tr.appendChild(th);
+      tr.appendChild(el('td', null, l ? (l.mood != null ? l.mood + ' / 5 · ' + MOODS[l.mood] : '—') : 'Not logged'));
+      tr.appendChild(el('td', null, l ? (l.cravings != null ? l.cravings + ' / 10' : '—') : 'Not logged'));
+      tb.appendChild(tr);
+    });
+    table.appendChild(tb);
+    det.appendChild(table);
+    b.appendChild(det);
+  }
+  function renderHistory(s){
+    const b = body('pg-history');
+    if (!d.logs) { b.appendChild(el('p', null, 'Couldn’t load this right now.')); return; }
+    b.appendChild(el('p', 'pg-legend', '✓ Logged · – Not logged. Select a logged day to open it in My Recovery.'));
+    const cal = el('div', 'pg-cal');
+    ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach(function(w){ const x = el('div', 'wd', w); x.setAttribute('aria-hidden', 'true'); cal.appendChild(x); });
+    const lead = (fromYmd(s.ds[0]).getDay() + 6) % 7; // Monday-first offset
+    for (let i = 0; i < lead; i++) { const sp = el('div'); sp.setAttribute('aria-hidden', 'true'); cal.appendChild(sp); }
+    s.ds.forEach(function(date){
+      const logged = !!s.byDate[date];
+      const label = fmt(date, { weekday: 'long', month: 'long', day: 'numeric' }) + ': ' + (logged ? 'Logged' : 'Not logged');
+      const cell = logged ? el('button', 'pg-day on') : el('div', 'pg-day');
+      if (logged) {
+        cell.type = 'button';
+        cell.setAttribute('aria-label', label + '. Open in My Recovery.');
+        cell.addEventListener('click', function(){ if (typeof window.FPRMyRecoveryOpenDate === 'function') window.FPRMyRecoveryOpenDate(date); });
+      } else {
+        cell.setAttribute('role', 'img');
+        cell.setAttribute('aria-label', label);
+      }
+      const num = el('b', null, String(fromYmd(date).getDate())); num.setAttribute('aria-hidden', 'true');
+      const mark = el('span', null, logged ? '✓' : '–'); mark.setAttribute('aria-hidden', 'true');
+      cell.appendChild(num); cell.appendChild(mark);
+      cal.appendChild(cell);
+    });
+    b.appendChild(cal);
+  }
+  function renderSupport(s){
+    const b = body('pg-support');
+    if (!d.checks) { b.appendChild(el('p', null, 'Couldn’t load this right now.')); return; }
+    b.appendChild(el('p', 'pg-lead', plural(s.checks.length, 'support activity', 'support activities') + ' completed in the last ' + range + ' days.'));
+    if (!s.checks.length) {
+      const a = el('div', 'td-actions'); a.appendChild(navBtn('Open Meetings & Support', 'btn btn-outline', 'meetings')); b.appendChild(a);
+      return;
+    }
+    const counts = {};
+    s.checks.forEach(function(c){ const cat = d.cats[c.item] || 'Other'; counts[cat] = (counts[cat] || 0) + 1; });
+    const ul = el('ul', 'pg-list');
+    Object.keys(counts).sort(function(a, b){ return a.localeCompare(b); }).forEach(function(cat){ // alphabetical: no ranking
+      const li = el('li'); li.appendChild(el('span', null, cat)); li.appendChild(el('b', null, String(counts[cat]))); ul.appendChild(li);
+    });
+    b.appendChild(ul);
+  }
+  function renderPorch(s){
+    const b = body('pg-porch');
+    if (!d.refl || !d.saved) { b.appendChild(el('p', null, 'Couldn’t load this right now.')); return; }
+    const ul = el('ul', 'pg-list');
+    [['Morning reflections', s.morning], ['Evening reflections', s.evening], ['Saved days', s.saved]].forEach(function(x){
+      const li = el('li'); li.appendChild(el('span', null, x[0])); li.appendChild(el('b', null, String(x[1]))); ul.appendChild(li);
+    });
+    b.appendChild(ul);
+    b.appendChild(el('p', 'pg-legend', 'Counts only. Your reflection text isn’t shown here.'));
+  }
+  function renderGoal(){
+    const b = body('pg-goal');
+    if (!d.goal) { b.appendChild(el('p', null, 'Couldn’t load this right now.')); return; }
+    const g = d.goal[0];
+    if (!g) { b.appendChild(el('p', null, 'Set one small recovery goal.')); }
+    else {
+      b.appendChild(el('p', 'td-title', g.goal_text));
+      if (g.target_date) b.appendChild(el('p', null, 'Target date: ' + fmt(g.target_date, { month: 'short', day: 'numeric', year: 'numeric' })));
+      b.appendChild(el('span', 'td-status' + (g.completed ? ' ok' : ''), g.completed ? '✓ Completed' : 'Active'));
+    }
+    const a = el('div', 'td-actions'); a.appendChild(navBtn('Open My Recovery', 'btn btn-outline', 'myrecovery')); b.appendChild(a);
+  }
+  function render(){
+    $('pg-signedout').hidden = signedIn;
+    $('pg-signedin').hidden = !signedIn;
+    $('pg-private').hidden = !signedIn;
+    $('pg-helper').hidden = !signedIn;
+    page.querySelectorAll('.pg-range-btn').forEach(function(btn){ btn.setAttribute('aria-pressed', String(Number(btn.dataset.range) === range)); });
+    $('pg-loading').hidden = !signedIn || loaded || $('pg-load-error').classList.contains('show');
+    const showData = signedIn && loaded;
+    const empty = showData && !hasAnyData();
+    $('pg-empty').hidden = !empty;
+    $('pg-sections').hidden = !showData || empty;
+    $('pg-goal').hidden = !showData;
+    if (!showData || empty) {
+      // Don't leave an earlier account's numbers in hidden markup.
+      ['pg-glance', 'pg-trend', 'pg-history', 'pg-support', 'pg-porch'].concat(showData ? [] : ['pg-goal']).forEach(body);
+    }
+    if (!showData) return;
+    renderGoal();
+    if (empty) return;
+    const s = stats();
+    renderGlance(s); renderTrend(s); renderHistory(s); renderSupport(s); renderPorch(s);
+  }
+
+  // ---- Loading (one parallel batch for 30 days) ----
+  function showLoadError(msg){ $('pg-load-error-text').textContent = msg || ''; $('pg-load-error').classList.toggle('show', !!msg); }
+  async function load(){
+    if (!client || !signedIn) return;
+    const mySeq = seq, myLoad = ++loadSeq, t = todayStr(), from = addDays(t, -29);
+    showLoadError('');
+    const call = function(fn, args){ return client.rpc(fn, args).then(function(r){ return r; }, function(e){ return { error: e }; }); };
+    const res = await Promise.all([
+      call('list_my_recovery_logs', { p_since: from }),
+      call('get_my_recovery_goal'),
+      call('list_my_support_items', { p_from: from, p_to: t }),
+      call('list_my_support_checkins', { p_from: from, p_to: t }),
+      call('list_my_daily_reflections', { p_since: from }),
+      call('list_my_saved_daily_porch')
+    ]);
+    if (mySeq !== seq || myLoad !== loadSeq) return;
+    const items = rows(res[2]), checks = rows(res[3]), refl = rows(res[4]), saved = rows(res[5]);
+    const cats = {};
+    (items || []).forEach(function(it){ cats[it.id] = it.category || 'Other'; });
+    d = {
+      logs: rows(res[0]),
+      goal: rows(res[1]),
+      cats: cats,
+      checks: checks ? checks.map(function(c){ return { item: c.item_id, date: c.occurrence_date }; }) : null,
+      // Keep only whether a morning/evening reflection exists; never the text.
+      refl: refl ? refl.map(function(r){ return { date: r.reflection_date, morning: !!r.morning_text, evening: !!r.evening_text }; }) : null,
+      saved: saved ? saved.filter(function(x){ return x.saved_at; }).map(function(x){ return { date: ymd(new Date(x.saved_at)) }; }) : null
+    };
+    loaded = true; stale = false; loadedFor = t;
+    if (res.every(function(r){ return r && r.error; })) { loaded = false; showLoadError('We couldn’t load your progress right now.'); }
+    render();
+  }
+  $('pg-retry').addEventListener('click', function(){ stale = true; load(); });
+  $('pg-signin').addEventListener('click', function(){ const b = $('header-account-btn'); if (b) b.click(); });
+  page.querySelectorAll('.pg-range-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ range = Number(btn.dataset.range); render(); }); // no new requests
+  });
+
+  function pageActive(){ return page.classList.contains('active'); }
+  function onSession(session){
+    const nowUser = session && session.user ? session.user.id : null;
+    if (nowUser === sessionUser) return;
+    sessionUser = nowUser;
+    signedIn = !!nowUser;
+    seq++; loaded = false; stale = true; loadedFor = null; d = {}; range = 30; // never carry one account's history into another
+    showLoadError('');
+    render();
+    if (signedIn && pageActive()) load();
+  }
+  ['fpr:recoverychange', 'fpr:supportchange', 'fpr:dailysavedchange', 'fpr:dailyreflectionchange'].forEach(function(name){
+    document.addEventListener(name, function(){ stale = true; if (signedIn && pageActive()) load(); });
+  });
+  document.addEventListener('fpr:pagechange', function(e){
+    if (!(e && e.detail && e.detail.page === 'progress') || !signedIn) return;
+    if (!loaded || stale || loadedFor !== todayStr()) load(); else render();
+  });
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible' && signedIn && pageActive() && loadedFor !== todayStr()) load();
+  });
+  render();
   if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
     client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
   }

@@ -29,6 +29,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
 - **My Recovery Plan v1 (Phase 11C)** — complete: a private, signed-in plan for hard moments (see below).
+- **Progress v1 (Phase 11G)** — complete: a private 7/30-day history view computed from existing data, with no new storage (see below).
 - **Today v1 (Phase 11F)** — complete: a signed-in daily dashboard over existing data, with no new storage (see below).
 - **Meetings & Support v1 (Phase 11E)** — complete: public meeting/resource finders plus a private weekly support plan (see below).
 - **Recovery Toolbox v1 (Phase 11D)** — complete: the existing Toolbox page reorganised into built-in tools with private pinning, grounding and breathing tools, and plan contacts (see below).
@@ -139,6 +140,29 @@ The backend is `supabase/migrations/phase11d_toolbox_pins_v1.sql` (applied; see 
   - **No new storage and no migration.** One parallel batch of 8 existing RPCs per load: `list_my_recovery_logs`, `get_my_recovery_goal`, `list_my_saved_daily_porch`, `list_my_support_items`, `list_my_support_checkins`, `get_my_recovery_plan`, `list_my_toolbox_pins`, `get_my_profile`.
   - **Caching:** results are reused until something changes. The other features dispatch `fpr:recoverychange` (log/goal), `fpr:dailysavedchange`, `fpr:pinschange`, `fpr:planchange` and `fpr:supportchange`, and `fpr:profilechange` already existed. The cache is also dropped when the local date changes (checked on each Today visit and when the tab becomes visible) or when the account changes.
   - **No timers or polling.** Signing out or switching accounts clears everything.
+
+## Progress
+
+"Progress" (`#progress`) answers "How have I been showing up for my recovery lately?" with facts only: no score, interpretation, prediction or judgment.
+
+- **Navigation:** the mobile menu and footer (after My Recovery), "View my progress →" under Today's cards, and "View Progress" in My Recovery's Last 7 days card. It's not in the desktop nav, which is full.
+- **Signed out:** "Your progress, over time", a Sign in button, and Check-In / Daily Porch links. No private calls are made.
+- **Ranges:** **7 days** or **30 days** (the default). This is a two-button `aria-pressed` group with a ✓ on the selected one, ending today (local).
+- **Progress at a glance:** "You logged recovery entries on N of the last 30 days.", plus:
+  - days logged;
+  - average mood and average cravings (averaged only over days that have that value, shown as "—" when there's none);
+  - support activities completed;
+  - Daily Porch reflections (morning plus evening).
+- **Mood and cravings:** two small CSS bar strips (no chart library). Days without a value are left as gaps and never filled in. The bars are hidden from screen readers, and a "Day-by-day values" table with a caption gives every day's exact value or "Not logged".
+- **Logging history:** a Monday-first calendar of the range. Logged days are ✓ buttons that open My Recovery editing that date, using its existing past-entry editing via `FPRMyRecoveryOpenDate`. Other days are "–", labelled "Not logged".
+- **Support this period:** completed Meetings & Support check-offs, counted by the category stored on the item. Categories are listed alphabetically, never ranked. Check-offs whose item was later removed (so it has no stored category) count as "Other". Planned-but-not-marked items aren't counted or mentioned.
+- **Daily Porch:** counts of morning reflections, evening reflections and saved days (by save date). Reflection text is never shown or kept.
+- **Current goal:** the text, target date, and Active or ✓ Completed; or "Set one small recovery goal." Open My Recovery.
+- **Empty state** (nothing in the last 30 days): "Your progress will build over time", the explanation, and Open My Recovery / Open Daily Porch. The goal card still shows.
+- **Data:**
+  - **No new storage and no migration.** One parallel batch of 6 existing RPCs covering 30 days: `list_my_recovery_logs`, `get_my_recovery_goal`, `list_my_support_items`, `list_my_support_checkins`, `list_my_daily_reflections`, `list_my_saved_daily_porch`. The 7-day view reuses it, so switching ranges makes no requests.
+  - **Refresh:** cached until `fpr:recoverychange`, `fpr:supportchange`, `fpr:dailysavedchange` or the new `fpr:dailyreflectionchange` (fired by a Daily Porch reflection save), a date change, or an account change. There's no polling.
+  - **Sign-out** clears the page, including hidden markup.
 
 ## Meetings & Support
 
