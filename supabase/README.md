@@ -797,6 +797,10 @@ Migration: `migrations/phase11e_meetings_support_v1.sql`. It's additive only (no
   - Community counts are unchanged.
 - **Browser fixture suite:** 69 checks passed.
 
+## Phase 11F — Today v1 (no database change)
+
+Today is a read-only dashboard over the 11A–11E RPCs, plus `get_my_profile`. It adds **no tables, functions, grants or migration rows**; `schema_migrations` stays at 14. Its only write is the existing `set_my_support_checkin`. It reads `get_my_recovery_plan` only to check whether a plan exists, and never displays or keeps the plan's text. The Privacy Policy needs no new category, because no new data is stored.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.

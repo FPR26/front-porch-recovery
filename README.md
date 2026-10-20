@@ -29,6 +29,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
 - **My Recovery Plan v1 (Phase 11C)** — complete: a private, signed-in plan for hard moments (see below).
+- **Today v1 (Phase 11F)** — complete: a signed-in daily dashboard over existing data, with no new storage (see below).
 - **Meetings & Support v1 (Phase 11E)** — complete: public meeting/resource finders plus a private weekly support plan (see below).
 - **Recovery Toolbox v1 (Phase 11D)** — complete: the existing Toolbox page reorganised into built-in tools with private pinning, grounding and breathing tools, and plan contacts (see below).
 - **Daily Porch v1 (Phase 11B)** — complete: the existing 365-day Daily Porch page upgraded with today's date view, private morning/evening reflections, saved days, and recent days (see below).
@@ -118,6 +119,26 @@ How the tools behave:
 Rough Day keeps its own page and crisis resources; the Toolbox links to it. There's no AI, diagnosis, scoring or gamification.
 
 The backend is `supabase/migrations/phase11d_toolbox_pins_v1.sql` (applied; see `supabase/README.md`).
+
+## Today
+
+"Today" (`#today`) is the signed-in member's daily dashboard: "What does my recovery look like today?" Home stays the public welcome page. Signed-in members get a small "Your Today / Open Today" card under Home's onboarding card; signed-out visitors don't see it.
+
+- **Navigation:** Today sits right after Home in the desktop nav, mobile menu and footer. To keep the 12-item desktop header from breaking, **About** left the desktop nav. It's still reachable from the mobile menu ("My Story"), the two "Our Story" buttons on Home, and a new "Our Story" link in the footer.
+- **Signed out:** "Your recovery, in one place", a Sign in button, and public links to Check-In, Daily Porch and Rough Day. No private calls are made.
+- **Signed in:** a local-time greeting ("Good morning/afternoon/evening, <display name>." The name is left out if it's still "New member"), the full local date, and "Private to your account" with helper text. Then, in this order (two columns on wide screens):
+  1. **Daily Porch:** today's title, the first sentence, "Saved ✓" if the day is saved, and **Read today's Daily Porch**.
+  2. **My Recovery:** "Nothing logged today yet." / Not logged with **Check in to My Recovery**; or the mood, cravings, a win preview and Saved ✓, with **Open My Recovery**. The entry form isn't duplicated.
+  3. **My Goal:** the current goal, its target date, and Active or ✓ Completed; or "Set one small recovery goal."
+  4. **Support Today:** today's Meetings & Support occurrences (weekly and one-time) by time, showing Planned or Done. **I went / Done** calls the existing `set_my_support_checkin` and updates in place. Empty: "No support items planned today." with **Plan my support**.
+  5. **My Toolbox:** up to 4 pinned tools in pin order (from the Toolbox's own tool list), plus **Show all tools →**. Empty: "Pin the tools that help you most."
+  6. **My Recovery Plan:** quick access only, **Open my plan** or **Build my recovery plan**. The plan's text is never shown or kept; Today only checks whether a plan exists.
+  7. **Having a rough day?** with **Open Rough Day**. Calm styling; Rough Day itself is unchanged.
+- **Status, not evaluation:** Saved, Done, Planned, Not logged, Active, Completed. No scores, percentages, colours-as-judgment, AI, points or streaks.
+- **Data and requests:**
+  - **No new storage and no migration.** One parallel batch of 8 existing RPCs per load: `list_my_recovery_logs`, `get_my_recovery_goal`, `list_my_saved_daily_porch`, `list_my_support_items`, `list_my_support_checkins`, `get_my_recovery_plan`, `list_my_toolbox_pins`, `get_my_profile`.
+  - **Caching:** results are reused until something changes. The other features dispatch `fpr:recoverychange` (log/goal), `fpr:dailysavedchange`, `fpr:pinschange`, `fpr:planchange` and `fpr:supportchange`, and `fpr:profilechange` already existed. The cache is also dropped when the local date changes (checked on each Today visit and when the tab becomes visible) or when the account changes.
+  - **No timers or polling.** Signing out or switching accounts clears everything.
 
 ## Meetings & Support
 

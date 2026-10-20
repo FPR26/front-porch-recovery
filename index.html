@@ -888,7 +888,40 @@
      .tb-pin, ...) on the private pages and the Toolbox, like the other
      [hidden] rules above. */
   #page-myrecovery [hidden], #page-daily [hidden], #page-recoveryplan [hidden],
-  #page-toolbox [hidden], #page-meetings [hidden], #roughday-plan-link[hidden]{display:none !important;}
+  #page-toolbox [hidden], #page-meetings [hidden], #page-today [hidden], #roughday-plan-link[hidden],
+  #home-today[hidden]{display:none !important;}
+
+  /* ---------- Today (Phase 11F) ---------- */
+  .td-wrap{max-width:1000px;}
+  .td-grid{display:grid; grid-template-columns:1fr; gap:14px; align-items:start;}
+  @media(min-width:860px){ .td-grid{grid-template-columns:repeat(2, minmax(0,1fr));} .td-rough{grid-column:1 / -1;} }
+  .td-card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:16px; display:flex; flex-direction:column; gap:6px; min-width:0;}
+  .td-card h2{font-size:.8rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--sage-text);}
+  .td-card p{font-size:.92rem; color:var(--charcoal-soft); line-height:1.55;}
+  .td-title{font-size:1.08rem; font-weight:700; color:var(--charcoal) !important; overflow-wrap:anywhere;}
+  .td-status{display:inline-block; align-self:flex-start; font-size:.75rem; font-weight:700; border-radius:999px; padding:3px 10px; background:var(--gray); color:var(--charcoal-soft);}
+  .td-status.ok{background:var(--sage); color:var(--charcoal);}
+  .td-nums{font-size:.95rem; font-weight:600; color:var(--charcoal) !important;}
+  .td-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:auto; padding-top:8px;}
+  .td-actions .btn{min-height:44px; padding:10px 16px; font-size:.88rem; flex:1 1 auto;}
+  .td-list{list-style:none; padding:0; margin:4px 0 0; display:flex; flex-direction:column; gap:8px;}
+  .td-item{border:1.5px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .td-item.done{background:rgba(167,184,168,.18); border-color:var(--sage);}
+  .td-item-main{min-width:0; flex:1 1 160px;}
+  .td-item-name{font-weight:700; font-size:.95rem; overflow-wrap:anywhere;}
+  .td-item-meta{font-size:.8rem; color:var(--charcoal-soft);}
+  .td-item .btn{min-height:44px; padding:8px 14px; font-size:.85rem; flex:none;}
+  .td-tools{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; margin-top:4px;}
+  .td-tools .btn{min-height:48px; padding:8px 10px; font-size:.85rem; white-space:normal; line-height:1.25;}
+  .td-rough{background:var(--amber-soft); border-color:transparent;}
+  .td-rough h2{color:#6b4e18;}
+  .td-links{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
+  .td-links .btn{flex:1 1 120px; min-height:44px;}
+  #td-signedout .btn-primary{margin-top:12px;}
+  .home-today-card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:16px 18px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;}
+  .home-today-card h2{font-size:1.15rem;}
+  .home-today-card p{font-size:.9rem; color:var(--charcoal-soft); margin-top:2px;}
+  .home-today-card .btn{flex:none;}
 
   /* ---------- My Recovery (Phase 11A) ---------- */
   .mr-wrap{max-width:680px;}
@@ -1053,6 +1086,7 @@
     </button>
     <nav class="desktop-nav" aria-label="Primary">
       <button data-nav="home">Home</button>
+      <button data-nav="today">Today</button>
       <button data-nav="checkin">Check In</button>
       <button data-nav="myrecovery">My Recovery</button>
       <button data-nav="porch">The Porch</button>
@@ -1063,7 +1097,6 @@
       <button data-nav="music">Music</button>
       <button data-nav="stories">Stories</button>
       <button data-nav="community">Community</button>
-      <button data-nav="about">About</button>
     </nav>
     <div class="header-actions">
       <button class="header-account-btn" id="header-account-btn" type="button" data-account-action="open">Sign In</button>
@@ -1082,6 +1115,7 @@
   </div>
   <div class="links">
     <button data-nav="home">Home</button>
+    <button data-nav="today">Today</button>
     <button data-nav="checkin">Check In</button>
     <button data-nav="myrecovery">My Recovery</button>
     <button data-nav="recoveryplan">My Recovery Plan</button>
@@ -1144,6 +1178,19 @@
   <section class="block bg-cream tight" id="fpr-onboard-wrap" hidden>
     <div class="wrap">
       <div class="onboard-card" id="fpr-onboard" tabindex="-1" aria-labelledby="fpr-onboard-title"></div>
+    </div>
+  </section>
+
+  <!-- Today v1: one small link for signed-in members (shown by the Today script). -->
+  <section class="block bg-cream tight" id="home-today" hidden>
+    <div class="wrap">
+      <div class="home-today-card">
+        <div>
+          <h2>Your Today</h2>
+          <p>Daily Porch, My Recovery, your goal, and today’s support in one place.</p>
+        </div>
+        <button type="button" class="btn btn-primary" data-nav="today">Open Today</button>
+      </div>
     </div>
   </section>
 
@@ -1420,6 +1467,53 @@
         <p><strong>In an emergency, call <a class="crisis-num" href="tel:911"><strong>911</strong></a>.</strong> If you're in immediate danger, having a medical emergency, or at risk of harming yourself or someone else, call 911 or go to the nearest emergency room — emergency responders can get help to you fastest.</p>
         <p>If you need to talk to someone right now, call or text <a class="crisis-num" href="tel:988"><strong>988</strong></a> (Suicide &amp; Crisis Lifeline) — free, confidential, and available 24/7 in the U.S.</p>
         <p>This check-in is peer support and community connection — it is not emergency or clinical treatment.</p>
+      </div>
+    </div>
+  </section>
+</section>
+
+<!-- ================= TODAY (Phase 11F) =================
+     Signed-in daily dashboard. Aggregates existing private data only
+     (no storage of its own). Built by the Today script (textContent only). -->
+<section class="page" id="page-today">
+  <section class="block bg-charcoal tight">
+    <div class="wrap td-wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;" id="td-greeting">Today</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;" id="td-date">Today</h1>
+      <p class="mr-private-pill" id="td-private" hidden><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>Private to your account</p>
+      <p style="color:var(--gray); margin-top:10px; max-width:58ch;" id="td-helper" hidden>Your Today dashboard is not public and does not appear in Community.</p>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap td-wrap">
+      <div class="form-card mr-card" id="td-signedout">
+        <h2>Your recovery, in one place</h2>
+        <p>Sign in to see your private daily recovery dashboard.</p>
+        <button type="button" class="btn btn-primary" id="td-signin">Sign in</button>
+        <p class="mr-muted">No account needed for these:</p>
+        <div class="td-links">
+          <button type="button" class="btn btn-outline" data-nav="checkin">Check-In</button>
+          <button type="button" class="btn btn-outline" data-nav="daily">Daily Porch</button>
+          <button type="button" class="btn btn-outline" data-nav="roughday">Rough Day</button>
+        </div>
+      </div>
+
+      <div id="td-signedin" hidden>
+        <div class="status-msg status-error" id="td-load-error" role="alert"><span id="td-load-error-text"></span> <button type="button" class="mr-link" id="td-retry">Try again</button></div>
+        <div class="td-grid">
+          <section class="td-card" id="td-porch" aria-labelledby="td-porch-title"><h2 id="td-porch-title">Daily Porch</h2><div class="td-body"></div></section>
+          <section class="td-card" id="td-recovery" aria-labelledby="td-recovery-title"><h2 id="td-recovery-title">My Recovery</h2><div class="td-body"></div></section>
+          <section class="td-card" id="td-goal" aria-labelledby="td-goal-title"><h2 id="td-goal-title">My Goal</h2><div class="td-body"></div></section>
+          <section class="td-card" id="td-support" aria-labelledby="td-support-title"><h2 id="td-support-title">Support Today</h2><div class="td-body"></div></section>
+          <section class="td-card" id="td-toolbox" aria-labelledby="td-toolbox-title"><h2 id="td-toolbox-title">My Toolbox</h2><div class="td-body"></div></section>
+          <section class="td-card" id="td-plan" aria-labelledby="td-plan-title"><h2 id="td-plan-title">My Recovery Plan</h2><div class="td-body"></div></section>
+          <section class="td-card td-rough" id="td-rough" aria-labelledby="td-rough-title">
+            <h2 id="td-rough-title">Having a rough day?</h2>
+            <p>Breathing, grounding, and people to reach, whenever you need them.</p>
+            <div class="td-actions"><button type="button" class="btn btn-outline" data-nav="roughday">Open Rough Day</button></div>
+          </section>
+        </div>
       </div>
     </div>
   </section>
@@ -3038,6 +3132,7 @@
       <div>
         <h4>Explore</h4>
         <ul>
+          <li><a href="#" data-nav="today">Today</a></li>
           <li><a href="#" data-nav="checkin">Check In</a></li>
           <li><a href="#" data-nav="myrecovery">My Recovery</a></li>
           <li><a href="#" data-nav="recoveryplan">My Recovery Plan</a></li>
@@ -3065,6 +3160,7 @@
           <li><a href="https://youtube.com/@justinwhetstone?si=WYgobb-GyYVn0DXv" target="_blank" rel="noopener noreferrer">YouTube</a></li>
           <li id="footer-pinterest"></li>
           <li><a href="https://frontporchrecovery.etsy.com" target="_blank" rel="noopener noreferrer">Etsy</a></li>
+          <li><a href="#" data-nav="about">Our Story</a></li>
           <li><a href="#" data-nav="contact">Contact</a></li>
           <li><a href="#app" data-nav="app">Get the App</a></li>
         </ul>
@@ -13940,6 +14036,7 @@ const FPRBadge = (function(){
         .sort(function(a, b){ return a.log_date < b.log_date ? 1 : -1; });
       fillForm(row);
       renderSummary(); renderHistory();
+      try { document.dispatchEvent(new CustomEvent('fpr:recoverychange', { detail: { what: 'log' } })); } catch(e){} // Today refreshes
     } catch(err){
       if (mySeq !== seq) return;
       showFieldError(logError, errMsg(err, 'Couldn’t save right now. Please try again.'));
@@ -14052,6 +14149,7 @@ const FPRBadge = (function(){
       else goal = (Array.isArray(data) ? data[0] : data) || null;
       goalMode = 'view';
       renderGoal();
+      try { document.dispatchEvent(new CustomEvent('fpr:recoverychange', { detail: { what: 'goal' } })); } catch(e){} // Today refreshes
     } catch(err){
       if (mySeq !== seq) return;
       showFieldError(goalError, errMsg(err, fallback));
@@ -14268,6 +14366,7 @@ const FPRBadge = (function(){
       const row = Array.isArray(data) ? data[0] : data;
       saved = saved.filter(function(d){ return d !== day; });
       if (row && row.saved) saved.unshift(day);
+      try { document.dispatchEvent(new CustomEvent('fpr:dailysavedchange', { detail: { day: day } })); } catch(e){} // Today refreshes
     } catch(err){
       if (mySeq !== seq) return;
       failed = true;
@@ -14648,6 +14747,7 @@ const FPRBadge = (function(){
       if (mySeq !== seq) return;
       if (error) throw error;
       plan = (Array.isArray(data) ? data[0] : data) || null;
+      try { document.dispatchEvent(new CustomEvent('fpr:planchange')); } catch(e){} // Today refreshes
       closeEdit();
       savedNote.textContent = isEmptyPlan(plan) ? '' : 'Saved ✓ Your plan is up to date.';
     } catch(err){
@@ -14753,6 +14853,7 @@ const FPRBadge = (function(){
     { key: 'journal', group: 'reset', kind: 'journal', title: 'Write for five minutes', desc: 'Get it out of your head. Write privately in today’s Daily Porch reflection, or log how you’re doing in My Recovery.' }
   ];
   const byKey = {}; TOOLS.forEach(function(t){ byKey[t.key] = t; });
+  window.FPRToolboxTools = TOOLS; // read-only tool list for Today's "My Toolbox" shortcuts
 
   let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0;
   let pinsLoaded = false, pins = [];      // pinned keys in pin order
@@ -14794,6 +14895,7 @@ const FPRBadge = (function(){
       const row = Array.isArray(data) ? data[0] : data;
       pins = pins.filter(function(k){ return k !== key; });
       if (row && row.pinned) pins.push(key);
+      try { document.dispatchEvent(new CustomEvent('fpr:pinschange')); } catch(e){} // Today refreshes
     } catch(err){
       if (mySeq !== seq) return;
       failed = true;
@@ -15102,6 +15204,11 @@ const FPRBadge = (function(){
   }
   function openAccount(){ const b = $('header-account-btn'); if (b) b.click(); }
   function showErr(node, msg){ node.textContent = msg || ''; node.classList.toggle('show', !!msg); }
+  function emitSupportChange(){ try { document.dispatchEvent(new CustomEvent('fpr:supportchange', { detail: { source: 'meetings' } })); } catch(e){} }
+  // Today can check off today's items too; refresh if this page is open.
+  document.addEventListener('fpr:supportchange', function(e){
+    if (e && e.detail && e.detail.source === 'today' && signedIn && page.classList.contains('active') && form.hidden) load();
+  });
 
   // ---- Find Support (public; reuses the Finding Meetings guide's links) ----
   function renderLinks(){
@@ -15216,6 +15323,7 @@ const FPRBadge = (function(){
       if (row && row.completed) done[k] = true; else delete done[k];
       busy = false;
       renderWeek();
+      emitSupportChange();
     } catch(err){
       if (mySeq !== seq) return;
       busy = false; button.disabled = false;
@@ -15238,6 +15346,7 @@ const FPRBadge = (function(){
       if (mySeq !== seq) return;
       if (error) throw error;
       busy = false;
+      emitSupportChange();
       await load();
     } catch(err){
       if (mySeq !== seq) return;
@@ -15288,6 +15397,7 @@ const FPRBadge = (function(){
       if (error) throw error;
       busy = false; saveBtn.disabled = false;
       closeForm();
+      emitSupportChange();
       await load();
     } catch(err){
       if (mySeq !== seq) return;
@@ -15399,6 +15509,278 @@ const FPRBadge = (function(){
   document.addEventListener('fpr:pagechange', function(e){
     if (e && e.detail && e.detail.page === 'meetings' && signedIn && form.hidden) load();
   });
+})();
+
+/* ---------- Today (Phase 11F) ----------
+   A signed-in daily dashboard that only READS existing private data, in
+   one parallel batch per load: My Recovery log + goal, saved Daily Porch
+   days, today's Meetings & Support items + check-offs, whether a Recovery
+   Plan exists (its text is never shown or kept), Toolbox pins, and the
+   display name for the greeting. The only write is the existing
+   set_my_support_checkin for today's support items. Data is cached until
+   another feature reports a change (fpr:recoverychange, fpr:dailysavedchange,
+   fpr:pinschange, fpr:planchange, fpr:supportchange, fpr:profilechange),
+   the local date changes, or the account changes. Neutral status words
+   only; no scores. Member text is rendered with textContent. */
+(function(){
+  const page = document.getElementById('page-today');
+  if (!page) return;
+  const client = window.__fprSupabaseClient || null;
+  const $ = function(id){ return document.getElementById(id); };
+  const homeCard = $('home-today');
+  const MOODS = { 1: 'Rough', 2: 'Struggling', 3: 'Okay', 4: 'Good', 5: 'Great' };
+
+  let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0;
+  let loaded = false, stale = true, loadedFor = null, busy = false;
+  let d = {};   // last loaded data for this account and date
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function btn(label, cls, onClick){ const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; }
+  function navBtn(label, cls, nav, scroll){ const b = btn(label, cls); b.setAttribute('data-nav', nav); if (scroll) b.setAttribute('data-scroll-target', scroll); return b; }
+  function pad(n){ return String(n).padStart(2, '0'); }
+  function todayStr(){ const n = new Date(); return n.getFullYear() + '-' + pad(n.getMonth() + 1) + '-' + pad(n.getDate()); }
+  function fromYmd(s){ const p = String(s).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function fmtTime(t){ if (!t) return ''; const p = String(t).split(':').map(Number); return (p[0] % 12 || 12) + ':' + pad(p[1] || 0) + (p[0] < 12 ? ' AM' : ' PM'); }
+  function fmtDate(s){ try { return fromYmd(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch(e){ return s; } }
+  function clip(s, n){ s = String(s || ''); return s.length > n ? s.slice(0, n - 1).replace(/\s+\S*$/, '') + '…' : s; }
+  function body(id){ const b = page.querySelector('#' + id + ' .td-body'); b.replaceChildren(); return b; }
+  function actions(parent){ const a = el('div', 'td-actions'); parent.appendChild(a); return a; }
+  function status(parent, text, ok){ parent.appendChild(el('span', 'td-status' + (ok ? ' ok' : ''), text)); }
+  function unavailable(b){ b.appendChild(el('p', null, 'Couldn’t load this right now.')); }
+  function rows(res){ return res && !res.error ? (Array.isArray(res.data) ? res.data : (res.data == null ? [] : [res.data])) : null; }
+
+  // ---- Header ----
+  function renderHeader(){
+    const now = new Date();
+    $('td-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const h = now.getHours();
+    const part = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    const name = signedIn && d.name && d.name !== 'New member' ? d.name : '';
+    $('td-greeting').textContent = signedIn ? part + (name ? ', ' + name + '.' : '.') : 'Today';
+    $('td-private').hidden = !signedIn;
+    $('td-helper').hidden = !signedIn;
+  }
+
+  // ---- Cards ----
+  function renderPorch(){
+    const b = body('td-porch');
+    const day = getTodaysPorchDay();
+    const entry = CONFIG.dailyEntries[day];
+    b.appendChild(el('p', 'td-title', entry && entry.title ? entry.title : 'Day ' + day));
+    if (entry && entry.morningThought) {
+      const m = entry.morningThought.match(/^[\s\S]*?[.!?](?=\s|$)/); // first sentence (no lookbehind, for older Safari)
+      const first = m ? m[0] : entry.morningThought;
+      b.appendChild(el('p', null, clip(first, 170)));
+    }
+    if (d.saved && d.saved.indexOf(day) !== -1) status(b, 'Saved ✓', true);
+    actions(b).appendChild(navBtn('Read today’s Daily Porch', 'btn btn-primary', 'daily'));
+  }
+  function renderRecovery(){
+    const b = body('td-recovery');
+    if (!d.logs) return unavailable(b);
+    const log = d.logs.find(function(l){ return l.log_date === d.date; });
+    if (!log) {
+      b.appendChild(el('p', null, 'Nothing logged today yet.'));
+      status(b, 'Not logged', false);
+      actions(b).appendChild(navBtn('Check in to My Recovery', 'btn btn-primary', 'myrecovery'));
+      return;
+    }
+    const parts = [];
+    if (log.mood != null) parts.push('Mood ' + log.mood + '/5' + (MOODS[log.mood] ? ' · ' + MOODS[log.mood] : ''));
+    if (log.cravings != null) parts.push('Cravings ' + log.cravings + '/10');
+    if (parts.length) b.appendChild(el('p', 'td-nums', parts.join(' · ')));
+    if (log.win_text) b.appendChild(el('p', null, 'Win: ' + clip(log.win_text, 110)));
+    status(b, 'Saved ✓', true);
+    actions(b).appendChild(navBtn('Open My Recovery', 'btn btn-outline', 'myrecovery'));
+  }
+  function renderGoal(){
+    const b = body('td-goal');
+    if (!d.goal) return unavailable(b);
+    const g = d.goal[0];
+    if (!g) {
+      b.appendChild(el('p', null, 'Set one small recovery goal.'));
+      actions(b).appendChild(navBtn('Set a goal', 'btn btn-outline', 'myrecovery'));
+      return;
+    }
+    b.appendChild(el('p', 'td-title', g.goal_text));
+    if (g.target_date) b.appendChild(el('p', null, 'Target date: ' + fmtDate(g.target_date)));
+    status(b, g.completed ? '✓ Completed' : 'Active', !!g.completed);
+    actions(b).appendChild(navBtn('Open My Recovery', 'btn btn-outline', 'myrecovery'));
+  }
+  function todaysSupport(){
+    const day = d.date, dow = fromYmd(day).getDay();
+    return (d.items || []).filter(function(it){
+      return it.repeat_weekly
+        ? (day >= it.scheduled_date && fromYmd(it.scheduled_date).getDay() === dow && (!it.ended_on || day <= it.ended_on))
+        : it.scheduled_date === day;
+    }).sort(function(a, b){ return String(a.scheduled_time || '99').localeCompare(String(b.scheduled_time || '99')); });
+  }
+  function renderSupport(){
+    const b = body('td-support');
+    if (!d.items || !d.done) return unavailable(b);
+    const list = todaysSupport();
+    if (!list.length) {
+      b.appendChild(el('p', null, 'No support items planned today.'));
+      actions(b).appendChild(navBtn('Plan my support', 'btn btn-outline', 'meetings'));
+      return;
+    }
+    b.appendChild(el('p', null, list.length === 1 ? '1 planned today' : list.length + ' planned today'));
+    const ul = el('ul', 'td-list');
+    list.forEach(function(it){
+      const isDone = !!d.done[it.id];
+      const li = el('li', 'td-item' + (isDone ? ' done' : ''));
+      const main = el('div', 'td-item-main');
+      main.appendChild(el('p', 'td-item-name', it.name));
+      const meta = [it.scheduled_time ? fmtTime(it.scheduled_time) : '', it.category || ''].filter(Boolean).join(' · ');
+      main.appendChild(el('p', 'td-item-meta', (meta ? meta + ' · ' : '') + (isDone ? 'Done' : 'Planned')));
+      li.appendChild(main);
+      const t = btn(isDone ? '✓ Done' : 'I went / Done', 'btn ' + (isDone ? 'btn-outline' : 'btn-primary'), function(){ setDone(it, !isDone, t); });
+      t.setAttribute('aria-pressed', String(isDone));
+      t.setAttribute('aria-label', isDone ? it.name + ' is marked done today. Select to unmark.' : 'Mark ' + it.name + ' as done today');
+      li.appendChild(t);
+      ul.appendChild(li);
+    });
+    b.appendChild(ul);
+    actions(b).appendChild(navBtn('Open Meetings & Support', 'btn btn-outline', 'meetings'));
+  }
+  async function setDone(it, want, button){
+    if (!client || !signedIn || busy) return;
+    const mySeq = seq;
+    busy = true; button.disabled = true;
+    try {
+      const { data, error } = await client.rpc('set_my_support_checkin', { p_item_id: it.id, p_occurrence_date: d.date, p_completed: want });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row && row.completed) d.done[it.id] = true; else delete d.done[it.id];
+      busy = false;
+      renderSupport();
+      const again = Array.prototype.find.call(page.querySelectorAll('#td-support .td-item'), function(li){ return li.querySelector('.td-item-name').textContent === it.name; });
+      if (again) { const b2 = again.querySelector('button'); if (b2) try { b2.focus(); } catch(e){} }
+      try { document.dispatchEvent(new CustomEvent('fpr:supportchange', { detail: { source: 'today' } })); } catch(e){}
+    } catch(err){
+      if (mySeq !== seq) return;
+      busy = false; button.disabled = false;
+      showLoadError('Couldn’t update that right now. Please try again.');
+    }
+  }
+  function renderToolbox(){
+    const b = body('td-toolbox');
+    if (!d.pins) return unavailable(b);
+    const tools = window.FPRToolboxTools || [];
+    const byKey = {}; tools.forEach(function(t){ byKey[t.key] = t; });
+    const mine = d.pins.map(function(k){ return byKey[k]; }).filter(Boolean);
+    if (!mine.length) {
+      b.appendChild(el('p', null, 'Pin the tools that help you most.'));
+      actions(b).appendChild(navBtn('Open Recovery Toolbox', 'btn btn-outline', 'toolbox'));
+      return;
+    }
+    const grid = el('div', 'td-tools');
+    mine.slice(0, 4).forEach(function(t){
+      const simpleNav = !t.kind && t.nav;
+      grid.appendChild(navBtn(t.title, 'btn btn-outline', simpleNav ? t.nav : 'toolbox', simpleNav ? t.scroll : 'tb-tool-' + t.key));
+    });
+    b.appendChild(grid);
+    if (mine.length > 4) actions(b).appendChild(navBtn('Show all tools →', 'btn btn-outline', 'toolbox', 'tb-mine'));
+  }
+  function renderPlan(){
+    const b = body('td-plan');
+    if (d.hasPlan == null) return unavailable(b);
+    b.appendChild(el('p', null, 'Your steps, support people, and reasons for recovery — ready when you need them.'));
+    actions(b).appendChild(navBtn(d.hasPlan ? 'Open my plan' : 'Build my recovery plan', 'btn btn-outline', 'recoveryplan'));
+  }
+  function renderAll(){
+    renderHeader();
+    $('td-signedout').hidden = signedIn;
+    $('td-signedin').hidden = !signedIn;
+    if (homeCard) homeCard.hidden = !signedIn;
+    if (!signedIn || !loaded) {
+      ['td-porch', 'td-recovery', 'td-goal', 'td-support', 'td-toolbox', 'td-plan'].forEach(function(id){
+        if (id === 'td-porch' && signedIn) return renderPorch();
+        const b = body(id);
+        if (signedIn) b.appendChild(el('p', null, 'Loading…'));
+      });
+      return;
+    }
+    renderPorch(); renderRecovery(); renderGoal(); renderSupport(); renderToolbox(); renderPlan();
+  }
+
+  // ---- Loading (one parallel batch) ----
+  function showLoadError(msg){ $('td-load-error-text').textContent = msg || ''; $('td-load-error').classList.toggle('show', !!msg); }
+  async function load(){
+    if (!client || !signedIn) return;
+    const mySeq = seq, myLoad = ++loadSeq, date = todayStr();
+    showLoadError('');
+    const call = function(fn, args){ return client.rpc(fn, args).then(function(r){ return r; }, function(e){ return { error: e }; }); };
+    const res = await Promise.all([
+      call('list_my_recovery_logs', { p_since: date }),
+      call('get_my_recovery_goal'),
+      call('list_my_saved_daily_porch'),
+      call('list_my_support_items', { p_from: date, p_to: date }),
+      call('list_my_support_checkins', { p_from: date, p_to: date }),
+      call('get_my_recovery_plan'),
+      call('list_my_toolbox_pins'),
+      call('get_my_profile')
+    ]);
+    if (mySeq !== seq || myLoad !== loadSeq) return;
+    const saved = rows(res[2]), checks = rows(res[4]), plan = rows(res[5]), pins = rows(res[6]), prof = rows(res[7]);
+    let done = null;
+    if (checks) { done = {}; checks.forEach(function(c){ if (c.occurrence_date === date) done[c.item_id] = true; }); }
+    const p = plan && plan[0];
+    d = {
+      date: date,
+      logs: rows(res[0]),
+      goal: rows(res[1]),
+      saved: saved ? saved.map(function(s){ return Number(s.day_number); }) : [],
+      items: rows(res[3]),
+      done: done,
+      // Only whether a plan exists; its private text is not kept.
+      hasPlan: plan ? !!(p && (p.warning_signs || p.what_helps || p.reasons_for_recovery || p.step_1 || p.step_2 || p.step_3 || (Array.isArray(p.contacts) && p.contacts.length))) : null,
+      pins: pins ? pins.map(function(x){ return x.tool_key; }) : null,
+      name: prof && prof[0] ? prof[0].display_name : ''
+    };
+    loaded = true; stale = false; loadedFor = date;
+    if (res.every(function(r){ return r && r.error; })) showLoadError('We couldn’t load your day right now.');
+    renderAll();
+  }
+  $('td-retry').addEventListener('click', function(){ stale = true; load(); });
+  $('td-signin').addEventListener('click', function(){ const b = $('header-account-btn'); if (b) b.click(); });
+
+  function pageActive(){ return page.classList.contains('active'); }
+  function refreshIfNeeded(){
+    if (!signedIn) return;
+    if (!loaded || stale || loadedFor !== todayStr()) load();
+    else renderAll();
+  }
+  function onSession(session){
+    const nowUser = session && session.user ? session.user.id : null;
+    if (nowUser === sessionUser) return;
+    sessionUser = nowUser;
+    signedIn = !!nowUser;
+    seq++; loaded = false; stale = true; loadedFor = null; busy = false; d = {}; // never carry one account's day into another
+    showLoadError('');
+    renderAll();
+    if (signedIn && pageActive()) load();
+  }
+  ['fpr:recoverychange', 'fpr:dailysavedchange', 'fpr:pinschange', 'fpr:planchange', 'fpr:supportchange', 'fpr:profilechange'].forEach(function(name){
+    document.addEventListener(name, function(e){
+      if (e && e.detail && e.detail.source === 'today') return; // our own change, already applied
+      stale = true;
+      if (signedIn && pageActive()) load();
+    });
+  });
+  document.addEventListener('fpr:pagechange', function(e){
+    const pg = e && e.detail && e.detail.page;
+    if (pg === 'today') { renderHeader(); refreshIfNeeded(); }
+  });
+  // Coming back to the app after midnight (or later in the day): fresh header, and new data if the date changed.
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible' && pageActive()) { renderHeader(); if (signedIn && loadedFor !== todayStr()) load(); }
+  });
+  renderAll();
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  }
 })();
 
 /* ---------- Community celebration cards (separate from recovery badges) ----------
