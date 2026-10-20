@@ -29,6 +29,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
 - **My Recovery Plan v1 (Phase 11C)** — complete: a private, signed-in plan for hard moments (see below).
+- **Meetings & Support v1 (Phase 11E)** — complete: public meeting/resource finders plus a private weekly support plan (see below).
 - **Recovery Toolbox v1 (Phase 11D)** — complete: the existing Toolbox page reorganised into built-in tools with private pinning, grounding and breathing tools, and plan contacts (see below).
 - **Daily Porch v1 (Phase 11B)** — complete: the existing 365-day Daily Porch page upgraded with today's date view, private morning/evening reflections, saved days, and recent days (see below).
 - **Admin mobile layout** — deployed and checked on a phone: wrapping tabs, readable text, account header, and filters. Current checkpoint: main at e9ad981 on 2026-10-19.
@@ -117,6 +118,33 @@ How the tools behave:
 Rough Day keeps its own page and crisis resources; the Toolbox links to it. There's no AI, diagnosis, scoring or gamification.
 
 The backend is `supabase/migrations/phase11d_toolbox_pins_v1.sql` (applied; see `supabase/README.md`).
+
+## Meetings & Support
+
+"Meetings & Support" (`#meetings`) isn't tied to any program. It's in the mobile menu, the footer, the Toolbox's Connection group (`meetings_support`, pinnable) and a small link on My Recovery. The desktop nav is unchanged.
+
+- **Find Support (everyone):** meeting finders and recovery resources, rendered from the "Finding Meetings" guide's own `external` list, so the guide and this page share one source. The list is AA, NA, SMART Recovery, Celebrate Recovery (added this phase after confirming the official site), FindTreatment.gov and USARA. Links are https only, open in a new tab with `rel="noopener noreferrer"`, and are labelled "(opens in a new tab)". The page also links the full guide and 988/911.
+- **Signed out:** the explanation, a Sign in button, and Find Support. Rough Day and the Toolbox stay public.
+- **Signed in: "My Support This Week"** (Monday–Sunday, local), with a "Private to your account" indicator and helper text.
+  - **This week:** grouped as Today, Later this week, Earlier this week (only if something isn't marked yet), and Completed.
+  - **Navigation:** Prev/Next week (up to 8 weeks either way) and "Back to this week".
+  - **Each card shows:** name, type (and "Weekly"), day and time, and the location/link/note.
+  - **Neutral states:** Today, Upcoming, Not marked, or ✓ Done. There's never "missed" or "failed", and no streaks or points.
+  - **Actions:** **I went / Done** (a toggle with `aria-pressed`; for today and past days only), **Open link**, **Edit** and **Remove**.
+  - **Open link** appears only when the note contains a plain `http(s)` URL; `javascript:` and `data:` text stays as text.
+- **Add support form:**
+  - Type: a preset (AA, NA, SMART, Celebrate Recovery, peer group, therapy, church/recovery group, call sponsor, meet with peer) or "Other…" with free text.
+  - Name (required, up to 120 characters), Day (required), Time (optional), Location/link/note (up to 300), and **Repeats weekly**.
+  - Only weekly recurrence is supported, on the chosen day's weekday from that date on.
+- **Completion is per occurrence date.** Marking this week never marks another week, and past weeks can be marked from the week view.
+- **Remove:**
+  - A one-time item is hidden.
+  - A weekly item stops from today; if today's occurrence is already marked done, it stops from tomorrow so today stays in Completed. Earlier weeks still show it.
+  - Every check-off record is kept.
+- **Editing:** editing a weekly item's day moves all its occurrences, including past weeks. Check-offs stay stored by their original date, so a check-off on the old weekday no longer shows in the week view. This is a known v1 trade-off.
+- **People I can reach out to:** read from My Recovery Plan with the same Call/Text buttons, and not copied. Kept separate from the plan itself, which answers "what do I do when things get hard?".
+
+The backend is `supabase/migrations/phase11e_meetings_support_v1.sql` (applied; see `supabase/README.md`).
 
 ## Community features
 

@@ -373,7 +373,7 @@
   .field{margin-bottom:20px;}
   .field label{display:block; font-weight:600; font-size:.92rem; margin-bottom:8px;}
   .field .hint{font-size:.82rem; color:var(--charcoal-soft); opacity:.7; margin-top:6px;}
-  input[type=text],input[type=email],input[type=date],textarea,select{
+  input[type=text],input[type=email],input[type=date],input[type=time],textarea,select{
     width:100%; border:1.5px solid var(--line); border-radius:var(--radius-s);
     padding:13px 14px; font-family:inherit; font-size:.95rem; background:var(--white); color:var(--charcoal);
   }
@@ -888,7 +888,7 @@
      .tb-pin, ...) on the private pages and the Toolbox, like the other
      [hidden] rules above. */
   #page-myrecovery [hidden], #page-daily [hidden], #page-recoveryplan [hidden],
-  #page-toolbox [hidden], #roughday-plan-link[hidden]{display:none !important;}
+  #page-toolbox [hidden], #page-meetings [hidden], #roughday-plan-link[hidden]{display:none !important;}
 
   /* ---------- My Recovery (Phase 11A) ---------- */
   .mr-wrap{max-width:680px;}
@@ -999,6 +999,39 @@
   .tb-done-note{font-size:.88rem; font-weight:600; color:var(--sage-text);}
   .tb-people{list-style:none; padding:0; margin:4px 0 0; display:flex; flex-direction:column; gap:8px;}
   .tb-library-title{font-size:1.3rem; margin-bottom:12px;}
+
+  /* ---------- Meetings & Support (Phase 11E) ---------- */
+  .ms-private{font-size:.88rem; color:var(--charcoal-soft); display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .ms-weeknav{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:12px;}
+  .ms-weeknav .btn{min-height:44px; padding:8px 14px; font-size:.85rem; flex:none;}
+  .ms-weeklabel{font-weight:700; font-size:.92rem; text-align:center; flex:1; min-width:0;}
+  .ms-thisweek{display:block; margin:8px auto 0;}
+  .ms-group{margin-top:18px;}
+  .ms-group h3{font-size:.8rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--sage-text);}
+  .ms-list{list-style:none; padding:0; margin:8px 0 0; display:flex; flex-direction:column; gap:10px;}
+  .ms-item{border:1.5px solid var(--line); border-radius:12px; padding:12px 14px;}
+  .ms-item.done{background:rgba(167,184,168,.18); border-color:var(--sage);}
+  .ms-item-top{display:flex; justify-content:space-between; gap:8px; align-items:flex-start;}
+  .ms-item h4{font-size:1rem; overflow-wrap:anywhere;}
+  .ms-state{flex:none; font-size:.75rem; font-weight:700; border-radius:999px; padding:3px 10px; background:var(--gray); color:var(--charcoal-soft); white-space:nowrap;}
+  .ms-state.done{background:var(--sage); color:var(--charcoal);}
+  .ms-meta{font-size:.88rem; font-weight:600; color:var(--charcoal); margin-top:4px;}
+  .ms-type{font-size:.8rem; color:var(--sage-text); font-weight:600; margin-top:2px;}
+  .ms-loc{font-size:.88rem; color:var(--charcoal-soft); margin-top:4px; white-space:pre-wrap; overflow-wrap:anywhere;}
+  .ms-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .ms-actions .btn{min-height:44px; padding:8px 14px; font-size:.85rem;}
+  .ms-actions .ms-done{flex:1 1 140px;}
+  .ms-empty{font-size:.92rem; color:var(--charcoal-soft); margin-top:12px;}
+  .ms-add-row{margin-top:16px;}
+  .ms-add-row .btn{width:100%;}
+  .ms-two{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px;}
+  .ms-check{display:flex; align-items:center; gap:10px; font-weight:600; min-height:44px; cursor:pointer;}
+  .ms-check input{width:22px; height:22px; flex:none;}
+  .ms-links{list-style:none; padding:0; margin:12px 0 0; display:flex; flex-direction:column; gap:10px;}
+  .ms-link{border:1px solid var(--line); border-radius:12px; padding:12px 14px;}
+  .ms-link a{font-weight:700; color:var(--charcoal); text-decoration:underline; text-underline-offset:3px; display:inline-block; min-height:28px;}
+  .ms-link p{font-size:.86rem; color:var(--charcoal-soft); margin-top:2px;}
+  .ms-crisis{color:var(--charcoal); font-weight:700; text-decoration:underline;}
 </style>
 <!-- Supabase client (Phase 1): optional member accounts only. Loaded from
      jsdelivr's CDN mirror of the published npm package; nothing here can
@@ -1052,6 +1085,7 @@
     <button data-nav="checkin">Check In</button>
     <button data-nav="myrecovery">My Recovery</button>
     <button data-nav="recoveryplan">My Recovery Plan</button>
+    <button data-nav="meetings">Meetings &amp; Support</button>
     <button data-nav="porch">The Porch</button>
     <button data-nav="books">Books</button>
     <button data-nav="shop">Shop</button>
@@ -1408,7 +1442,7 @@
   <section class="block bg-cream">
     <div class="wrap mr-wrap">
       <p class="mr-distinction">My Recovery is private to your account and can follow you across devices. Your existing Check-In and Recovery Counter still stay on this device unless you choose to use My Recovery. <button type="button" class="mr-link" data-nav="privacy">Privacy</button></p>
-      <p class="mr-plan-link">For harder moments: <button type="button" class="mr-link" data-nav="recoveryplan">My Recovery Plan</button>, what you want available when things get hard.</p>
+      <p class="mr-plan-link">For harder moments: <button type="button" class="mr-link" data-nav="recoveryplan">My Recovery Plan</button>. For this week’s support: <button type="button" class="mr-link" data-nav="meetings">Meetings &amp; Support</button>.</p>
 
       <div class="form-card mr-card" id="mr-signedout">
         <h2>Sign in to use My Recovery</h2>
@@ -1607,6 +1641,113 @@
       </div>
 
       <p class="mr-muted rp-disclaimer">This is your own plan. It isn’t medical care, therapy, or an emergency service. In an emergency, call <a class="crisis-num" href="tel:911">911</a>. For crisis support, call or text <a class="crisis-num" href="tel:988">988</a>.</p>
+    </div>
+  </section>
+</section>
+
+<!-- ================= MEETINGS & SUPPORT (Phase 11E) =================
+     Public "Find Support" links (from the Finding Meetings guide's own
+     list) for everyone, plus a signed-in, account-private weekly support
+     plan. Built by the Meetings & Support script (textContent only). -->
+<section class="page" id="page-meetings">
+  <section class="block bg-charcoal tight">
+    <div class="wrap mr-wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;">Any program, any kind of support</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Meetings &amp; Support</h1>
+      <p style="color:var(--gray); margin-top:10px; max-width:58ch;">Plan the support you want this week, and find meetings and recovery resources when you need them.</p>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap mr-wrap">
+      <div class="form-card mr-card" id="ms-signedout">
+        <h2>Plan your week of support</h2>
+        <p>Looking for support? Use the links below to find meetings and recovery resources. Sign in if you want to build a private weekly support plan.</p>
+        <button type="button" class="btn btn-outline" id="ms-signin">Sign in</button>
+      </div>
+
+      <div id="ms-signedin" hidden>
+        <p class="ms-private"><span class="dp-private">Private to your account</span> Your meeting and support plan is not public and does not appear in Community.</p>
+        <div class="status-msg status-error" id="ms-load-error" role="alert"><span id="ms-load-error-text"></span> <button type="button" class="mr-link" id="ms-retry">Try again</button></div>
+
+        <section class="form-card mr-card" id="ms-week" aria-labelledby="ms-week-title">
+          <h2 id="ms-week-title">My Support This Week</h2>
+          <div class="ms-weeknav">
+            <button type="button" class="btn btn-outline" id="ms-prev" aria-label="Previous week">‹ Prev</button>
+            <p class="ms-weeklabel" id="ms-weeklabel" aria-live="polite"></p>
+            <button type="button" class="btn btn-outline" id="ms-next" aria-label="Next week">Next ›</button>
+          </div>
+          <button type="button" class="card-link ms-thisweek" id="ms-thisweek" hidden style="background:none; border:none; cursor:pointer; padding:0;">Back to this week</button>
+          <p class="mr-state" id="ms-loading" role="status">Loading your week…</p>
+          <div id="ms-groups"></div>
+        </section>
+
+        <div class="ms-add-row">
+          <button type="button" class="btn btn-primary" id="ms-add">Add support</button>
+        </div>
+
+        <form class="form-card mr-card" id="ms-form" novalidate hidden aria-labelledby="ms-form-title">
+          <h2 id="ms-form-title">Add support</h2>
+          <div class="field">
+            <label for="ms-f-type">Type <span class="mr-hint">(optional)</span></label>
+            <select id="ms-f-type">
+              <option value="">Choose a type…</option>
+              <option>AA meeting</option>
+              <option>NA meeting</option>
+              <option>SMART meeting</option>
+              <option>Celebrate Recovery</option>
+              <option>Peer support group</option>
+              <option>Therapy</option>
+              <option>Church / recovery group</option>
+              <option>Call sponsor</option>
+              <option>Meet with peer</option>
+              <option value="__other">Other…</option>
+            </select>
+          </div>
+          <div class="field" id="ms-f-other-wrap" hidden>
+            <label for="ms-f-other">Other type</label>
+            <input type="text" id="ms-f-other" maxlength="40" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="ms-f-name">Name</label>
+            <input type="text" id="ms-f-name" maxlength="120" autocomplete="off" required aria-required="true" placeholder="e.g. Tuesday night group">
+          </div>
+          <div class="ms-two">
+            <div class="field">
+              <label for="ms-f-date">Day</label>
+              <input type="date" id="ms-f-date" required aria-required="true" aria-describedby="ms-f-date-hint">
+            </div>
+            <div class="field">
+              <label for="ms-f-time">Time <span class="mr-hint">(optional)</span></label>
+              <input type="time" id="ms-f-time">
+            </div>
+          </div>
+          <p class="mr-hint rp-help" id="ms-f-date-hint">For a weekly item, this is the first day. It repeats on the same weekday.</p>
+          <div class="field">
+            <label for="ms-f-loc">Location, link, or note <span class="mr-hint">(optional)</span></label>
+            <textarea id="ms-f-loc" maxlength="300" rows="2"></textarea>
+          </div>
+          <label class="ms-check"><input type="checkbox" id="ms-f-repeat"> Repeats weekly</label>
+          <p class="field-error" id="ms-form-error" role="alert"></p>
+          <div class="mr-actions">
+            <button type="submit" class="btn btn-primary" id="ms-save">Save</button>
+            <button type="button" class="btn btn-outline" id="ms-cancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <section class="form-card mr-card" id="ms-find" aria-labelledby="ms-find-title">
+        <h2 id="ms-find-title">Find Support</h2>
+        <p class="mr-muted">Meeting finders and recovery resources. Links open the organization’s own site in a new tab.</p>
+        <ul class="ms-links" id="ms-links"></ul>
+        <p class="mr-muted"><button type="button" class="mr-link" data-resource="finding-meetings">Read our guide to finding meetings</button></p>
+        <p class="mr-muted">If you’re in crisis, call or text <a class="ms-crisis" href="tel:988">988</a>. In an emergency, call <a class="ms-crisis" href="tel:911">911</a>.</p>
+      </section>
+
+      <section class="form-card mr-card" id="ms-people" aria-labelledby="ms-people-title" hidden>
+        <h2 id="ms-people-title">People I can reach out to</h2>
+        <div id="ms-people-body"></div>
+      </section>
     </div>
   </section>
 </section>
@@ -2424,6 +2565,9 @@
       <h2>My Recovery Plan (private to your account)</h2>
       <p>If you build a My Recovery Plan, what you write is saved with your account: your next steps, what helps you, your warning signs, why you're choosing recovery, and up to five people you list with an optional phone number or note. You type these in yourself. The site never reads your phone's contacts, and Call/Text buttons just open your phone's own dialer or messaging app; nothing is called or sent automatically. Your plan follows the same rules as My Recovery: only you can see it in the site, it never appears in the Community, on your profile, or in notifications, it isn't shared or exported, and FPR's admin tools have no screen for it. It's your own plan, not medical care or an emergency service.</p>
 
+      <h2>Meetings &amp; Support plan (private to your account)</h2>
+      <p>Anyone can use the Find Support links without an account; they open the organizations' own sites. If you sign in and plan your week, the support items you add (name, type, day, time, and any location, link, or note) and which ones you mark done are saved with your account. Only you can see them in the site. They never appear in the Community, on your profile, or in notifications, there are no streaks or counts, and FPR's admin tools have no screen for them. Removing an item keeps the days you already marked done.</p>
+
       <h2>Recovery Toolbox pins (private to your account)</h2>
       <p>If you pin tools to My Toolbox, the list of pinned tools is saved with your account so it follows you to any device. Only you can see it, and there are no public counts. Using the grounding, breathing, or quick-reset tools isn't saved or sent anywhere. The Toolbox's "People I can reach out to" shows the contacts from your own My Recovery Plan; they aren't copied anywhere else.</p>
 
@@ -2897,6 +3041,7 @@
           <li><a href="#" data-nav="checkin">Check In</a></li>
           <li><a href="#" data-nav="myrecovery">My Recovery</a></li>
           <li><a href="#" data-nav="recoveryplan">My Recovery Plan</a></li>
+          <li><a href="#" data-nav="meetings">Meetings &amp; Support</a></li>
           <li><a href="#" data-nav="porch">The Porch</a></li>
           <li><a href="#" data-nav="toolbox">Recovery Toolbox</a></li>
           <li><a href="#" data-nav="daily">Daily Porch</a></li>
@@ -3828,6 +3973,11 @@ const CONFIG = {
         "label": "SMART Recovery",
         "url": "https://www.smartrecovery.org",
         "note": "Meeting finder for SMART Recovery's self-empowerment approach, including online meetings."
+      },
+      {
+        "label": "Celebrate Recovery",
+        "url": "https://www.celebraterecovery.com",
+        "note": "Christ-centered recovery groups, usually hosted by local churches, with a group finder."
       },
       {
         "label": "FindTreatment.gov",
@@ -14594,6 +14744,7 @@ const FPRBadge = (function(){
     { key: 'check_in', group: 'daily', title: 'Check-In', desc: 'A one-minute check-in that stays on this device.', nav: 'checkin', label: 'Check in' },
     { key: 'recovery_counter', group: 'daily', title: 'Recovery Counter', desc: 'Your days, weeks, and milestones, kept on this device.', nav: 'toolbox', scroll: 'tb-counter', label: 'Open the counter' },
     { key: 'community', group: 'connection', title: 'Community', desc: 'Read what others on the porch are sharing. Sign in to post or reply.', nav: 'community', label: 'Open Community' },
+    { key: 'meetings_support', group: 'connection', title: 'Meetings & Support', desc: 'Find meetings and recovery resources, or plan the support you want this week.', nav: 'meetings', label: 'Open Meetings & Support' },
     { key: 'support_people', group: 'connection', kind: 'contacts', title: 'People I can reach out to', desc: 'The people from your My Recovery Plan, one tap away.', account: true, wide: true },
     { key: 'walk', group: 'reset', kind: 'quick', title: 'Take a short walk', desc: 'Five or ten minutes outside or around the block. Change the scenery, not your whole life.' },
     { key: 'water', group: 'reset', kind: 'quick', title: 'Drink some water', desc: 'Get a glass and drink it slowly. Simple, and it helps more than you’d think.' },
@@ -14892,6 +15043,361 @@ const FPRBadge = (function(){
     const pg = e && e.detail && e.detail.page;
     if (pg !== 'toolbox') { stopBreathing(); return; }
     if (signedIn) load();
+  });
+})();
+
+/* ---------- Meetings & Support (Phase 11E) ----------
+   Public "Find Support" links come from the Finding Meetings guide's own
+   list (CONFIG.toolboxResources 'finding-meetings' + shared resources),
+   so there's one source of truth. Signed-in members get a private weekly
+   plan: items from list_my_support_items, check-offs from
+   list_my_support_checkins (own rows only). Weekly items are expanded
+   into occurrences here; each occurrence is checked off on its own date,
+   so marking one week never marks another. Neutral states only
+   (Upcoming / Not marked / Done). "Open link" appears only for http(s)
+   URLs found in the member's note. People come from My Recovery Plan.
+   All member text is rendered with textContent. */
+(function(){
+  const page = document.getElementById('page-meetings');
+  if (!page) return;
+  const client = window.__fprSupabaseClient || null;
+  const $ = function(id){ return document.getElementById(id); };
+  const signedOutView = $('ms-signedout'), signedInView = $('ms-signedin');
+  const groupsBox = $('ms-groups'), loadingNote = $('ms-loading'), weekLabel = $('ms-weeklabel');
+  const loadErr = $('ms-load-error'), loadErrText = $('ms-load-error-text');
+  const form = $('ms-form'), formTitle = $('ms-form-title'), formError = $('ms-form-error'), saveBtn = $('ms-save'), addBtn = $('ms-add');
+  const fType = $('ms-f-type'), fOtherWrap = $('ms-f-other-wrap'), fOther = $('ms-f-other'), fName = $('ms-f-name');
+  const fDate = $('ms-f-date'), fTime = $('ms-f-time'), fLoc = $('ms-f-loc'), fRepeat = $('ms-f-repeat');
+  const peopleCard = $('ms-people'), peopleBody = $('ms-people-body');
+  const MAX_WEEKS = 8;
+
+  let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0, loaded = false;
+  let weekOffset = 0;            // 0 = this week (Mon-Sun, local)
+  let items = [], done = {};     // done['itemId|YYYY-MM-DD'] = true
+  let editingId = null, busy = false, contacts = [], planState = 'idle';
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function btn(label, cls, onClick){ const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; }
+  function pad(n){ return String(n).padStart(2, '0'); }
+  function ymd(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function fromYmd(s){ const p = String(s).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function addDays(s, n){ const d = fromYmd(s); d.setDate(d.getDate() + n); return ymd(d); }
+  function todayStr(){ return ymd(new Date()); }
+  function weekStart(offset){ const d = new Date(); const back = (d.getDay() + 6) % 7; d.setDate(d.getDate() - back + offset * 7); return ymd(d); }
+  function fmtDay(s, long){ try { return fromYmd(s).toLocaleDateString('en-US', long ? { weekday: 'long', month: 'short', day: 'numeric' } : { weekday: 'short', month: 'short', day: 'numeric' }); } catch(e){ return s; } }
+  function fmtTime(t){
+    if (!t) return '';
+    const p = String(t).split(':').map(Number);
+    const h = p[0] % 12 || 12;
+    return h + ':' + pad(p[1] || 0) + (p[0] < 12 ? ' AM' : ' PM');
+  }
+  // Only plain http(s) links are ever turned into "Open link".
+  function safeUrl(text){
+    const m = String(text || '').match(/https?:\/\/[^\s<>"'`]+/i);
+    if (!m) return null;
+    try {
+      const u = new URL(m[0].replace(/[).,;!?]+$/, ''));
+      return (u.protocol === 'https:' || u.protocol === 'http:') ? u.href : null;
+    } catch(e){ return null; }
+  }
+  function openAccount(){ const b = $('header-account-btn'); if (b) b.click(); }
+  function showErr(node, msg){ node.textContent = msg || ''; node.classList.toggle('show', !!msg); }
+
+  // ---- Find Support (public; reuses the Finding Meetings guide's links) ----
+  function renderLinks(){
+    const ul = $('ms-links'); ul.replaceChildren();
+    const res = (CONFIG.toolboxResources || []).find(function(r){ return r.slug === 'finding-meetings'; });
+    (res && res.external || []).forEach(function(ext){
+      const shared = ext.ref ? (CONFIG.sharedResources || {})[ext.ref] : null;
+      const label = shared ? shared.title : ext.label;
+      const url = shared ? shared.url : ext.url;
+      const note = ext.note || (shared && shared.description) || '';
+      if (!label || !/^https:\/\//.test(url || '')) return;
+      const li = el('li', 'ms-link');
+      const a = el('a', null, label);
+      a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.setAttribute('aria-label', label + ' (opens in a new tab)');
+      a.appendChild(el('span', null, ' ↗')).setAttribute('aria-hidden', 'true');
+      li.appendChild(a);
+      if (note) li.appendChild(el('p', null, note));
+      ul.appendChild(li);
+    });
+  }
+
+  // ---- Week ----
+  function occurrences(from){
+    const out = [];
+    for (let i = 0; i < 7; i++) {
+      const day = addDays(from, i), dow = fromYmd(day).getDay();
+      items.forEach(function(it){
+        let on;
+        if (it.repeat_weekly) on = day >= it.scheduled_date && fromYmd(it.scheduled_date).getDay() === dow && (!it.ended_on || day <= it.ended_on);
+        else on = day === it.scheduled_date;
+        if (on) out.push({ item: it, date: day, done: !!done[it.id + '|' + day] });
+      });
+    }
+    out.sort(function(a, b){ return a.date === b.date ? String(a.item.scheduled_time || '99').localeCompare(String(b.item.scheduled_time || '99')) : (a.date < b.date ? -1 : 1); });
+    return out;
+  }
+  function occCard(o){
+    const it = o.item, today = todayStr();
+    const li = el('li', 'ms-item' + (o.done ? ' done' : ''));
+    const top = el('div', 'ms-item-top');
+    top.appendChild(el('h4', null, it.name));
+    const stateText = o.done ? '✓ Done' : (o.date > today ? 'Upcoming' : (o.date === today ? 'Today' : 'Not marked'));
+    top.appendChild(el('span', 'ms-state' + (o.done ? ' done' : ''), stateText));
+    li.appendChild(top);
+    if (it.category) li.appendChild(el('p', 'ms-type', it.category + (it.repeat_weekly ? ' · Weekly' : '')));
+    else if (it.repeat_weekly) li.appendChild(el('p', 'ms-type', 'Weekly'));
+    li.appendChild(el('p', 'ms-meta', fmtDay(o.date, true) + (it.scheduled_time ? ' · ' + fmtTime(it.scheduled_time) : '')));
+    if (it.location_note) li.appendChild(el('p', 'ms-loc', it.location_note));
+    const actions = el('div', 'ms-actions');
+    if (o.date <= today) {
+      const d = btn(o.done ? '✓ Done' : 'I went / Done', 'btn ' + (o.done ? 'btn-outline' : 'btn-primary') + ' ms-done', function(){ setDone(o, !o.done, d); });
+      d.setAttribute('aria-pressed', String(o.done));
+      d.setAttribute('aria-label', o.done ? it.name + ' on ' + fmtDay(o.date, true) + ' is marked done. Select to unmark.' : 'Mark ' + it.name + ' on ' + fmtDay(o.date, true) + ' as done');
+      actions.appendChild(d);
+    }
+    const url = safeUrl(it.location_note);
+    if (url) {
+      const a = el('a', 'btn btn-outline', 'Open link');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.setAttribute('aria-label', 'Open link for ' + it.name + ' (opens in a new tab)');
+      actions.appendChild(a);
+    }
+    actions.appendChild(btn('Edit', 'btn btn-outline', function(){ openForm(it); }));
+    actions.appendChild(btn('Remove', 'btn btn-outline', function(){ removeItem(o); }));
+    li.appendChild(actions);
+    return li;
+  }
+  function group(title, list, empty){
+    const sec = el('section', 'ms-group');
+    sec.appendChild(el('h3', null, title));
+    if (!list.length) { sec.appendChild(el('p', 'ms-empty', empty)); return sec; }
+    const ul = el('ul', 'ms-list');
+    list.forEach(function(o){ ul.appendChild(occCard(o)); });
+    sec.appendChild(ul);
+    return sec;
+  }
+  function renderWeek(){
+    const from = weekStart(weekOffset), to = addDays(from, 6), today = todayStr();
+    weekLabel.textContent = (weekOffset === 0 ? 'This week · ' : weekOffset === 1 ? 'Next week · ' : weekOffset === -1 ? 'Last week · ' : '') + fmtDay(from) + ' – ' + fmtDay(to);
+    $('ms-thisweek').hidden = weekOffset === 0;
+    $('ms-prev').disabled = weekOffset <= -MAX_WEEKS;
+    $('ms-next').disabled = weekOffset >= MAX_WEEKS;
+    groupsBox.replaceChildren();
+    loadingNote.hidden = loaded || loadErr.classList.contains('show');
+    if (!loaded) return;
+    const occ = occurrences(from);
+    if (!items.length && weekOffset === 0) {
+      groupsBox.appendChild(el('p', 'ms-empty', 'Nothing planned yet. Add a meeting, a call, a group, or any support you want this week.'));
+      return;
+    }
+    if (weekOffset === 0) {
+      groupsBox.appendChild(group('Today', occ.filter(function(o){ return o.date === today && !o.done; }), 'Nothing left for today.'));
+      groupsBox.appendChild(group('Later this week', occ.filter(function(o){ return o.date > today; }), 'Nothing else planned this week.'));
+      const earlier = occ.filter(function(o){ return o.date < today && !o.done; });
+      if (earlier.length) groupsBox.appendChild(group('Earlier this week', earlier, ''));
+      groupsBox.appendChild(group('Completed', occ.filter(function(o){ return o.done; }), 'Nothing marked done yet.'));
+    } else {
+      groupsBox.appendChild(group(weekOffset < 0 ? 'That week' : 'Planned', occ, 'Nothing planned for this week.'));
+    }
+  }
+  async function setDone(o, want, button){
+    if (!client || !signedIn || busy) return;
+    const mySeq = seq;
+    busy = true; button.disabled = true;
+    try {
+      const { data, error } = await client.rpc('set_my_support_checkin', { p_item_id: o.item.id, p_occurrence_date: o.date, p_completed: want });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      const k = o.item.id + '|' + o.date;
+      if (row && row.completed) done[k] = true; else delete done[k];
+      busy = false;
+      renderWeek();
+    } catch(err){
+      if (mySeq !== seq) return;
+      busy = false; button.disabled = false;
+      showLoadError(err && err.code === '22023' ? err.message : 'Couldn’t update that right now. Please try again.');
+    }
+  }
+  async function removeItem(o){
+    const it = o.item;
+    const question = it.repeat_weekly
+      ? 'Stop repeating “' + it.name + '”? It won’t show from today on. Earlier weeks and anything you marked done stay.'
+      : 'Remove “' + it.name + '”?';
+    if (!window.confirm(question)) return;
+    if (!client || !signedIn || busy) return;
+    const mySeq = seq, today = todayStr();
+    // If today's occurrence is already marked done, keep it visible this week.
+    const from = done[it.id + '|' + today] ? addDays(today, 1) : today;
+    busy = true;
+    try {
+      const { error } = await client.rpc('remove_my_support_item', { p_id: it.id, p_from_date: from });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      busy = false;
+      await load();
+    } catch(err){
+      if (mySeq !== seq) return;
+      busy = false;
+      showLoadError('Couldn’t remove that right now. Please try again.');
+    }
+  }
+
+  // ---- Form ----
+  const PRESETS = Array.prototype.map.call(fType.options, function(o){ return o.value; }).filter(function(v){ return v && v !== '__other'; });
+  fType.addEventListener('change', function(){ fOtherWrap.hidden = fType.value !== '__other'; if (!fOtherWrap.hidden) fOther.focus(); });
+  function openForm(it){
+    editingId = it ? it.id : null;
+    formTitle.textContent = it ? 'Edit support' : 'Add support';
+    const cat = it && it.category || '';
+    if (!cat) { fType.value = ''; fOther.value = ''; }
+    else if (PRESETS.indexOf(cat) !== -1) { fType.value = cat; fOther.value = ''; }
+    else { fType.value = '__other'; fOther.value = cat; }
+    fOtherWrap.hidden = fType.value !== '__other';
+    fName.value = it ? it.name : '';
+    fDate.value = it ? it.scheduled_date : (weekOffset === 0 ? todayStr() : weekStart(weekOffset));
+    fTime.value = it && it.scheduled_time ? String(it.scheduled_time).slice(0, 5) : '';
+    fLoc.value = it && it.location_note || '';
+    fRepeat.checked = !!(it && it.repeat_weekly);
+    showErr(formError, '');
+    form.hidden = false; addBtn.hidden = true;
+    try { form.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); } catch(e){}
+    try { fName.focus({ preventScroll: true }); } catch(e){}
+  }
+  function closeForm(){ form.hidden = true; addBtn.hidden = false; editingId = null; try { addBtn.focus(); } catch(e){} }
+  addBtn.addEventListener('click', function(){ openForm(null); });
+  $('ms-cancel').addEventListener('click', closeForm);
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (!client || !signedIn || busy) return;
+    const name = fName.value.trim();
+    if (!name) { showErr(formError, 'Give it a name.'); fName.focus(); return; }
+    if (!fDate.value) { showErr(formError, 'Choose a day.'); fDate.focus(); return; }
+    const cat = fType.value === '__other' ? fOther.value.trim() : fType.value;
+    const mySeq = seq;
+    busy = true; saveBtn.disabled = true; showErr(formError, '');
+    try {
+      const { error } = await client.rpc('save_my_support_item', {
+        p_id: editingId, p_category: cat || null, p_name: name, p_scheduled_date: fDate.value,
+        p_scheduled_time: fTime.value || null, p_location_note: fLoc.value.trim() || null, p_repeat_weekly: fRepeat.checked
+      });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      busy = false; saveBtn.disabled = false;
+      closeForm();
+      await load();
+    } catch(err){
+      if (mySeq !== seq) return;
+      busy = false; saveBtn.disabled = false;
+      const code = err && err.code;
+      showErr(formError, (code === '22023' || code === 'P0002') ? err.message : 'Couldn’t save right now. Please try again.');
+    }
+  });
+
+  // ---- People (from My Recovery Plan; no copy) ----
+  function renderPeople(){
+    peopleCard.hidden = !signedIn;
+    peopleBody.replaceChildren();
+    if (!signedIn) return;
+    if (planState !== 'ready') { peopleBody.appendChild(el('p', 'ms-empty', planState === 'error' ? 'Couldn’t load your people right now.' : 'Loading…')); return; }
+    if (!contacts.length) {
+      peopleBody.appendChild(el('p', 'ms-empty', 'Add support people to My Recovery Plan.'));
+      const a = el('div', 'ms-actions'); const b = btn('Open My Recovery Plan', 'btn btn-outline'); b.setAttribute('data-nav', 'recoveryplan'); a.appendChild(b);
+      peopleBody.appendChild(a);
+      return;
+    }
+    const phoneOf = typeof window.FPRPhoneOf === 'function' ? window.FPRPhoneOf : function(){ return null; };
+    const ul = el('ul', 'tb-people');
+    contacts.forEach(function(c){
+      if (!c || !c.name) return;
+      const li = el('li', 'rp-person');
+      const head = el('p', 'rp-person-name', c.name);
+      if (c.role) head.appendChild(el('span', 'rp-person-role', c.role));
+      li.appendChild(head);
+      if (c.contact) li.appendChild(el('p', 'rp-person-contact', c.contact));
+      const tel = phoneOf(c.contact);
+      if (tel) {
+        const actions = el('div', 'rp-person-actions');
+        const call = el('a', 'btn btn-primary', 'Call'); call.href = 'tel:' + tel; call.setAttribute('aria-label', 'Call ' + c.name);
+        const text = el('a', 'btn btn-outline', 'Text'); text.href = 'sms:' + tel; text.setAttribute('aria-label', 'Text ' + c.name);
+        actions.appendChild(call); actions.appendChild(text);
+        li.appendChild(actions);
+      }
+      ul.appendChild(li);
+    });
+    peopleBody.appendChild(ul);
+  }
+
+  // ---- Loading / session ----
+  function showLoadError(msg){ loadErrText.textContent = msg || ''; loadErr.classList.toggle('show', !!msg); }
+  async function load(){
+    if (!client || !signedIn) return;
+    const mySeq = seq, myLoad = ++loadSeq;
+    const from = weekStart(weekOffset), to = addDays(from, 6);
+    showLoadError('');
+    renderWeek();
+    const res = await Promise.all([
+      client.rpc('list_my_support_items', { p_from: from, p_to: to }).then(function(r){ return r; }, function(e){ return { error: e }; }),
+      client.rpc('list_my_support_checkins', { p_from: from, p_to: to }).then(function(r){ return r; }, function(e){ return { error: e }; }),
+      client.rpc('get_my_recovery_plan').then(function(r){ return r; }, function(e){ return { error: e }; })
+    ]);
+    if (mySeq !== seq || myLoad !== loadSeq) return;
+    if (res[0].error || res[1].error) {
+      loaded = false;
+      showLoadError('We couldn’t load your week right now.');
+    } else {
+      items = res[0].data || [];
+      done = {};
+      (res[1].data || []).forEach(function(c){ done[c.item_id + '|' + c.occurrence_date] = true; });
+      loaded = true;
+    }
+    if (!res[2].error) {
+      const row = Array.isArray(res[2].data) ? res[2].data[0] : res[2].data;
+      contacts = row && Array.isArray(row.contacts) ? row.contacts : [];
+      planState = 'ready';
+    } else planState = 'error';
+    renderWeek(); renderPeople();
+  }
+  $('ms-retry').addEventListener('click', load);
+  $('ms-prev').addEventListener('click', function(){ if (weekOffset > -MAX_WEEKS) { weekOffset--; loaded = false; load(); } });
+  $('ms-next').addEventListener('click', function(){ if (weekOffset < MAX_WEEKS) { weekOffset++; loaded = false; load(); } });
+  $('ms-thisweek').addEventListener('click', function(){ weekOffset = 0; loaded = false; load(); try { $('ms-prev').focus(); } catch(e){} });
+  $('ms-signin').addEventListener('click', openAccount);
+
+  function render(){
+    signedOutView.hidden = signedIn;
+    signedInView.hidden = !signedIn;
+    renderPeople();
+    if (signedIn) renderWeek();
+  }
+  function reset(){
+    seq++; loaded = false; items = []; done = {}; editingId = null; busy = false; weekOffset = 0;
+    contacts = []; planState = 'idle';
+    form.hidden = true; addBtn.hidden = false; saveBtn.disabled = false;
+    [fName, fDate, fTime, fLoc, fOther].forEach(function(f){ f.value = ''; });
+    fType.value = ''; fRepeat.checked = false;
+    groupsBox.replaceChildren(); showLoadError(''); showErr(formError, '');
+  }
+  function pageActive(){ return page.classList.contains('active'); }
+  function onSession(session){
+    const nowUser = session && session.user ? session.user.id : null;
+    if (nowUser === sessionUser) return;
+    sessionUser = nowUser;
+    signedIn = !!nowUser;
+    reset(); // never carry one account's plan or check-offs into another
+    render();
+    if (signedIn && pageActive()) load();
+  }
+  renderLinks();
+  render();
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  }
+  document.addEventListener('fpr:pagechange', function(e){
+    if (e && e.detail && e.detail.page === 'meetings' && signedIn && form.hidden) load();
   });
 })();
 

@@ -761,6 +761,42 @@ Migration: `migrations/phase11d_toolbox_pins_v1.sql`. It's additive only (no DRO
   - `recovery_plans` and Community counts are unchanged.
 - **Browser fixture suite:** 79 checks passed.
 
+## Phase 11E — Meetings & Support v1
+
+Migration: `migrations/phase11e_meetings_support_v1.sql`. It's additive only (no DROP, ALTER or DELETE). It was applied through the normal migration tool on 2026-10-19 and is recorded in `schema_migrations` as row 14, `phase11e_meetings_support_v1`.
+
+- **`recovery_support_items`:**
+  - Columns: `id`, `user_id` (`ON DELETE CASCADE`), `category` (1–40 or NULL), `name` (1–120), `scheduled_date`, `scheduled_time`, `location_note` (1–300 or NULL), `repeat_weekly`, `ended_on`, `removed_at`, `created_at`, `updated_at`.
+  - A weekly item recurs on `scheduled_date`'s weekday, from that date through `ended_on`.
+  - Rows are never deleted. Removing a one-time item sets `removed_at`, and removing a weekly item sets `ended_on`.
+- **`recovery_support_checkins`:**
+  - Columns: `user_id`, `item_id` (FK to items), `occurrence_date`, `completed`, `completed_at`. The primary key is `(item_id, occurrence_date)`.
+  - Each occurrence is checked off on its own, and un-marking sets `completed = false`.
+- **Access:** RLS is on with **no policies**, and `public`, `anon` and `authenticated` have **no table privileges**. Members use only:
+  - `list_my_support_items(p_from, p_to)`: items that can occur in a range of up to 62 days;
+  - `list_my_support_checkins(p_from, p_to)`;
+  - `save_my_support_item(p_id, …)`: create (at most 50 active) or edit your own item;
+  - `remove_my_support_item(p_id, p_from_date)`;
+  - `set_my_support_checkin(p_item_id, p_occurrence_date, p_completed)`. The date must be a real occurrence (start date, weekday and end date are checked) and not in the future (one day of slack).
+
+  All are `security definer` with `search_path = public, pg_temp`, executable by `authenticated` only. They act on `auth.uid()`'s rows and never return `user_id`. Item ids are random UUIDs used only for the owner's own edits and check-offs. Errors use `42501` for no session, `22023` for validation and `P0002` for "not found / not yours".
+- **No other paths:** there's no admin policy or RPC, no view, no trigger, and no link to Community, profiles or notifications. People come from `get_my_recovery_plan`.
+
+**Verification (2026-10-19):**
+- **Privileges:** `has_table_privilege` is false for anon and authenticated on both tables, and EXECUTE is authenticated-only.
+- **Rollback DO block** (two throwaway users). These passed:
+  - anon RPC and table access are denied, and direct table access as authenticated is denied;
+  - a one-time item can be created (trimmed) and edited (a blank note becomes NULL);
+  - a weekly item is listed in range but not before its start;
+  - one check-off marks no future occurrences, and un-marking works;
+  - check-offs are rejected for the wrong weekday, before the start, in the future, or on the wrong day for a one-time item;
+  - name, length, date and range validation all work;
+  - removing a weekly item hides future weeks and keeps past weeks and check-offs, and marking after the end is rejected;
+  - removing a one-time item hides it, editing a removed item returns P0002, and all rows are retained;
+  - member B sees nothing of A's and gets P0002 trying to check off, edit or remove A's items;
+  - Community counts are unchanged.
+- **Browser fixture suite:** 69 checks passed.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -789,4 +825,4 @@ Migration: `migrations/phase11d_toolbox_pins_v1.sql`. It's additive only (no DRO
 
 **Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and on-site payment processing. Optional Support FPR contributions use an external Cash App link; no payment credentials or transaction records are stored by this website.
 
-Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`, `phase11d_toolbox_pins_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`, `phase11d_toolbox_pins_v1`, `phase11e_meetings_support_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
