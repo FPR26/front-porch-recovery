@@ -29,6 +29,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
 - **My Recovery Plan v1 (Phase 11C)** — complete: a private, signed-in plan for hard moments (see below).
+- **Milestones & Wins v1 (Phase 11H)** — complete: calculated recovery milestones plus private personal wins in one timeline (see below).
 - **Progress v1 (Phase 11G)** — complete: a private 7/30-day history view computed from existing data, with no new storage (see below).
 - **Today v1 (Phase 11F)** — complete: a signed-in daily dashboard over existing data, with no new storage (see below).
 - **Meetings & Support v1 (Phase 11E)** — complete: public meeting/resource finders plus a private weekly support plan (see below).
@@ -140,6 +141,27 @@ The backend is `supabase/migrations/phase11d_toolbox_pins_v1.sql` (applied; see 
   - **No new storage and no migration.** One parallel batch of 8 existing RPCs per load: `list_my_recovery_logs`, `get_my_recovery_goal`, `list_my_saved_daily_porch`, `list_my_support_items`, `list_my_support_checkins`, `get_my_recovery_plan`, `list_my_toolbox_pins`, `get_my_profile`.
   - **Caching:** results are reused until something changes. The other features dispatch `fpr:recoverychange` (log/goal), `fpr:dailysavedchange`, `fpr:pinschange`, `fpr:planchange` and `fpr:supportchange`, and `fpr:profilechange` already existed. The cache is also dropped when the local date changes (checked on each Today visit and when the tab becomes visible) or when the account changes.
   - **No timers or polling.** Signing out or switching accounts clears everything.
+
+## Milestones & Wins
+
+"Milestones & Wins" (`#milestones`) answers "How far have I come, and what do I want to remember?". It's private only: no sharing, badges, points, leaderboards or Community posting.
+
+- **Navigation:** the mobile menu and footer, "View milestones & wins →" on Today (plus a "Milestone today" card only on a milestone day), "Milestones & Wins →" on Progress, and "View Milestones & Wins" on My Recovery. It's not in the desktop nav.
+- **Recovery date source:** the **account profile `recovery_date`**, through the existing `get_my_profile` / `update_my_profile`.
+  - **Viewing never writes.** Changing an existing date, or who can see it, stays in the Account window ("Change date or who can see it" opens it).
+  - **No date on the account:** "Set my recovery date" saves one as **private**. If the account's visibility was members or everyone while it had no date, it's set to private, so a date is never disclosed by this page. Display name and bio are re-read and sent back unchanged.
+  - **Device counter date:** if the on-device Recovery Counter has a date, a note says it hasn't been added to the account. "Use this date for my private milestones" asks for confirmation first. Nothing is uploaded automatically, and the device counter itself is never changed.
+- **Milestones:** 7, 14, 30, 60 and 90 days, 6 months, 9 months, 1 year, 18 months, 2 years, then every year.
+  - **Date math:** they're calculated, never stored, with the Recovery Counter's calendar-aware `FPRMilestones.milestoneDate`. If the start day doesn't exist in the target month, the milestone rolls to the 1st of the next month. For example, a Feb 29 start's 1 Year is Mar 1 in non-leap years (and Feb 29 in leap years), and an Aug 31 start's 6 Months is Mar 1.
+  - **Invalid dates:** future dates are rejected, and very old dates (1900 on) work.
+- **Your recovery:** total days, "N years, N months" when it applies, the start date, and who can see that date.
+- **Next milestone:** its name, "N days away" and the date, plus the next 3 after it. On a milestone day it says "Today is your X milestone. Every one of those days counted." Nothing is celebrated publicly.
+- **Personal wins:** a title (required, up to 120 characters), a date (defaults to today, not in the future) and an optional private note (up to 500). Add, Edit, and Remove (asks first; it's a soft remove).
+- **My Recovery Timeline:** reached milestones and wins in one list, newest first, each labelled "Recovery milestone" or "Personal win" in text. Filters: All / Milestones / My wins.
+- **Empty state** (no date and no wins): "Your story is still being written", with Add a win and Set my recovery date (plus the device-date option if there is one).
+- **Data:** one parallel load (`get_my_profile` + `list_my_wins`). It refreshes on `fpr:profilechange`, a date change, or an account change. Sign-out clears everything.
+
+The backend is `supabase/migrations/phase11h_recovery_wins_v1.sql` (applied; see `supabase/README.md`).
 
 ## Progress
 

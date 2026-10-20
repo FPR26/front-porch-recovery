@@ -888,7 +888,7 @@
      .tb-pin, ...) on the private pages and the Toolbox, like the other
      [hidden] rules above. */
   #page-myrecovery [hidden], #page-daily [hidden], #page-recoveryplan [hidden],
-  #page-toolbox [hidden], #page-meetings [hidden], #page-today [hidden], #page-progress [hidden], #roughday-plan-link[hidden],
+  #page-toolbox [hidden], #page-meetings [hidden], #page-today [hidden], #page-progress [hidden], #page-milestones [hidden], #roughday-plan-link[hidden],
   #home-today[hidden]{display:none !important;}
 
   /* ---------- Today (Phase 11F) ---------- */
@@ -913,6 +913,8 @@
   .td-item .btn{min-height:44px; padding:8px 14px; font-size:.85rem; flex:none;}
   .td-tools{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; margin-top:4px;}
   .td-tools .btn{min-height:48px; padding:8px 10px; font-size:.85rem; white-space:normal; line-height:1.25;}
+  .td-milestone{border:2px solid var(--sage); background:rgba(167,184,168,.18);}
+  @media(min-width:860px){ .td-milestone{grid-column:1 / -1;} }
   .td-rough{background:var(--amber-soft); border-color:transparent;}
   .td-rough h2{color:#6b4e18;}
   .td-links{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
@@ -953,6 +955,27 @@
   .pg-list{list-style:none; padding:0; margin:4px 0 0;}
   .pg-list li{display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid var(--line); font-size:.92rem;}
   .pg-list li b{font-weight:700;}
+  /* ---------- Milestones & Wins (Phase 11H) ---------- */
+  .mw-wrap{max-width:720px;}
+  .mw-card{margin-top:14px;}
+  .td-card p.mw-big{font-size:2.2rem; font-weight:800; color:var(--sage-text); line-height:1.1;}
+  .mw-sub{font-size:1rem !important; font-weight:600; color:var(--charcoal) !important;}
+  .mw-today{font-size:1.05rem !important; font-weight:700; color:var(--charcoal) !important;}
+  .mw-upcoming{list-style:none; padding:0; margin:8px 0 0;}
+  .mw-upcoming li{display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px solid var(--line); font-size:.88rem;}
+  .mw-filter{margin-top:8px; flex-wrap:wrap;}
+  .mw-filter .pg-range-btn{padding:8px 14px;}
+  .mw-list{list-style:none; padding:0; margin:12px 0 0; border-left:2px solid var(--line); padding-left:14px; display:flex; flex-direction:column; gap:12px;}
+  .mw-item{position:relative;}
+  .mw-item::before{content:""; position:absolute; left:-21px; top:8px; width:12px; height:12px; border-radius:50%; background:var(--white); border:2px solid var(--sage-dark);}
+  .mw-item.win::before{background:var(--amber); border-color:var(--amber);}
+  .mw-date{font-size:.8rem; font-weight:700; color:var(--charcoal-soft);}
+  .mw-kind{display:inline-block; font-size:.72rem; font-weight:700; letter-spacing:.03em; text-transform:uppercase; border-radius:999px; padding:2px 8px; margin-top:4px; background:var(--gray); color:var(--charcoal-soft);}
+  .mw-item.win .mw-kind{background:var(--amber-soft); color:#6b4e18;}
+  .mw-title{font-size:1.02rem; font-weight:700; margin-top:4px; overflow-wrap:anywhere;}
+  .mw-note{font-size:.9rem; color:var(--charcoal-soft); margin-top:2px; white-space:pre-wrap; overflow-wrap:anywhere;}
+  .mw-item .ms-actions .btn{min-height:44px; padding:8px 14px; font-size:.85rem;}
+  .mw-device{font-size:.9rem !important; background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-top:6px;}
   .home-today-card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:16px 18px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;}
   .home-today-card h2{font-size:1.15rem;}
   .home-today-card p{font-size:.9rem; color:var(--charcoal-soft); margin-top:2px;}
@@ -1154,6 +1177,7 @@
     <button data-nav="checkin">Check In</button>
     <button data-nav="myrecovery">My Recovery</button>
     <button data-nav="progress">Progress</button>
+    <button data-nav="milestones">Milestones &amp; Wins</button>
     <button data-nav="recoveryplan">My Recovery Plan</button>
     <button data-nav="meetings">Meetings &amp; Support</button>
     <button data-nav="porch">The Porch</button>
@@ -1508,6 +1532,99 @@
   </section>
 </section>
 
+<!-- ================= MILESTONES & WINS (Phase 11H) =================
+     Private. Milestones are calculated from the account profile recovery
+     date (never stored); personal wins come from recovery_wins. No
+     sharing, badges or Community. Built by the Milestones & Wins script
+     (textContent only). -->
+<section class="page" id="page-milestones">
+  <section class="block bg-charcoal tight">
+    <div class="wrap td-wrap mw-wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;">Milestones recognize time. Wins recognize life.</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Milestones &amp; Wins</h1>
+      <p class="mr-private-pill" id="mw-private" hidden><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>Private to your account</p>
+      <p style="color:var(--gray); margin-top:10px; max-width:58ch;" id="mw-helper" hidden>Your wins and milestone timeline do not appear in Community.</p>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap td-wrap mw-wrap">
+      <div class="form-card mr-card" id="mw-signedout">
+        <h2>How far you’ve come</h2>
+        <p>Sign in to see your recovery milestones and keep a private list of the wins you want to remember.</p>
+        <button type="button" class="btn btn-primary" id="mw-signin">Sign in</button>
+        <p class="mr-muted">The <button type="button" class="mr-link" data-nav="home" data-scroll-target="home-counter">Recovery Counter</button> works without an account.</p>
+      </div>
+
+      <div id="mw-signedin" hidden>
+        <div class="status-msg status-error" id="mw-load-error" role="alert"><span id="mw-load-error-text"></span> <button type="button" class="mr-link" id="mw-retry">Try again</button></div>
+        <p class="mr-state" id="mw-loading" role="status">Loading…</p>
+
+        <div class="form-card mr-card" id="mw-empty" hidden>
+          <h2>Your story is still being written</h2>
+          <p>Recovery is made of more than anniversaries. Add the moments you want to remember.</p>
+          <div class="mr-actions">
+            <button type="button" class="btn btn-primary" data-mw="add">Add a win</button>
+            <button type="button" class="btn btn-outline" data-mw="setdate">Set my recovery date</button>
+          </div>
+        </div>
+
+        <section class="td-card mw-card" id="mw-length" aria-labelledby="mw-length-title" hidden><h2 id="mw-length-title">Your recovery</h2><div class="mw-body"></div></section>
+
+        <form class="td-card mw-card" id="mw-date-form" novalidate hidden aria-labelledby="mw-date-title">
+          <h2 id="mw-date-title">Set my recovery date</h2>
+          <div class="field">
+            <label for="mw-date-input">Recovery date</label>
+            <input type="date" id="mw-date-input" required aria-required="true" aria-describedby="mw-date-hint">
+          </div>
+          <p class="mr-hint rp-help" id="mw-date-hint"></p>
+          <p class="field-error" id="mw-date-error" role="alert"></p>
+          <div class="mr-actions">
+            <button type="submit" class="btn btn-primary" id="mw-date-save">Save date</button>
+            <button type="button" class="btn btn-outline" id="mw-date-cancel">Cancel</button>
+          </div>
+        </form>
+
+        <section class="td-card mw-card" id="mw-next" aria-labelledby="mw-next-title" hidden><h2 id="mw-next-title">Next milestone</h2><div class="mw-body"></div></section>
+
+        <div class="ms-add-row" id="mw-add-row" hidden><button type="button" class="btn btn-primary" data-mw="add">Add a win</button></div>
+
+        <form class="td-card mw-card" id="mw-win-form" novalidate hidden aria-labelledby="mw-win-title">
+          <h2 id="mw-win-title">Add a win</h2>
+          <div class="field">
+            <label for="mw-win-name">What happened?</label>
+            <input type="text" id="mw-win-name" maxlength="120" autocomplete="off" required aria-required="true" placeholder="e.g. Made it through a hard weekend">
+          </div>
+          <div class="field">
+            <label for="mw-win-date">Date</label>
+            <input type="date" id="mw-win-date" required aria-required="true">
+          </div>
+          <div class="field">
+            <label for="mw-win-note">Note <span class="mr-hint">(optional, private)</span></label>
+            <textarea id="mw-win-note" maxlength="500" rows="3"></textarea>
+            <p class="mr-count" id="mw-win-count" aria-live="polite"></p>
+          </div>
+          <p class="field-error" id="mw-win-error" role="alert"></p>
+          <div class="mr-actions">
+            <button type="submit" class="btn btn-primary" id="mw-win-save">Save win</button>
+            <button type="button" class="btn btn-outline" id="mw-win-cancel">Cancel</button>
+          </div>
+        </form>
+
+        <section class="td-card mw-card" id="mw-timeline" aria-labelledby="mw-timeline-title" hidden>
+          <h2 id="mw-timeline-title">My Recovery Timeline</h2>
+          <div class="pg-range mw-filter" role="group" aria-label="Show">
+            <button type="button" class="pg-range-btn" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" class="pg-range-btn" data-filter="milestones" aria-pressed="false">Milestones</button>
+            <button type="button" class="pg-range-btn" data-filter="wins" aria-pressed="false">My wins</button>
+          </div>
+          <ol class="mw-list" id="mw-list"></ol>
+        </section>
+      </div>
+    </div>
+  </section>
+</section>
+
 <!-- ================= PROGRESS (Phase 11G) =================
      Private history view computed from existing data (no storage of its
      own). Facts only: no scores, judgments or interpretation. Built by the
@@ -1559,6 +1676,7 @@
           <section class="td-card pg-card" id="pg-porch" aria-labelledby="pg-porch-title"><h2 id="pg-porch-title">Daily Porch</h2><div class="pg-body"></div></section>
         </div>
         <section class="td-card pg-card" id="pg-goal" aria-labelledby="pg-goal-title" hidden><h2 id="pg-goal-title">Current goal</h2><div class="pg-body"></div></section>
+        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="milestones">Milestones &amp; Wins →</button></p>
       </div>
     </div>
   </section>
@@ -1594,6 +1712,7 @@
       <div id="td-signedin" hidden>
         <div class="status-msg status-error" id="td-load-error" role="alert"><span id="td-load-error-text"></span> <button type="button" class="mr-link" id="td-retry">Try again</button></div>
         <div class="td-grid">
+          <section class="td-card td-milestone" id="td-milestone" aria-labelledby="td-milestone-title" hidden><h2 id="td-milestone-title">Milestone today</h2><div class="td-body"></div></section>
           <section class="td-card" id="td-porch" aria-labelledby="td-porch-title"><h2 id="td-porch-title">Daily Porch</h2><div class="td-body"></div></section>
           <section class="td-card" id="td-recovery" aria-labelledby="td-recovery-title"><h2 id="td-recovery-title">My Recovery</h2><div class="td-body"></div></section>
           <section class="td-card" id="td-goal" aria-labelledby="td-goal-title"><h2 id="td-goal-title">My Goal</h2><div class="td-body"></div></section>
@@ -1606,7 +1725,7 @@
             <div class="td-actions"><button type="button" class="btn btn-outline" data-nav="roughday">Open Rough Day</button></div>
           </section>
         </div>
-        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="progress">View my progress →</button></p>
+        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="progress">View my progress →</button> · <button type="button" class="mr-link" data-nav="milestones">View milestones &amp; wins →</button></p>
       </div>
     </div>
   </section>
@@ -1683,7 +1802,7 @@
         <section class="form-card mr-card" id="mr-summary" aria-labelledby="mr-summary-title">
           <h2 id="mr-summary-title">Last 7 days</h2>
           <div id="mr-summary-body"></div>
-          <p class="mr-muted"><button type="button" class="mr-link" data-nav="progress">View Progress</button> for your last 7 or 30 days.</p>
+          <p class="mr-muted"><button type="button" class="mr-link" data-nav="progress">View Progress</button> for your last 7 or 30 days · <button type="button" class="mr-link" data-nav="milestones">View Milestones &amp; Wins</button></p>
         </section>
 
         <section class="form-card mr-card" id="mr-goal" aria-labelledby="mr-goal-title">
@@ -2753,6 +2872,9 @@
       <h2>My Recovery Plan (private to your account)</h2>
       <p>If you build a My Recovery Plan, what you write is saved with your account: your next steps, what helps you, your warning signs, why you're choosing recovery, and up to five people you list with an optional phone number or note. You type these in yourself. The site never reads your phone's contacts, and Call/Text buttons just open your phone's own dialer or messaging app; nothing is called or sent automatically. Your plan follows the same rules as My Recovery: only you can see it in the site, it never appears in the Community, on your profile, or in notifications, it isn't shared or exported, and FPR's admin tools have no screen for it. It's your own plan, not medical care or an emergency service.</p>
 
+      <h2>Milestones &amp; Wins (private to your account)</h2>
+      <p>Milestones are worked out from the recovery date in your account profile; nothing extra is stored for them, and who can see that date stays exactly as you've set it. If your account has no recovery date, you can add one from Milestones &amp; Wins; it's saved as private (only you), and the Recovery Counter date on your device is only added if you choose to and confirm it. The personal wins you add (a title, a date, and an optional note) are saved with your account. Only you can see them in the site. They never appear in the Community, on your profile, or in notifications, there are no badges, points, or sharing, and FPR's admin tools have no screen for them.</p>
+
       <h2>Meetings &amp; Support plan (private to your account)</h2>
       <p>Anyone can use the Find Support links without an account; they open the organizations' own sites. If you sign in and plan your week, the support items you add (name, type, day, time, and any location, link, or note) and which ones you mark done are saved with your account. Only you can see them in the site. They never appear in the Community, on your profile, or in notifications, there are no streaks or counts, and FPR's admin tools have no screen for them. Removing an item keeps the days you already marked done.</p>
 
@@ -3230,6 +3352,7 @@
           <li><a href="#" data-nav="checkin">Check In</a></li>
           <li><a href="#" data-nav="myrecovery">My Recovery</a></li>
           <li><a href="#" data-nav="progress">Progress</a></li>
+          <li><a href="#" data-nav="milestones">Milestones &amp; Wins</a></li>
           <li><a href="#" data-nav="recoveryplan">My Recovery Plan</a></li>
           <li><a href="#" data-nav="meetings">Meetings &amp; Support</a></li>
           <li><a href="#" data-nav="porch">The Porch</a></li>
@@ -15784,6 +15907,18 @@ const FPRBadge = (function(){
     b.appendChild(grid);
     if (mine.length > 4) actions(b).appendChild(navBtn('Show all tools →', 'btn btn-outline', 'toolbox', 'tb-mine'));
   }
+  // Only when one of the account recovery date's milestones falls today.
+  function renderMilestoneToday(){
+    const card = $('td-milestone');
+    const ms = signedIn && loaded && d.recoveryDate && typeof window.FPRWinsMilestoneToday === 'function'
+      ? window.FPRWinsMilestoneToday(d.recoveryDate) : null;
+    card.hidden = !ms;
+    const b = body('td-milestone');
+    if (!ms) return;
+    b.appendChild(el('p', 'td-title', ms.label));
+    b.appendChild(el('p', null, 'Today is your ' + ms.label + ' milestone.'));
+    actions(b).appendChild(navBtn('Open Milestones & Wins', 'btn btn-primary', 'milestones'));
+  }
   function renderPlan(){
     const b = body('td-plan');
     if (d.hasPlan == null) return unavailable(b);
@@ -15795,6 +15930,7 @@ const FPRBadge = (function(){
     $('td-signedout').hidden = signedIn;
     $('td-signedin').hidden = !signedIn;
     if (homeCard) homeCard.hidden = !signedIn;
+    renderMilestoneToday();
     if (!signedIn || !loaded) {
       ['td-porch', 'td-recovery', 'td-goal', 'td-support', 'td-toolbox', 'td-plan'].forEach(function(id){
         if (id === 'td-porch' && signedIn) return renderPorch();
@@ -15838,7 +15974,8 @@ const FPRBadge = (function(){
       // Only whether a plan exists; its private text is not kept.
       hasPlan: plan ? !!(p && (p.warning_signs || p.what_helps || p.reasons_for_recovery || p.step_1 || p.step_2 || p.step_3 || (Array.isArray(p.contacts) && p.contacts.length))) : null,
       pins: pins ? pins.map(function(x){ return x.tool_key; }) : null,
-      name: prof && prof[0] ? prof[0].display_name : ''
+      name: prof && prof[0] ? prof[0].display_name : '',
+      recoveryDate: prof && prof[0] ? prof[0].recovery_date : null // only used to spot a milestone today
     };
     loaded = true; stale = false; loadedFor = date;
     if (res.every(function(r){ return r && r.error; })) showLoadError('We couldn’t load your day right now.');
@@ -16140,6 +16277,342 @@ const FPRBadge = (function(){
   });
   document.addEventListener('fpr:pagechange', function(e){
     if (!(e && e.detail && e.detail.page === 'progress') || !signedIn) return;
+    if (!loaded || stale || loadedFor !== todayStr()) load(); else render();
+  });
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible' && signedIn && pageActive() && loadedFor !== todayStr()) load();
+  });
+  render();
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  }
+})();
+
+/* ---------- Milestones & Wins (Phase 11H) ----------
+   Private. Recovery milestones are CALCULATED (never stored) from the
+   account profile recovery_date with the same calendar-aware date math as
+   the Recovery Counter (FPRMilestones.milestoneDate: e.g. a Feb 29 or
+   Jan 31 start rolls to Mar 1 when that day doesn't exist). Personal wins
+   come from list_my_wins / save_my_win / remove_my_win (own rows only).
+   The on-device Recovery Counter date is never uploaded automatically:
+   the member can choose to add it to their account, with confirmation.
+   Setting a date here only happens when the account has none, and it is
+   saved as private; an existing date or its visibility is never changed
+   here (that stays in the Account window). Nothing is shared, badged, or
+   posted. Member text is rendered with textContent. */
+(function(){
+  const page = document.getElementById('page-milestones');
+  const M = (typeof FPRMilestones !== 'undefined') ? FPRMilestones : null;
+  if (!page || !M) return;
+  const client = window.__fprSupabaseClient || null;
+  const $ = function(id){ return document.getElementById(id); };
+  const DEFS = [
+    { label: '7 Days', unit: 'day', n: 7 }, { label: '14 Days', unit: 'day', n: 14 },
+    { label: '30 Days', unit: 'day', n: 30 }, { label: '60 Days', unit: 'day', n: 60 },
+    { label: '90 Days', unit: 'day', n: 90 }, { label: '6 Months', unit: 'month', n: 6 },
+    { label: '9 Months', unit: 'month', n: 9 }, { label: '1 Year', unit: 'year', n: 1 },
+    { label: '18 Months', unit: 'month', n: 18 }, { label: '2 Years', unit: 'year', n: 2 }
+  ];
+  const WHO = { private: 'Only you', members: 'Signed-in members', public: 'Everyone' };
+
+  // Every milestone for a start date, oldest first, with reached flags.
+  function milestones(startStr, today){
+    const start = M.parseYMD(startStr);
+    if (!start || M.compareYMD(start, today) > 0) return null;
+    const list = DEFS.slice();
+    const lastYear = Math.max(2, M.fullYearsBetween(start, today) + 1);
+    for (let n = 3; n <= lastYear; n++) list.push({ label: n + ' Years', unit: 'year', n: n });
+    const tu = M.utcOf(today);
+    return list.map(function(ms){
+      const date = M.milestoneDate(start, ms), utc = M.utcOf(date);
+      return { label: ms.label, ymd: date, date: M.ymdString(date), utc: utc, reached: utc <= tu, today: utc === tu };
+    }).sort(function(a, b){ return a.utc - b.utc; });
+  }
+  window.FPRWinsMilestones = milestones;
+  window.FPRWinsMilestoneToday = function(startStr){
+    const all = milestones(startStr, M.todayYMD());
+    return all ? (all.find(function(m){ return m.today; }) || null) : null;
+  };
+
+  let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0;
+  let loaded = false, stale = true, loadedFor = null, busy = false;
+  let profile = null, wins = [], filter = 'all', editingId = null;
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function btn(label, cls, onClick){ const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; }
+  function body(id){ const b = page.querySelector('#' + id + ' .mw-body'); b.replaceChildren(); return b; }
+  function todayStr(){ return M.ymdString(M.todayYMD()); }
+  function longDate(s){ const p = M.parseYMD(s); try { return new Date(M.utcOf(p)).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }); } catch(e){ return s; } }
+  function showErr(node, msg){ node.textContent = msg || ''; node.classList.toggle('show', !!msg); }
+  function openAccount(){ const b = $('header-account-btn'); if (b) b.click(); }
+  function deviceDate(){ try { const s = M.savedStart(); return s ? M.ymdString(s) : null; } catch(e){ return null; } }
+
+  // ---- Recovery length + setup ----
+  function deviceNote(parent){
+    const local = deviceDate();
+    if (!local) return;
+    const box = el('p', 'mw-device', 'Your Recovery Counter has a date on this device (' + longDate(local) + '), but it hasn’t been added to your account.');
+    parent.appendChild(box);
+    const a = el('div', 'td-actions');
+    a.appendChild(btn('Use this date for my private milestones', 'btn btn-outline', function(){
+      if (!window.confirm('Add ' + longDate(local) + ' to your account as your recovery date? It will be private to you. You can change who can see it later in your profile.')) return;
+      saveDate(local);
+    }));
+    parent.appendChild(a);
+  }
+  function renderLength(){
+    const card = $('mw-length');
+    const b = body('mw-length');
+    const date = profile && profile.recovery_date;
+    card.hidden = !(signedIn && loaded) || (!date && !wins.length); // the empty state covers "no date, no wins"
+    if (card.hidden) return;
+    if (!date) {
+      b.appendChild(el('p', null, 'Add your recovery date to see your milestones. It’s saved to your account as private.'));
+      deviceNote(b);
+      const a = el('div', 'td-actions'); a.appendChild(btn('Set my recovery date', 'btn btn-primary', openDateForm)); b.appendChild(a);
+      return;
+    }
+    const start = M.parseYMD(date), today = M.todayYMD();
+    const days = M.daysBetween(start, today);
+    b.appendChild(el('p', 'mw-big', days.toLocaleString() + (days === 1 ? ' day' : ' days')));
+    const y = M.fullYearsBetween(start, today), mo = M.fullMonthsBetween(start, today) - y * 12;
+    const parts = [];
+    if (y) parts.push(y + (y === 1 ? ' year' : ' years'));
+    if (mo) parts.push(mo + (mo === 1 ? ' month' : ' months'));
+    if (parts.length) b.appendChild(el('p', 'mw-sub', parts.join(', ')));
+    b.appendChild(el('p', null, 'Since ' + longDate(date) + ' · Who can see this date: ' + (WHO[profile.recovery_visibility] || 'Only you')));
+    const a = el('div', 'td-actions'); a.appendChild(btn('Change date or who can see it', 'btn btn-outline', openAccount)); b.appendChild(a);
+  }
+  function renderNext(){
+    const card = $('mw-next');
+    const all = signedIn && loaded && profile && profile.recovery_date ? milestones(profile.recovery_date, M.todayYMD()) : null;
+    card.hidden = !all;
+    const b = body('mw-next');
+    if (!all) return;
+    const todayMs = all.find(function(m){ return m.today; });
+    const upcoming = all.filter(function(m){ return !m.reached; });
+    if (todayMs) {
+      b.appendChild(el('p', 'mw-today', 'Today is your ' + todayMs.label + ' milestone.'));
+      b.appendChild(el('p', null, 'Every one of those days counted.'));
+    }
+    const next = upcoming[0];
+    if (next) {
+      if (todayMs) b.appendChild(el('p', 'pg-chart-title', 'After that'));
+      b.appendChild(el('p', 'td-title', next.label));
+      const away = M.daysBetween(M.todayYMD(), next.ymd);
+      b.appendChild(el('p', 'mw-sub', away === 1 ? '1 day away' : away.toLocaleString() + ' days away'));
+      b.appendChild(el('p', null, longDate(next.date)));
+      const later = upcoming.slice(1, 4);
+      if (later.length) {
+        const ul = el('ul', 'mw-upcoming'); ul.setAttribute('aria-label', 'Coming up after that');
+        later.forEach(function(m){ const li = el('li'); li.appendChild(el('span', null, m.label)); li.appendChild(el('span', null, longDate(m.date))); ul.appendChild(li); });
+        b.appendChild(ul);
+      }
+    }
+  }
+
+  // ---- Timeline ----
+  function renderTimeline(){
+    const card = $('mw-timeline'), list = $('mw-list');
+    list.replaceChildren();
+    const date = profile && profile.recovery_date;
+    card.hidden = !(signedIn && loaded) || (!date && !wins.length);
+    page.querySelectorAll('.mw-filter .pg-range-btn').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.filter === filter)); });
+    if (card.hidden) return;
+    const items = [];
+    if (filter !== 'wins' && date) (milestones(date, M.todayYMD()) || []).filter(function(m){ return m.reached; }).forEach(function(m){ items.push({ kind: 'milestone', date: m.date, title: '✓ ' + m.label }); });
+    if (filter !== 'milestones') wins.forEach(function(w){ items.push({ kind: 'win', date: w.win_date, title: w.title, note: w.note, win: w }); });
+    items.sort(function(a, b){ return a.date === b.date ? (a.kind === 'milestone' ? -1 : 1) : (a.date < b.date ? 1 : -1); }); // newest first
+    if (!items.length) { list.appendChild(el('li', 'ms-empty', filter === 'wins' ? 'No wins added yet.' : filter === 'milestones' ? 'Your first milestone is on its way.' : 'Nothing here yet.')); return; }
+    items.forEach(function(it){
+      const li = el('li', 'mw-item ' + it.kind);
+      li.appendChild(el('p', 'mw-date', longDate(it.date)));
+      li.appendChild(el('span', 'mw-kind', it.kind === 'win' ? 'Personal win' : 'Recovery milestone'));
+      li.appendChild(el('p', 'mw-title', it.title));
+      if (it.note) li.appendChild(el('p', 'mw-note', it.note));
+      if (it.win) {
+        const a = el('div', 'ms-actions');
+        const e = btn('Edit', 'btn btn-outline', function(){ openWinForm(it.win); }); e.setAttribute('aria-label', 'Edit win: ' + it.title);
+        const r = btn('Remove', 'btn btn-outline', function(){ removeWin(it.win); }); r.setAttribute('aria-label', 'Remove win: ' + it.title);
+        a.appendChild(e); a.appendChild(r); li.appendChild(a);
+      }
+      list.appendChild(li);
+    });
+  }
+  page.querySelectorAll('.mw-filter .pg-range-btn').forEach(function(b){ b.addEventListener('click', function(){ filter = b.dataset.filter; renderTimeline(); }); });
+
+  // ---- Empty state ----
+  function renderEmpty(){
+    const box = $('mw-empty');
+    const empty = signedIn && loaded && !(profile && profile.recovery_date) && !wins.length;
+    box.hidden = !empty;
+    box.querySelectorAll('.mw-device, .td-actions').forEach(function(n){ n.remove(); });
+    if (empty) deviceNote(box);
+  }
+  function render(){
+    $('mw-signedout').hidden = signedIn;
+    $('mw-signedin').hidden = !signedIn;
+    $('mw-private').hidden = !signedIn;
+    $('mw-helper').hidden = !signedIn;
+    $('mw-loading').hidden = !signedIn || loaded || $('mw-load-error').classList.contains('show');
+    $('mw-add-row').hidden = !(signedIn && loaded) || !$('mw-win-form').hidden;
+    renderEmpty(); renderLength(); renderNext(); renderTimeline();
+  }
+
+  // ---- Set recovery date (only when the account has none; saved private) ----
+  function openDateForm(){
+    const f = $('mw-date-form');
+    $('mw-date-input').max = todayStr();
+    $('mw-date-input').value = deviceDate() || '';
+    $('mw-date-hint').textContent = 'Saved to your account as private (only you can see it). You can change who can see it later in your profile. This doesn’t change the Recovery Counter on this device.';
+    showErr($('mw-date-error'), '');
+    f.hidden = false;
+    try { f.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); } catch(e){}
+    try { $('mw-date-input').focus({ preventScroll: true }); } catch(e){}
+  }
+  page.querySelectorAll('[data-mw="setdate"]').forEach(function(b){ b.addEventListener('click', openDateForm); });
+  $('mw-date-cancel').addEventListener('click', function(){ $('mw-date-form').hidden = true; });
+  $('mw-date-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    const v = $('mw-date-input').value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || v > todayStr() || v < '1900-01-01') { showErr($('mw-date-error'), 'Please choose a date that isn’t in the future.'); return; }
+    saveDate(v);
+  });
+  async function saveDate(dateStr){
+    if (!client || !signedIn || busy) return;
+    const mySeq = seq;
+    busy = true; showErr($('mw-date-error'), ''); showLoadError('');
+    try {
+      // Re-read the profile so only the date changes; never overwrite an existing date here.
+      const cur = await client.rpc('get_my_profile');
+      if (mySeq !== seq) return;
+      if (cur.error) throw cur.error;
+      const p = Array.isArray(cur.data) ? cur.data[0] : cur.data;
+      if (!p) throw new Error('No profile');
+      if (p.recovery_date) { profile = p; busy = false; $('mw-date-form').hidden = true; render(); return; }
+      const { data, error } = await client.rpc('update_my_profile', {
+        p_display_name: p.display_name, p_bio: p.bio || null, p_recovery_date: dateStr,
+        p_recovery_visibility: 'private' // the account had no date: start it private, never disclosed
+      });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      profile = (Array.isArray(data) ? data[0] : data) || p;
+      busy = false;
+      $('mw-date-form').hidden = true;
+      render();
+      try { document.dispatchEvent(new CustomEvent('fpr:profilechange', { detail: { source: 'milestones' } })); } catch(e){}
+      const card = $('mw-length'); try { card.setAttribute('tabindex', '-1'); card.focus(); } catch(e){}
+    } catch(err){
+      if (mySeq !== seq) return;
+      busy = false;
+      const msg = (err && err.code === '22023') ? err.message : 'Couldn’t save your recovery date right now. Please try again.';
+      if (!$('mw-date-form').hidden) showErr($('mw-date-error'), msg); else showLoadError(msg);
+    }
+  }
+
+  // ---- Wins ----
+  function openWinForm(w){
+    const f = $('mw-win-form');
+    editingId = w ? w.id : null;
+    $('mw-win-title').textContent = w ? 'Edit win' : 'Add a win';
+    $('mw-win-name').value = w ? w.title : '';
+    $('mw-win-date').value = w ? w.win_date : todayStr();
+    $('mw-win-date').max = todayStr();
+    $('mw-win-note').value = w && w.note || '';
+    $('mw-win-count').textContent = $('mw-win-note').value.length ? $('mw-win-note').value.length + ' / 500' : '';
+    showErr($('mw-win-error'), '');
+    f.hidden = false; $('mw-add-row').hidden = true;
+    try { f.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); } catch(e){}
+    try { $('mw-win-name').focus({ preventScroll: true }); } catch(e){}
+  }
+  function closeWinForm(){ $('mw-win-form').hidden = true; editingId = null; render(); }
+  page.querySelectorAll('[data-mw="add"]').forEach(function(b){ b.addEventListener('click', function(){ openWinForm(null); }); });
+  $('mw-win-cancel').addEventListener('click', closeWinForm);
+  $('mw-win-note').addEventListener('input', function(){ const n = $('mw-win-note').value.length; $('mw-win-count').textContent = n ? n + ' / 500' : ''; });
+  $('mw-win-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (!client || !signedIn || busy) return;
+    const title = $('mw-win-name').value.trim(), date = $('mw-win-date').value, note = $('mw-win-note').value.trim();
+    if (!title) { showErr($('mw-win-error'), 'Give your win a title.'); $('mw-win-name').focus(); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayStr() || date < '1900-01-01') { showErr($('mw-win-error'), 'Choose a date that isn’t in the future.'); return; }
+    const mySeq = seq;
+    busy = true; $('mw-win-save').disabled = true; showErr($('mw-win-error'), '');
+    try {
+      const { data, error } = await client.rpc('save_my_win', { p_id: editingId, p_win_date: date, p_title: title, p_note: note || null });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      wins = wins.filter(function(w){ return w.id !== row.id; }).concat([row]);
+      busy = false; $('mw-win-save').disabled = false;
+      closeWinForm();
+    } catch(err){
+      if (mySeq !== seq) return;
+      busy = false; $('mw-win-save').disabled = false;
+      const code = err && err.code;
+      showErr($('mw-win-error'), (code === '22023' || code === 'P0002') ? err.message : 'Couldn’t save your win right now. Please try again.');
+    }
+  });
+  async function removeWin(w){
+    if (!window.confirm('Remove “' + w.title + '” from your wins?')) return;
+    if (!client || !signedIn || busy) return;
+    const mySeq = seq;
+    busy = true;
+    try {
+      const { error } = await client.rpc('remove_my_win', { p_id: w.id });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      wins = wins.filter(function(x){ return x.id !== w.id; });
+      busy = false;
+      render();
+      try { $('mw-timeline-title').setAttribute('tabindex', '-1'); $('mw-timeline-title').focus(); } catch(e){}
+    } catch(err){
+      if (mySeq !== seq) return;
+      busy = false;
+      showLoadError('Couldn’t remove that win right now. Please try again.');
+    }
+  }
+
+  // ---- Loading / session ----
+  function showLoadError(msg){ $('mw-load-error-text').textContent = msg || ''; $('mw-load-error').classList.toggle('show', !!msg); }
+  async function load(){
+    if (!client || !signedIn) return;
+    const mySeq = seq, myLoad = ++loadSeq;
+    showLoadError('');
+    const call = function(fn){ return client.rpc(fn).then(function(r){ return r; }, function(e){ return { error: e }; }); };
+    const res = await Promise.all([call('get_my_profile'), call('list_my_wins')]);
+    if (mySeq !== seq || myLoad !== loadSeq) return;
+    if (res[0].error || res[1].error) {
+      showLoadError('We couldn’t load your milestones and wins right now.');
+    } else {
+      const p = Array.isArray(res[0].data) ? res[0].data[0] : res[0].data;
+      profile = p ? { recovery_date: p.recovery_date, recovery_visibility: p.recovery_visibility } : null; // only what this page needs
+      wins = res[1].data || [];
+      loaded = true; stale = false; loadedFor = todayStr();
+    }
+    render();
+  }
+  $('mw-retry').addEventListener('click', function(){ stale = true; load(); });
+  $('mw-signin').addEventListener('click', openAccount);
+
+  function pageActive(){ return page.classList.contains('active'); }
+  function onSession(session){
+    const nowUser = session && session.user ? session.user.id : null;
+    if (nowUser === sessionUser) return;
+    sessionUser = nowUser;
+    signedIn = !!nowUser;
+    seq++; loaded = false; stale = true; loadedFor = null; busy = false; profile = null; wins = []; filter = 'all'; editingId = null; // never carry one account's story into another
+    $('mw-win-form').hidden = true; $('mw-date-form').hidden = true;
+    ['mw-win-name', 'mw-win-date', 'mw-win-note', 'mw-date-input'].forEach(function(id){ $(id).value = ''; });
+    showLoadError('');
+    render();
+    if (signedIn && pageActive()) load();
+  }
+  document.addEventListener('fpr:profilechange', function(e){
+    if (e && e.detail && e.detail.source === 'milestones') return;
+    stale = true; if (signedIn && pageActive()) load();
+  });
+  document.addEventListener('fpr:pagechange', function(e){
+    if (!(e && e.detail && e.detail.page === 'milestones') || !signedIn) return;
     if (!loaded || stale || loadedFor !== todayStr()) load(); else render();
   });
   document.addEventListener('visibilitychange', function(){

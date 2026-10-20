@@ -805,6 +805,33 @@ Today is a read-only dashboard over the 11A–11E RPCs, plus `get_my_profile`. I
 
 Progress is computed in the browser from existing 11A, 11B, 11E and goal RPCs, using one 30-day batch. It adds **no tables, functions, grants or migration rows**; `schema_migrations` stays at 14. The existing RPCs already cover 30 days: logs return at most 60 rows, support ranges allow up to 62 days, and reflections at most 60 rows. Reflection text is reduced to "morning/evening present" as soon as it arrives. No new data is stored, so the Privacy Policy is unchanged.
 
+## Phase 11H — Milestones & Wins v1
+
+Migration: `migrations/phase11h_recovery_wins_v1.sql`. It's additive only (no DROP, ALTER or DELETE). It was applied through the normal migration tool on 2026-10-19 and is recorded in `schema_migrations` as row 15, `phase11h_recovery_wins_v1`. Milestones are **not** stored; they're calculated from `profiles.recovery_date`.
+
+- **`recovery_wins`:**
+  - Columns: `id`, `user_id` (`ON DELETE CASCADE`), `win_date`, `title` (1–120), `note` (1–500 or NULL), `removed_at`, `created_at`, `updated_at`.
+  - Removing a win sets `removed_at`; rows are never deleted.
+- **Access:** RLS is on with **no policies**, and `public`, `anon` and `authenticated` have **no table privileges**. Members use only:
+  - `list_my_wins()`: newest first, at most 500;
+  - `save_my_win(p_id, p_win_date, p_title, p_note)`: create (at most 500 kept) or edit your own. The date can't be more than a day in the future and can't be before 1900.
+  - `remove_my_win(p_id)`.
+
+  All are `security definer` with `search_path = public, pg_temp`, executable by `authenticated` only. They act on `auth.uid()`'s rows and never return `user_id`. Errors use `42501`, `22023`, and `P0002` for "not found / not yours".
+- **Recovery date:** the existing, unchanged `update_my_profile` is used only when the account has no date, sending the current name and bio back with visibility `private`. The existing `community_member_profiles_public` view keeps a private date hidden from other members and anonymous visitors, and shows it only to the owner.
+
+**Verification (2026-10-19):**
+- **Privileges:** `has_table_privilege` is false for anon and authenticated, and EXECUTE is authenticated-only.
+- **Rollback DO block** (throwaway users). These passed:
+  - anon RPC and table access are denied, and direct table access as authenticated is denied;
+  - adding a win trims it, a blank note becomes NULL, an edit keeps the same row, and the list is newest first;
+  - a soft remove hides the win but keeps the row; removing it again or editing it returns P0002;
+  - a blank title, 121 characters, a 501-character note and a future date are rejected, and a 1950 date is accepted;
+  - member B sees no wins from A and gets P0002 trying to edit or remove them;
+  - Community counts are unchanged.
+- **Separate rollback block:** setting a 2024-02-29 date through `update_my_profile` with visibility unchanged (private) kept the name. The public view showed the date to the owner but hid it from member B and from anon.
+- **Browser fixture suite:** 65 checks passed, including leap-year, month-end and very-old date math.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -833,4 +860,4 @@ Progress is computed in the browser from existing 11A, 11B, 11E and goal RPCs, u
 
 **Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and on-site payment processing. Optional Support FPR contributions use an external Cash App link; no payment credentials or transaction records are stored by this website.
 
-Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`, `phase11d_toolbox_pins_v1`, `phase11e_meetings_support_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`, `phase11d_toolbox_pins_v1`, `phase11e_meetings_support_v1`, `phase11h_recovery_wins_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
