@@ -888,7 +888,7 @@
      .tb-pin, ...) on the private pages and the Toolbox, like the other
      [hidden] rules above. */
   #page-myrecovery [hidden], #page-daily [hidden], #page-recoveryplan [hidden],
-  #page-toolbox [hidden], #page-meetings [hidden], #page-today [hidden], #page-progress [hidden], #page-milestones [hidden], #page-weekly [hidden], #roughday-plan-link[hidden],
+  #page-toolbox [hidden], #page-meetings [hidden], #page-today [hidden], #page-progress [hidden], #page-milestones [hidden], #page-weekly [hidden], #page-journal [hidden], #roughday-plan-link[hidden],
   #home-today[hidden]{display:none !important;}
 
   /* ---------- Today (Phase 11F) ---------- */
@@ -922,6 +922,36 @@
   #td-signedout .btn-primary{margin-top:12px;}
   .td-progress-link{margin-top:16px; text-align:center; font-size:.95rem;}
   .td-progress-link .td-strong{font-weight:800;}
+
+  /* ---------- Journal (Phase 11J) ---------- */
+  .jr-wrap{max-width:720px;}
+  .jr-search{margin-top:16px;}
+  .jr-search label{display:block; font-weight:700; font-size:.92rem; margin-bottom:6px;}
+  .jr-search-row{display:flex; gap:8px;}
+  .jr-search-row input{flex:1 1 auto; min-width:0; min-height:46px;}
+  .jr-search-row .btn{flex:none; min-height:46px; padding:8px 16px;}
+  input[type=search]{width:100%; border:1.5px solid var(--line); border-radius:var(--radius-s); padding:12px 14px; font-family:inherit; font-size:.95rem; background:var(--white); color:var(--charcoal);}
+  .jr-filter{margin-top:12px; font-size:.9rem; font-weight:600;}
+  .jr-list-title{font-size:1.2rem; margin-top:20px;}
+  .jr-list{list-style:none; padding:0; margin:10px 0 0; display:flex; flex-direction:column; gap:10px;}
+  .jr-card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:14px;}
+  .jr-card-open{display:block; width:100%; text-align:left; background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; min-height:44px;}
+  .jr-date{font-size:.8rem; font-weight:700; color:var(--charcoal-soft);}
+  .jr-card-title{font-size:1.02rem; font-weight:700; margin-top:2px; overflow-wrap:anywhere;}
+  .jr-preview{font-size:.9rem; color:var(--charcoal-soft); margin-top:4px; overflow-wrap:anywhere; white-space:pre-line; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
+  .jr-edited{font-size:.75rem; font-weight:600; color:var(--sage-text); margin-left:6px;}
+  .jr-tags{list-style:none; padding:0; margin:8px 0 0; display:flex; flex-wrap:wrap; gap:6px;}
+  .jr-tag{border:1px solid var(--line); background:var(--cream); border-radius:999px; padding:6px 12px; min-height:36px; font:inherit; font-size:.8rem; color:var(--charcoal); cursor:pointer; overflow-wrap:anywhere;}
+  span.jr-tag{cursor:default; display:inline-block;}
+  .jr-card .ms-actions .btn{min-height:44px; padding:8px 14px; font-size:.85rem;}
+  #jr-more{margin-top:12px; width:100%;}
+  .jr-entry{margin-top:14px;}
+  .jr-back{display:inline-block; min-height:32px; margin-bottom:6px;}
+  .jr-entry-title{font-size:1.3rem; margin-top:4px; overflow-wrap:anywhere;}
+  .jr-body{margin-top:10px; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.7; color:var(--charcoal); font-size:1rem;}
+  .jr-editor{margin-top:14px;}
+  .jr-editor textarea{min-height:260px; font-size:1rem; line-height:1.6;}
+  .jr-editor-actions .btn{flex:1 1 140px; min-height:50px;}
 
   /* ---------- Weekly Review (Phase 11I) ---------- */
   .wr-wrap{max-width:720px;}
@@ -1200,6 +1230,7 @@
     <button data-nav="progress">Progress</button>
     <button data-nav="milestones">Milestones &amp; Wins</button>
     <button data-nav="weekly">Weekly Review</button>
+    <button data-nav="journal">Journal</button>
     <button data-nav="recoveryplan">My Recovery Plan</button>
     <button data-nav="meetings">Meetings &amp; Support</button>
     <button data-nav="porch">The Porch</button>
@@ -1554,6 +1585,109 @@
   </section>
 </section>
 
+<!-- ================= JOURNAL (Phase 11J) =================
+     Private freeform journal. Lists load 20 previews at a time; a full
+     entry loads only when opened; search runs in the database. Built by
+     the Journal script (textContent only; line breaks via CSS). -->
+<section class="page" id="page-journal">
+  <section class="block bg-charcoal tight">
+    <div class="wrap td-wrap jr-wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;">What do I need to get out of my head?</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Journal</h1>
+      <p class="mr-private-pill" id="jr-private" hidden><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>Private to your account</p>
+      <p style="color:var(--gray); margin-top:10px; max-width:58ch;" id="jr-helper" hidden>Your journal entries are not public and do not appear in Community.</p>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap td-wrap jr-wrap">
+      <div class="form-card mr-card" id="jr-signedout">
+        <h2>A private place to write</h2>
+        <p>Sign in to keep private journal entries with your account.</p>
+        <button type="button" class="btn btn-primary" id="jr-signin">Sign in</button>
+        <div class="td-links">
+          <button type="button" class="btn btn-outline" data-nav="daily">Daily Porch</button>
+          <button type="button" class="btn btn-outline" data-nav="checkin">Check-In</button>
+        </div>
+      </div>
+
+      <div id="jr-signedin" hidden>
+        <div class="status-msg status-error" id="jr-load-error" role="alert"><span id="jr-load-error-text"></span> <button type="button" class="mr-link" id="jr-retry">Try again</button></div>
+
+        <!-- List view -->
+        <div id="jr-list-view">
+          <div class="ms-add-row"><button type="button" class="btn btn-primary" id="jr-new">New entry</button></div>
+          <form class="jr-search" id="jr-search-form" role="search" novalidate>
+            <label for="jr-search-input">Search my journal</label>
+            <div class="jr-search-row">
+              <input type="search" id="jr-search-input" maxlength="100" autocomplete="off" placeholder="Words from a title, entry, or tag">
+              <button type="submit" class="btn btn-outline">Search</button>
+            </div>
+          </form>
+          <p class="jr-filter" id="jr-filter" hidden></p>
+          <p class="mr-state" id="jr-loading" role="status">Loading your journal…</p>
+          <div class="form-card mr-card" id="jr-empty" hidden>
+            <h2>This space is yours</h2>
+            <p>Write what you need to write. It doesn’t have to sound good, make sense, or be something you’d ever say out loud.</p>
+            <button type="button" class="btn btn-primary" id="jr-first">Write my first entry</button>
+          </div>
+          <section id="jr-list-section" aria-labelledby="jr-list-title" hidden>
+            <h2 class="jr-list-title" id="jr-list-title">Recent entries</h2>
+            <ul class="jr-list" id="jr-list"></ul>
+            <p class="ms-empty" id="jr-none" hidden></p>
+            <button type="button" class="btn btn-outline" id="jr-more" hidden>Load more</button>
+          </section>
+        </div>
+
+        <!-- Entry view -->
+        <article class="td-card jr-entry" id="jr-entry-view" hidden aria-labelledby="jr-entry-title" tabindex="-1">
+          <button type="button" class="card-link jr-back" id="jr-back" style="background:none; border:none; cursor:pointer; padding:0;">← Back to Journal</button>
+          <p class="wr-status saved" id="jr-entry-status" role="status" aria-live="polite"></p>
+          <p class="jr-date" id="jr-entry-date"></p>
+          <h2 class="jr-entry-title" id="jr-entry-title"></h2>
+          <div class="jr-body" id="jr-entry-body"></div>
+          <ul class="jr-tags" id="jr-entry-tags" aria-label="Tags"></ul>
+          <p class="pg-legend" id="jr-entry-meta"></p>
+          <div class="mr-actions">
+            <button type="button" class="btn btn-outline" id="jr-entry-edit">Edit</button>
+            <button type="button" class="btn btn-outline" id="jr-entry-remove">Remove</button>
+          </div>
+        </article>
+
+        <!-- Editor -->
+        <form class="td-card jr-editor" id="jr-editor" novalidate hidden aria-labelledby="jr-editor-title">
+          <h2 id="jr-editor-title">New journal entry</h2>
+          <div class="field">
+            <label for="jr-f-date">Date</label>
+            <input type="date" id="jr-f-date" required aria-required="true">
+          </div>
+          <div class="field">
+            <label for="jr-f-title">Title <span class="mr-hint">(optional)</span></label>
+            <input type="text" id="jr-f-title" maxlength="120" autocomplete="off" aria-describedby="jr-f-title-count">
+            <p class="mr-count" id="jr-f-title-count">0 / 120</p>
+          </div>
+          <div class="field">
+            <label for="jr-f-body">Entry</label>
+            <textarea id="jr-f-body" maxlength="5000" rows="12" required aria-required="true" aria-describedby="jr-f-body-count"></textarea>
+            <p class="mr-count" id="jr-f-body-count">0 / 5000</p>
+          </div>
+          <div class="field">
+            <label for="jr-f-tags">Tags <span class="mr-hint">(optional)</span></label>
+            <input type="text" id="jr-f-tags" autocomplete="off" aria-describedby="jr-f-tags-hint" placeholder="e.g. work, family">
+            <p class="mr-hint rp-help" id="jr-f-tags-hint">Up to 5, separated by commas. Each up to 30 characters. Only you see them.</p>
+          </div>
+          <p class="wr-status" id="jr-editor-status" role="status" aria-live="polite"></p>
+          <p class="field-error" id="jr-editor-error" role="alert"></p>
+          <div class="mr-actions jr-editor-actions">
+            <button type="submit" class="btn btn-primary" id="jr-save">Save entry</button>
+            <button type="button" class="btn btn-outline" id="jr-cancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</section>
+
 <!-- ================= WEEKLY REVIEW (Phase 11I) =================
      Private. The weekly summary and moments are derived from existing
      records (never stored); only the member's written reflection is saved
@@ -1631,6 +1765,7 @@
           <button type="button" class="mr-link" data-nav="meetings">View Meetings &amp; Support →</button>
           <button type="button" class="mr-link" data-nav="daily">Open Daily Porch →</button>
           <button type="button" class="mr-link" data-nav="progress">View Progress →</button>
+          <button type="button" class="mr-link" data-nav="journal">Open Journal →</button>
         </div>
       </div>
     </div>
@@ -1830,7 +1965,7 @@
             <div class="td-actions"><button type="button" class="btn btn-outline" data-nav="roughday">Open Rough Day</button></div>
           </section>
         </div>
-        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="progress">View my progress →</button> · <button type="button" class="mr-link" data-nav="milestones">View milestones &amp; wins →</button> · <button type="button" class="mr-link" data-nav="weekly" id="td-weekly-link">Weekly Review →</button></p>
+        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="progress">View my progress →</button> · <button type="button" class="mr-link" data-nav="milestones">View milestones &amp; wins →</button> · <button type="button" class="mr-link" data-nav="weekly" id="td-weekly-link">Weekly Review →</button> · <button type="button" class="mr-link" data-nav="journal">Write in Journal →</button></p>
       </div>
     </div>
   </section>
@@ -1907,7 +2042,7 @@
         <section class="form-card mr-card" id="mr-summary" aria-labelledby="mr-summary-title">
           <h2 id="mr-summary-title">Last 7 days</h2>
           <div id="mr-summary-body"></div>
-          <p class="mr-muted"><button type="button" class="mr-link" data-nav="progress">View Progress</button> for your last 7 or 30 days · <button type="button" class="mr-link" data-nav="milestones">View Milestones &amp; Wins</button> · <button type="button" class="mr-link" data-nav="weekly">Weekly Review</button></p>
+          <p class="mr-muted"><button type="button" class="mr-link" data-nav="progress">View Progress</button> for your last 7 or 30 days · <button type="button" class="mr-link" data-nav="milestones">View Milestones &amp; Wins</button> · <button type="button" class="mr-link" data-nav="weekly">Weekly Review</button> · <button type="button" class="mr-link" data-nav="journal">Open Journal</button></p>
         </section>
 
         <section class="form-card mr-card" id="mr-goal" aria-labelledby="mr-goal-title">
@@ -2977,6 +3112,9 @@
       <h2>My Recovery Plan (private to your account)</h2>
       <p>If you build a My Recovery Plan, what you write is saved with your account: your next steps, what helps you, your warning signs, why you're choosing recovery, and up to five people you list with an optional phone number or note. You type these in yourself. The site never reads your phone's contacts, and Call/Text buttons just open your phone's own dialer or messaging app; nothing is called or sent automatically. Your plan follows the same rules as My Recovery: only you can see it in the site, it never appears in the Community, on your profile, or in notifications, it isn't shared or exported, and FPR's admin tools have no screen for it. It's your own plan, not medical care or an emergency service.</p>
 
+      <h2>Journal (private to your account)</h2>
+      <p>If you write in the Journal, each entry (its date, optional title, what you wrote, and any tags you add) is saved with your account. Only you can see your entries and search them in the site. They never appear in the Community, on your profile, in notifications, in Progress, or in Weekly Review, they aren't analyzed, shared, or exported, and FPR's admin tools have no screen for them. Removing an entry takes it out of your journal and search.</p>
+
       <h2>Weekly Review (private to your account)</h2>
       <p>If you write a Weekly Review, your answers to its prompts and your intention for the next week are saved with your account, one review per week. The weekly summary shown next to it is worked out from your existing activity each time and isn't stored again, and it never shows your Daily Porch reflections or other private notes. Only you can see your reviews in the site. They never appear in the Community, on your profile, or in notifications, and FPR's admin tools have no screen for them.</p>
 
@@ -3462,6 +3600,7 @@
           <li><a href="#" data-nav="progress">Progress</a></li>
           <li><a href="#" data-nav="milestones">Milestones &amp; Wins</a></li>
           <li><a href="#" data-nav="weekly">Weekly Review</a></li>
+          <li><a href="#" data-nav="journal">Journal</a></li>
           <li><a href="#" data-nav="recoveryplan">My Recovery Plan</a></li>
           <li><a href="#" data-nav="meetings">Meetings &amp; Support</a></li>
           <li><a href="#" data-nav="porch">The Porch</a></li>
@@ -15183,7 +15322,7 @@ const FPRBadge = (function(){
     { key: 'water', group: 'reset', kind: 'quick', title: 'Drink some water', desc: 'Get a glass and drink it slowly. Simple, and it helps more than you’d think.' },
     { key: 'music', group: 'reset', kind: 'quick', title: 'Put on music', desc: 'One song that steadies you. Or something from the porch.', nav: 'music', label: 'Music from the Porch' },
     { key: 'prayer', group: 'reset', kind: 'quick', title: 'Prayer or quiet time', desc: 'A few minutes of quiet: prayer, meditation, or just sitting still. Whatever that looks like for you.' },
-    { key: 'journal', group: 'reset', kind: 'journal', title: 'Write for five minutes', desc: 'Get it out of your head. Write privately in today’s Daily Porch reflection, or log how you’re doing in My Recovery.' }
+    { key: 'journal', group: 'reset', kind: 'journal', title: 'Write for five minutes', desc: 'Get it out of your head. Write freely in your private Journal, or use the Daily Porch reflection or your My Recovery log.' }
   ];
   const byKey = {}; TOOLS.forEach(function(t){ byKey[t.key] = t; });
   window.FPRToolboxTools = TOOLS; // read-only tool list for Today's "My Toolbox" shortcuts
@@ -15312,6 +15451,10 @@ const FPRBadge = (function(){
   }
   function journalBody(card){
     const actions = el('div', 'tb-actions');
+    // Primary: freeform Journal -> New entry (Phase 11J). Structured options stay.
+    actions.appendChild(btn('Write in my Journal', 'btn btn-primary', function(){
+      if (typeof window.FPRJournalNewEntry === 'function') window.FPRJournalNewEntry(); else goTo('journal');
+    }));
     actions.appendChild(navBtn('Daily Porch reflection', 'btn btn-outline', 'daily'));
     actions.appendChild(navBtn('My Recovery log', 'btn btn-outline', 'myrecovery'));
     card.appendChild(actions);
@@ -17018,6 +17161,317 @@ const FPRBadge = (function(){
     if (document.visibilityState === 'visible' && signedIn && pageActive() && loadedFor !== todayStr()) { weeks = {}; sessionFor = null; load(); }
   });
   counts();
+  render();
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  }
+})();
+
+/* ---------- Journal (Phase 11J) ----------
+   Private freeform writing. Bounded reads only: the list loads 20 entries
+   at a time with a 200-character preview (list_my_journal_entries, with an
+   optional tag filter), a full entry loads only when opened
+   (get_my_journal_entry), and search runs in the database
+   (search_my_journal, at most 50). No autosave, no analysis, no sharing.
+   Unsaved editor text is kept if you navigate elsewhere and come back;
+   Cancel / Back / opening another entry ask before discarding. Everything
+   is cleared on sign-out or account switch. Member text is rendered with
+   textContent (line breaks preserved by CSS). */
+(function(){
+  const page = document.getElementById('page-journal');
+  if (!page) return;
+  const client = window.__fprSupabaseClient || null;
+  const $ = function(id){ return document.getElementById(id); };
+  const PAGE = 20;
+
+  let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0, busy = false;
+  let view = 'list';                // 'list' | 'entry' | 'edit'
+  let items = [], offset = 0, hasMore = false, listLoaded = false, listStale = true;
+  let tag = null, query = null;     // active tag filter or search (one at a time)
+  let entry = null;                 // the open entry (full)
+  let editingId = null, snapshot = '', dirty = false, returnTo = 'list', pendingNew = false;
+
+  function el(tag2, cls, text){ const e = document.createElement(tag2); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function btn(label, cls, onClick){ const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; }
+  function pad(n){ return String(n).padStart(2, '0'); }
+  function todayStr(){ const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function longDate(s){ const p = String(s).split('-').map(Number); try { return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' }); } catch(e){ return s; } }
+  function stamp(ts){ try { return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch(e){ return ''; } }
+  function showErr(node, msg){ node.textContent = msg || ''; node.classList.toggle('show', !!msg); }
+  function showLoadError(msg){ $('jr-load-error-text').textContent = msg || ''; $('jr-load-error').classList.toggle('show', !!msg); }
+  function errMsg(err, fallback){ const c = err && err.code; return (c === '22023' || c === 'P0002') ? err.message : c === '42501' ? 'Please sign in again.' : fallback; }
+  function parseTags(s){
+    const out = [];
+    String(s || '').split(',').forEach(function(t){
+      t = t.trim();
+      if (t && !out.some(function(x){ return x.toLowerCase() === t.toLowerCase(); })) out.push(t);
+    });
+    return out;
+  }
+  function formValue(){ return [$('jr-f-date').value, $('jr-f-title').value, $('jr-f-body').value, $('jr-f-tags').value].join('\u0000'); }
+
+  // ---- Views ----
+  function setView(v){
+    view = v;
+    $('jr-list-view').hidden = v !== 'list';
+    $('jr-entry-view').hidden = v !== 'entry';
+    $('jr-editor').hidden = v !== 'edit';
+  }
+  function confirmDiscard(){ return !dirty || window.confirm('Discard your unsaved changes to this entry?'); }
+  function tagList(tags, clickable){
+    const ul = el('ul', 'jr-tags'); ul.setAttribute('aria-label', 'Tags');
+    (tags || []).forEach(function(t){
+      const li = el('li');
+      if (clickable) {
+        const b = btn('#' + t, 'jr-tag', function(){ filterByTag(t); });
+        b.setAttribute('aria-label', 'Show entries tagged ' + t);
+        li.appendChild(b);
+      } else li.appendChild(el('span', 'jr-tag', '#' + t));
+      ul.appendChild(li);
+    });
+    return ul;
+  }
+
+  // ---- List ----
+  function renderList(){
+    const list = $('jr-list'); list.replaceChildren();
+    $('jr-loading').hidden = listLoaded || $('jr-load-error').classList.contains('show');
+    const filtering = !!(tag || query);
+    $('jr-empty').hidden = !(listLoaded && !filtering && !items.length);
+    $('jr-list-section').hidden = !(listLoaded && (filtering || items.length));
+    const f = $('jr-filter'); f.replaceChildren(); f.hidden = !filtering;
+    if (filtering) {
+      f.appendChild(document.createTextNode(query ? 'Results for “' + query + '” · ' : 'Entries tagged “' + tag + '” · '));
+      f.appendChild(btn(query ? 'Clear search' : 'All entries', 'mr-link', clearFilter));
+    }
+    $('jr-list-title').textContent = query ? 'Search results' : tag ? 'Tagged entries' : 'Recent entries';
+    $('jr-none').hidden = !(listLoaded && filtering && !items.length);
+    $('jr-none').textContent = query ? 'No entries match that search.' : 'No entries with that tag.';
+    $('jr-more').hidden = !(listLoaded && hasMore && !query);
+    items.forEach(function(it){
+      const li = el('li');
+      const card = el('article', 'jr-card');
+      const open = btn('', 'jr-card-open', function(){ openEntry(it.id); });
+      const date = el('p', 'jr-date', longDate(it.entry_date));
+      if (it.edited) date.appendChild(el('span', 'jr-edited', '· Edited'));
+      open.appendChild(date);
+      open.appendChild(el('p', 'jr-card-title', it.title || 'Untitled entry'));
+      const prev = String(it.preview || '');
+      open.appendChild(el('p', 'jr-preview', prev.length >= 200 ? prev.replace(/\s+\S*$/, '') + '…' : prev));
+      open.setAttribute('aria-label', 'Open entry: ' + (it.title || 'Untitled entry') + ', ' + longDate(it.entry_date));
+      card.appendChild(open);
+      if (it.tags && it.tags.length) card.appendChild(tagList(it.tags, true));
+      const a = el('div', 'ms-actions');
+      const e = btn('Edit', 'btn btn-outline', function(){ editEntry(it.id); }); e.setAttribute('aria-label', 'Edit entry: ' + (it.title || 'Untitled entry'));
+      const r = btn('Remove', 'btn btn-outline', function(){ removeEntry(it.id, it.title); }); r.setAttribute('aria-label', 'Remove entry: ' + (it.title || 'Untitled entry'));
+      a.appendChild(e); a.appendChild(r); card.appendChild(a);
+      li.appendChild(card); list.appendChild(li);
+    });
+  }
+  async function loadList(append){
+    if (!client || !signedIn) return;
+    const mySeq = seq, myLoad = ++loadSeq;
+    showLoadError('');
+    if (!append) { offset = 0; }
+    try {
+      let res;
+      if (query) res = await client.rpc('search_my_journal', { p_query: query, p_limit: 50 });
+      else res = await client.rpc('list_my_journal_entries', { p_limit: PAGE, p_offset: offset, p_tag: tag });
+      if (mySeq !== seq || myLoad !== loadSeq) return;
+      if (res.error) throw res.error;
+      const rowsIn = res.data || [];
+      items = append ? items.concat(rowsIn) : rowsIn;
+      hasMore = !query && rowsIn.length === PAGE;
+      offset = items.length;
+      listLoaded = true; listStale = false;
+    } catch(err){
+      if (mySeq !== seq || myLoad !== loadSeq) return;
+      showLoadError(errMsg(err, 'We couldn’t load your journal right now.'));
+    }
+    renderList();
+  }
+  function filterByTag(t){ if (!confirmLeave()) return; tag = t; query = null; $('jr-search-input').value = ''; setView('list'); listLoaded = false; renderList(); loadList(false); }
+  function clearFilter(){ tag = null; query = null; $('jr-search-input').value = ''; listLoaded = false; renderList(); loadList(false); try { $('jr-search-input').focus(); } catch(e){} }
+  $('jr-search-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    const q = $('jr-search-input').value.trim();
+    if (!q) { clearFilter(); return; }
+    query = q.slice(0, 100); tag = null; listLoaded = false; renderList(); loadList(false);
+  });
+  $('jr-more').addEventListener('click', function(){ loadList(true); });
+
+  // ---- Entry view ----
+  function confirmLeave(){ if (view !== 'edit') return true; if (!confirmDiscard()) return false; dirty = false; return true; }
+  function renderEntry(statusText){
+    $('jr-entry-status').textContent = statusText || '';
+    $('jr-entry-date').textContent = longDate(entry.entry_date);
+    $('jr-entry-title').textContent = entry.title || 'Untitled entry';
+    $('jr-entry-body').textContent = entry.body;
+    const tags = $('jr-entry-tags'); tags.replaceChildren();
+    (entry.tags || []).forEach(function(t){ const li = el('li'); li.appendChild(btn('#' + t, 'jr-tag', function(){ filterByTag(t); })); tags.appendChild(li); });
+    tags.hidden = !(entry.tags && entry.tags.length);
+    $('jr-entry-meta').textContent = 'Written ' + stamp(entry.created_at) + (entry.edited ? ' · Edited ' + stamp(entry.updated_at) : '');
+  }
+  async function fetchEntry(id){
+    const { data, error } = await client.rpc('get_my_journal_entry', { p_id: id });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw { code: 'P0002', message: 'Entry not found.' };
+    return row;
+  }
+  async function openEntry(id){
+    if (!client || !signedIn || busy || !confirmLeave()) return;
+    const mySeq = seq; busy = true;
+    try {
+      const row = await fetchEntry(id);
+      if (mySeq !== seq) return;
+      entry = row; renderEntry(''); setView('entry');
+      try { $('jr-entry-view').focus(); window.scrollTo({ top: 0, behavior: 'auto' }); } catch(e){}
+    } catch(err){ if (mySeq === seq) showLoadError(errMsg(err, 'Couldn’t open that entry right now.')); }
+    finally { if (mySeq === seq) busy = false; }
+  }
+  $('jr-back').addEventListener('click', backToList);
+  function backToList(){
+    setView('list'); entry = null;
+    if (listStale || !listLoaded) loadList(false); else renderList();
+    try { $('jr-new').focus(); } catch(e){}
+  }
+  $('jr-entry-edit').addEventListener('click', function(){ if (entry) startEdit(entry, 'entry'); });
+  $('jr-entry-remove').addEventListener('click', function(){ if (entry) removeEntry(entry.id, entry.title); });
+
+  // ---- Editor ----
+  function counts(){
+    $('jr-f-title-count').textContent = $('jr-f-title').value.length + ' / 120';
+    $('jr-f-body-count').textContent = $('jr-f-body').value.length + ' / 5000';
+  }
+  function paintEditorStatus(){
+    const s = $('jr-editor-status');
+    s.classList.toggle('dirty', dirty); s.classList.toggle('saved', !dirty && !!editingId);
+    s.textContent = dirty ? 'Unsaved changes' : (editingId ? 'Saved ✓' : '');
+  }
+  function startEdit(row, from){
+    if (view === 'edit' && !confirmDiscard()) return;
+    editingId = row ? row.id : null;
+    returnTo = from || 'list';
+    $('jr-editor-title').textContent = row ? 'Edit entry' : 'New journal entry';
+    $('jr-f-date').max = todayStr();
+    $('jr-f-date').value = row ? row.entry_date : todayStr();
+    $('jr-f-title').value = row && row.title || '';
+    $('jr-f-body').value = row ? row.body : '';
+    $('jr-f-tags').value = row && row.tags ? row.tags.join(', ') : '';
+    snapshot = formValue(); dirty = false;
+    counts(); paintEditorStatus(); showErr($('jr-editor-error'), '');
+    setView('edit');
+    try { window.scrollTo({ top: 0, behavior: 'auto' }); $('jr-f-body').focus(); } catch(e){}
+  }
+  async function editEntry(id){
+    if (!client || !signedIn || busy) return;
+    const mySeq = seq; busy = true;
+    try { const row = await fetchEntry(id); if (mySeq !== seq) return; busy = false; entry = row; startEdit(row, 'list'); }
+    catch(err){ if (mySeq === seq) { busy = false; showLoadError(errMsg(err, 'Couldn’t open that entry right now.')); } }
+  }
+  function newEntry(){ if (view === 'edit' && !confirmDiscard()) return; startEdit(null, 'list'); }
+  $('jr-new').addEventListener('click', newEntry);
+  $('jr-first').addEventListener('click', newEntry);
+  ['jr-f-date', 'jr-f-title', 'jr-f-body', 'jr-f-tags'].forEach(function(id){
+    $(id).addEventListener('input', function(){ dirty = formValue() !== snapshot; counts(); paintEditorStatus(); showErr($('jr-editor-error'), ''); });
+  });
+  $('jr-cancel').addEventListener('click', function(){
+    if (!confirmDiscard()) return;
+    dirty = false;
+    if (returnTo === 'entry' && entry) { renderEntry(''); setView('entry'); } else backToList();
+  });
+  $('jr-editor').addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (!client || !signedIn || busy) return;
+    const err = $('jr-editor-error');
+    const date = $('jr-f-date').value, title = $('jr-f-title').value.trim(), body = $('jr-f-body').value;
+    const tags = parseTags($('jr-f-tags').value);
+    if (!body.trim()) { showErr(err, 'Write something before saving.'); $('jr-f-body').focus(); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayStr() || date < '1900-01-01') { showErr(err, 'Choose a date that isn’t in the future.'); $('jr-f-date').focus(); return; }
+    if (tags.length > 5) { showErr(err, 'You can use up to 5 tags.'); $('jr-f-tags').focus(); return; }
+    if (tags.some(function(t){ return t.length > 30; })) { showErr(err, 'Tags can be up to 30 characters.'); $('jr-f-tags').focus(); return; }
+    const mySeq = seq;
+    busy = true; $('jr-save').disabled = true; showErr(err, '');
+    try {
+      const { data, error } = await client.rpc('save_my_journal_entry', { p_id: editingId, p_entry_date: date, p_title: title || null, p_body: body, p_tags: tags });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      busy = false; $('jr-save').disabled = false;
+      dirty = false; editingId = row.id; entry = row; listStale = true;
+      renderEntry('Saved ✓'); setView('entry');
+      try { $('jr-entry-view').focus(); window.scrollTo({ top: 0, behavior: 'auto' }); } catch(e2){}
+    } catch(ex){
+      if (mySeq !== seq) return;
+      busy = false; $('jr-save').disabled = false;
+      showErr(err, errMsg(ex, 'Couldn’t save your entry right now. Please try again.'));
+    }
+  });
+
+  // ---- Remove ----
+  async function removeEntry(id, title){
+    if (!window.confirm('Remove “' + (title || 'Untitled entry') + '” from your journal?')) return;
+    if (!client || !signedIn || busy) return;
+    const mySeq = seq; busy = true;
+    try {
+      const { error } = await client.rpc('remove_my_journal_entry', { p_id: id });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      busy = false;
+      items = items.filter(function(x){ return x.id !== id; });
+      if (entry && entry.id === id) entry = null;
+      listStale = true;
+      setView('list'); loadList(false);
+      try { $('jr-new').focus(); } catch(e){}
+    } catch(err){
+      if (mySeq !== seq) return;
+      busy = false;
+      showLoadError(errMsg(err, 'Couldn’t remove that entry right now. Please try again.'));
+    }
+  }
+
+  // Toolbox "Write for five minutes" -> Journal, New entry.
+  window.FPRJournalNewEntry = function(){
+    pendingNew = true;
+    goTo('journal');
+  };
+
+  // ---- Session ----
+  function render(){
+    $('jr-signedout').hidden = signedIn;
+    $('jr-signedin').hidden = !signedIn;
+    $('jr-private').hidden = !signedIn;
+    $('jr-helper').hidden = !signedIn;
+  }
+  function pageActive(){ return page.classList.contains('active'); }
+  function reset(){
+    seq++; busy = false; items = []; offset = 0; hasMore = false; listLoaded = false; listStale = true;
+    tag = null; query = null; entry = null; editingId = null; snapshot = ''; dirty = false; pendingNew = false;
+    ['jr-f-date', 'jr-f-title', 'jr-f-body', 'jr-f-tags', 'jr-search-input'].forEach(function(id){ $(id).value = ''; });
+    ['jr-entry-date', 'jr-entry-title', 'jr-entry-body', 'jr-entry-meta', 'jr-entry-status'].forEach(function(id){ $(id).textContent = ''; });
+    $('jr-entry-tags').replaceChildren(); $('jr-list').replaceChildren();
+    showLoadError(''); counts(); setView('list'); renderList();
+  }
+  function onSession(session){
+    const nowUser = session && session.user ? session.user.id : null;
+    if (nowUser === sessionUser) return;
+    sessionUser = nowUser;
+    signedIn = !!nowUser;
+    const wantNew = pendingNew;
+    reset(); // never carry one account's journal into another
+    render();
+    if (signedIn && pageActive()) { loadList(false); if (wantNew) startEdit(null, 'list'); }
+  }
+  document.addEventListener('fpr:pagechange', function(e){
+    if (!(e && e.detail && e.detail.page === 'journal')) return;
+    if (!signedIn) { pendingNew = false; return; }
+    if (pendingNew) { pendingNew = false; if (view !== 'edit' || !dirty) startEdit(null, 'list'); }
+    if (view === 'list' && (listStale || !listLoaded)) loadList(false);
+  });
+  window.addEventListener('beforeunload', function(e){ if (signedIn && dirty) { e.preventDefault(); e.returnValue = ''; } });
+  counts();
+  setView('list');
   render();
   if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
     client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });

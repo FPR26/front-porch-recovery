@@ -860,6 +860,37 @@ Migration: `migrations/phase11i_weekly_review_v1.sql`. It's additive only (no DR
   - Community counts are unchanged.
 - **Browser fixture suite:** 66 checks passed.
 
+## Phase 11J — Journal v1
+
+Migration: `migrations/phase11j_journal_v1.sql`. It's additive only (no DROP, ALTER or DELETE). It was applied through the normal migration tool on 2026-10-19 and is recorded in `schema_migrations` as row 17, `phase11j_journal_v1`.
+
+- **`recovery_journal_entries`:**
+  - Columns: `id`, `user_id` (`ON DELETE CASCADE`), `entry_date`, `title` (1–120 or NULL), `body` (1–5000), `tags text[]` (CHECK at most 5), `removed_at`, `created_at`, `updated_at`.
+  - An index on `(user_id, entry_date desc, created_at desc)`.
+  - Removing an entry is soft (`removed_at`); rows are never deleted.
+- **RPCs:** all `security definer` with `search_path = public, pg_temp`, executable by `authenticated` only, scoped to `auth.uid()`, never returning `user_id`.
+  - `list_my_journal_entries(p_limit, p_offset, p_tag)`: pages of at most 50, newest first, with a 200-character `preview` and never the full body. The optional tag filter ignores case.
+  - `get_my_journal_entry(p_id)`: the full entry; `P0002` if it's missing or not yours.
+  - `search_my_journal(p_query, p_limit)`: 1–100 characters, case-insensitive substring over title, body and tags, at most 50 results, preview only. `%`, `_` and `\` are escaped, so they match literally.
+  - `save_my_journal_entry(p_id, p_entry_date, p_title, p_body, p_tags)`: create or edit your own. The body is trimmed and required; the date can't be more than a day in the future or before 1900. Tags are trimmed, blanks dropped and duplicates removed ignoring case; more than 5, or any over 30 characters, is rejected.
+  - `remove_my_journal_entry(p_id)`.
+  - `edited` is `updated_at > created_at`.
+- **Access:** RLS is on with no policies and no table privileges. There's no admin path, view or trigger, and no Community/profile/notification link.
+
+**Verification (2026-10-19):**
+- **Privileges:** false for anon and authenticated; EXECUTE is authenticated-only on all five RPCs.
+- **Rollback DO block** (throwaway users, ending in RAISE EXCEPTION). These passed:
+  - anon list, search and save, and anon table access, are denied; direct table access as authenticated is denied;
+  - creating an entry trims the title and body and normalizes tags (`[' Work ', '', 'work', 'Family', 'SLEEP']` becomes `{Work,Family,SLEEP}`), and an untitled entry stores NULL;
+  - a blank body, 5,001 characters, a 121-character title, a future date, 1899, 6 tags and a 31-character tag are rejected, and 5,000 is accepted;
+  - the list is newest first with a preview of at most 200 characters, paging works, the limit is capped at 50, and the tag filter ignores case;
+  - search matches title, partial body text ignoring case, and tags, with `%` and `_` matched literally; an empty search is rejected;
+  - get returns the full body (with emoji), and an edit changes the date, title and tags;
+  - a removed entry is hidden from the list and search, and getting or editing it returns P0002;
+  - member B sees and searches nothing of A's, and gets P0002 trying to get, edit or remove A's entries;
+  - Community counts are unchanged.
+- **Browser fixture suite:** 61 checks passed.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -888,4 +919,4 @@ Migration: `migrations/phase11i_weekly_review_v1.sql`. It's additive only (no DR
 
 **Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and on-site payment processing. Optional Support FPR contributions use an external Cash App link; no payment credentials or transaction records are stored by this website.
 
-Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`, `phase11d_toolbox_pins_v1`, `phase11e_meetings_support_v1`, `phase11h_recovery_wins_v1`, `phase11i_weekly_review_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`, `phase11d_toolbox_pins_v1`, `phase11e_meetings_support_v1`, `phase11h_recovery_wins_v1`, `phase11i_weekly_review_v1`, `phase11j_journal_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.

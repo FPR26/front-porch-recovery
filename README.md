@@ -29,6 +29,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
 - **My Recovery Plan v1 (Phase 11C)** — complete: a private, signed-in plan for hard moments (see below).
+- **Journal v1 (Phase 11J)** — complete: a private freeform journal with search and tags (see below).
 - **Weekly Review v1 (Phase 11I)** — complete: a factual Monday–Sunday summary plus a private weekly reflection (see below).
 - **Milestones & Wins v1 (Phase 11H)** — complete: calculated recovery milestones plus private personal wins in one timeline (see below).
 - **Progress v1 (Phase 11G)** — complete: a private 7/30-day history view computed from existing data, with no new storage (see below).
@@ -142,6 +143,32 @@ The backend is `supabase/migrations/phase11d_toolbox_pins_v1.sql` (applied; see 
   - **No new storage and no migration.** One parallel batch of 8 existing RPCs per load: `list_my_recovery_logs`, `get_my_recovery_goal`, `list_my_saved_daily_porch`, `list_my_support_items`, `list_my_support_checkins`, `get_my_recovery_plan`, `list_my_toolbox_pins`, `get_my_profile`.
   - **Caching:** results are reused until something changes. The other features dispatch `fpr:recoverychange` (log/goal), `fpr:dailysavedchange`, `fpr:pinschange`, `fpr:planchange` and `fpr:supportchange`, and `fpr:profilechange` already existed. The cache is also dropped when the local date changes (checked on each Today visit and when the tab becomes visible) or when the account changes.
   - **No timers or polling.** Signing out or switching accounts clears everything.
+
+## Journal
+
+"Journal" (`#journal`) is the member's private freeform writing space: "What do I need to get out of my head?" There's no AI, analysis, sharing, export, streaks or nagging.
+
+- **Navigation:** the mobile menu and footer, plus:
+  - the Toolbox "Write for five minutes" card, whose primary action **Write in my Journal** opens a new entry (the Daily Porch reflection and My Recovery log options stay);
+  - "Write in Journal →" on Today (a link only, with no entry status, to avoid an extra call);
+  - "Open Journal" on My Recovery, and "Open Journal →" on Weekly Review.
+
+  It's not in the desktop nav.
+- **Signed out:** "A private place to write", a Sign in button, and Daily Porch / Check-In links. There's no local journal storage, and no private calls are made.
+- **Empty state:** "This space is yours", your copy, and **Write my first entry**.
+- **New and edit entry:**
+  - Date (today by default; today or earlier, not before 1900) and an optional title (up to 120).
+  - The entry itself (required, up to 5,000, in a large textarea) and optional tags (comma-separated, up to 5, each up to 30; trimmed and de-duplicated ignoring case).
+  - Visible counters, "Unsaved changes" / "Saved ✓" in text, and Save / Cancel. There's no autosave.
+  - Cancel, Back or opening another entry asks before discarding changes. Leaving the page keeps the draft, and closing the tab warns.
+- **Recent entries:** newest first, 20 at a time with **Load more**. Each card shows the date, the title (or "Untitled entry"), a short preview, tags, and "Edited" if it was changed later, with Edit and Remove. Tapping a card opens the entry.
+- **Entry view:** the date, title, full body (line breaks preserved, rendered as text), tags, and "Written … · Edited …", with Edit, Remove and ← Back to Journal.
+- **Search my journal:** a case-insensitive partial match on title, body and tags, run in the database (at most 50 results). `%` and `_` are matched literally.
+- **Tags:** tap a tag to show only those entries (case-insensitive); "All entries" clears the filter.
+- **Remove:** asks first. It's a soft remove, and the entry disappears from the list and search immediately. There's no Trash UI yet.
+- **Data and requests:** the full body loads only when an entry is opened. There's no polling, and everything is cleared on sign-out or account switch. Journal text never appears in Community, profiles, notifications, Progress, Weekly Review or admin.
+
+The backend is `supabase/migrations/phase11j_journal_v1.sql` (applied; see `supabase/README.md`).
 
 ## Weekly Review
 
