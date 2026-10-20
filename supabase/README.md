@@ -891,6 +891,27 @@ Migration: `migrations/phase11j_journal_v1.sql`. It's additive only (no DROP, AL
   - Community counts are unchanged.
 - **Browser fixture suite:** 61 checks passed.
 
+## Phase 11K — Recovery History v1 (read helper only)
+
+Migration: `migrations/phase11k_recovery_history_v1.sql`. It adds **one read-only function and no table**, and stores nothing. It was applied through the normal migration tool on 2026-10-19 and is recorded in `schema_migrations` as row 18, `phase11k_recovery_history_v1`.
+
+- **Why it exists:** the existing list RPCs are bounded to short ranges (62–100 days) or return text (journal previews, review reflections, win notes). A year view needs one metadata-only read instead.
+- **`list_my_history_events(p_from, p_to)`:** a range of up to 366 days. It's `security definer` with `search_path = public, pg_temp`, executable by authenticated users only, scoped to `auth.uid()`, and never returns `user_id`. It returns one row per event, `(kind, event_date, mood, cravings, has_morning, has_evening, label, category)`:
+  - `log`: mood and cravings only, never notes;
+  - `reflection`: presence flags only, empty rows excluded;
+  - `support`: completed check-ins only, with item name and category (kept even if the item was later removed);
+  - `journal`: the date only, with removed entries excluded;
+  - `review`: the week start only, non-empty reviews only;
+  - `win`: the title only (never the note), with removed wins excluded.
+
+  Ordered by date, capped at 10,000 rows.
+- **Verification (rollback DO block ending in RAISE EXCEPTION; throwaway users seeded in every source):**
+  - anon is denied, and EXECUTE is authenticated-only;
+  - the output contains none of the seeded secret text, and the function signature has no text-body columns;
+  - each exclusion rule holds;
+  - Jan 1 and Dec 31 are both included, ranges over 366 days are rejected, and a leap year's 366-day range is accepted;
+  - member B sees nothing of A's, and Community counts are unchanged.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -919,4 +940,4 @@ Migration: `migrations/phase11j_journal_v1.sql`. It's additive only (no DROP, AL
 
 **Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and on-site payment processing. Optional Support FPR contributions use an external Cash App link; no payment credentials or transaction records are stored by this website.
 
-Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`, `phase11d_toolbox_pins_v1`, `phase11e_meetings_support_v1`, `phase11h_recovery_wins_v1`, `phase11i_weekly_review_v1`, `phase11j_journal_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`, `phase11d_toolbox_pins_v1`, `phase11e_meetings_support_v1`, `phase11h_recovery_wins_v1`, `phase11i_weekly_review_v1`, `phase11j_journal_v1`, `phase11k_recovery_history_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.

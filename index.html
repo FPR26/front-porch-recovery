@@ -888,7 +888,7 @@
      .tb-pin, ...) on the private pages and the Toolbox, like the other
      [hidden] rules above. */
   #page-myrecovery [hidden], #page-daily [hidden], #page-recoveryplan [hidden],
-  #page-toolbox [hidden], #page-meetings [hidden], #page-today [hidden], #page-progress [hidden], #page-milestones [hidden], #page-weekly [hidden], #page-journal [hidden], #roughday-plan-link[hidden],
+  #page-toolbox [hidden], #page-meetings [hidden], #page-today [hidden], #page-progress [hidden], #page-milestones [hidden], #page-weekly [hidden], #page-journal [hidden], #page-history [hidden], #roughday-plan-link[hidden],
   #home-today[hidden]{display:none !important;}
 
   /* ---------- Today (Phase 11F) ---------- */
@@ -922,6 +922,35 @@
   #td-signedout .btn-primary{margin-top:12px;}
   .td-progress-link{margin-top:16px; text-align:center; font-size:.95rem;}
   .td-progress-link .td-strong{font-weight:800;}
+
+  /* ---------- Recovery History (Phase 11K) ---------- */
+  .rh-wrap{max-width:960px;}
+  .rh-yearnav{margin-bottom:6px;}
+  .rh-year{font-size:1.6rem; text-align:center; flex:1;}
+  .rh-card{margin-top:14px;}
+  .rh-sec-title{font-size:1.2rem; margin-top:22px;}
+  .rh-months{list-style:none; padding:0; margin:10px 0 0; display:grid; grid-template-columns:1fr; gap:10px;}
+  @media(min-width:640px){ .rh-months{grid-template-columns:repeat(2, minmax(0,1fr));} }
+  @media(min-width:900px){ .rh-months{grid-template-columns:repeat(3, minmax(0,1fr));} }
+  .rh-mcard{width:100%; height:100%; text-align:left; background:var(--white); border:1.5px solid var(--line); border-radius:var(--radius-m); padding:14px; font:inherit; color:var(--charcoal); cursor:pointer; display:flex; flex-direction:column; gap:4px; min-height:64px;}
+  button.rh-mcard:hover, .rh-mcard[aria-expanded="true"]{border-color:var(--charcoal);}
+  div.rh-mcard{cursor:default; background:transparent; border-style:dashed;}
+  .rh-mname{font-weight:800; font-size:1rem;}
+  .rh-mnote{font-size:.78rem; font-weight:600; color:var(--sage-text);}
+  .rh-mline{font-size:.86rem; color:var(--charcoal-soft);}
+  .rh-mms{font-size:.86rem; font-weight:700; color:var(--sage-text);}
+  .rh-detail{margin-top:18px;}
+  .rh-detail-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap;}
+  .rh-detail-head h2{font-size:1.2rem !important; text-transform:none !important; letter-spacing:0 !important; color:var(--charcoal) !important;}
+  .rh-cols{display:grid; grid-template-columns:1fr; gap:14px; margin-top:12px;}
+  @media(min-width:760px){ .rh-cols{grid-template-columns:repeat(2, minmax(0,1fr));} }
+  .rh-sub{font-size:.95rem; font-weight:800; margin-top:6px;}
+  .rh-list{list-style:none; padding:0; margin:6px 0 0;}
+  .rh-list li{padding:7px 0; border-bottom:1px solid var(--line); font-size:.9rem; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .rh-list .rh-k{font-size:.72rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--sage-text); display:block;}
+  .rh-list .rh-t{font-weight:600; overflow-wrap:anywhere;}
+  .rh-list button.mr-link{min-height:32px;}
+  .rh-links{margin-top:22px;}
 
   /* ---------- Resources v2 ---------- */
   .rs-wrap{max-width:900px;}
@@ -1270,6 +1299,7 @@
     <button data-nav="myrecovery">My Recovery</button>
     <button data-nav="progress">Progress</button>
     <button data-nav="milestones">Milestones &amp; Wins</button>
+    <button data-nav="history">Recovery History</button>
     <button data-nav="weekly">Weekly Review</button>
     <button data-nav="journal">Journal</button>
     <button data-nav="recoveryplan">My Recovery Plan</button>
@@ -1627,6 +1657,77 @@
   </section>
 </section>
 
+<!-- ================= RECOVERY HISTORY (Phase 11K) =================
+     Private, long-term view of existing records (stores nothing new).
+     One metadata call per year (list_my_history_events) plus the saved
+     Daily Porch days and the profile recovery date once per session.
+     Never shows journal, review, reflection, plan or note text.
+     Built by the Recovery History script (textContent only). -->
+<section class="page" id="page-history">
+  <section class="block bg-charcoal tight">
+    <div class="wrap rh-wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;">Over the long run</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Recovery History</h1>
+      <p class="mr-private-pill" id="rh-private" hidden><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>Private to your account</p>
+      <p style="color:var(--gray); margin-top:10px; max-width:58ch;" id="rh-helper" hidden>Your Recovery History is not public and does not appear in Community.</p>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap rh-wrap">
+      <div class="form-card mr-card" id="rh-signedout">
+        <h2>Your recovery story, over time</h2>
+        <p>Sign in to see your private recovery history.</p>
+        <button type="button" class="btn btn-primary" id="rh-signin">Sign in</button>
+        <div class="td-links">
+          <button type="button" class="btn btn-outline" data-nav="daily">Daily Porch</button>
+          <button type="button" class="btn btn-outline" data-nav="checkin">Check-In</button>
+        </div>
+      </div>
+
+      <div id="rh-signedin" hidden>
+        <div class="wr-weeknav rh-yearnav">
+          <button type="button" class="btn btn-outline" id="rh-prev" aria-label="Previous year">‹ Prev</button>
+          <h2 class="rh-year" id="rh-year" aria-live="polite"></h2>
+          <button type="button" class="btn btn-outline" id="rh-next" aria-label="Next year">Next ›</button>
+        </div>
+        <div class="status-msg status-error" id="rh-load-error" role="alert"><span id="rh-load-error-text"></span> <button type="button" class="mr-link" id="rh-retry">Try again</button></div>
+        <p class="mr-state" id="rh-loading" role="status">Loading your history…</p>
+
+        <div class="form-card mr-card" id="rh-empty" hidden>
+          <h2>Nothing logged here yet</h2>
+          <p>Your history will build from the recovery tools you use over time.</p>
+          <div class="td-links">
+            <button type="button" class="btn btn-outline" data-nav="myrecovery">Open My Recovery</button>
+            <button type="button" class="btn btn-outline" data-nav="journal">Open Journal</button>
+            <button type="button" class="btn btn-outline" data-nav="daily">Open Daily Porch</button>
+          </div>
+        </div>
+
+        <section class="td-card rh-card" id="rh-glance" aria-labelledby="rh-glance-title" hidden><h2 id="rh-glance-title">Year at a glance</h2><div class="rh-body"></div></section>
+
+        <section class="rh-months-sec" id="rh-months-sec" aria-labelledby="rh-months-title" hidden>
+          <h2 class="rh-sec-title" id="rh-months-title">Month by month</h2>
+          <ol class="rh-months" id="rh-months"></ol>
+        </section>
+
+        <section class="td-card rh-card rh-detail" id="rh-month" aria-labelledby="rh-month-title" hidden tabindex="-1">
+          <div class="rh-detail-head"><h2 id="rh-month-title"></h2><button type="button" class="mr-link" id="rh-month-close">Back to months</button></div>
+          <div class="rh-body"></div>
+        </section>
+
+        <div class="wr-links rh-links">
+          <button type="button" class="mr-link" data-nav="progress">Open Progress →</button>
+          <button type="button" class="mr-link" data-nav="weekly">Open Weekly Review →</button>
+          <button type="button" class="mr-link" data-nav="milestones">Open Milestones &amp; Wins →</button>
+          <button type="button" class="mr-link" data-nav="journal">Open Journal →</button>
+          <button type="button" class="mr-link" data-nav="meetings">Open Meetings &amp; Support →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+
 <!-- ================= JOURNAL (Phase 11J) =================
      Private freeform journal. Lists load 20 previews at a time; a full
      entry loads only when opened; search runs in the database. Built by
@@ -1902,6 +2003,7 @@
           </div>
           <ol class="mw-list" id="mw-list"></ol>
         </section>
+        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="history">See your Recovery History →</button></p>
       </div>
     </div>
   </section>
@@ -1958,7 +2060,7 @@
           <section class="td-card pg-card" id="pg-porch" aria-labelledby="pg-porch-title"><h2 id="pg-porch-title">Daily Porch</h2><div class="pg-body"></div></section>
         </div>
         <section class="td-card pg-card" id="pg-goal" aria-labelledby="pg-goal-title" hidden><h2 id="pg-goal-title">Current goal</h2><div class="pg-body"></div></section>
-        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="weekly">Open Weekly Review →</button> · <button type="button" class="mr-link" data-nav="milestones">Milestones &amp; Wins →</button></p>
+        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="weekly">Open Weekly Review →</button> · <button type="button" class="mr-link" data-nav="milestones">Milestones &amp; Wins →</button> · <button type="button" class="mr-link" data-nav="history">Recovery History →</button></p>
       </div>
     </div>
   </section>
@@ -2084,7 +2186,7 @@
         <section class="form-card mr-card" id="mr-summary" aria-labelledby="mr-summary-title">
           <h2 id="mr-summary-title">Last 7 days</h2>
           <div id="mr-summary-body"></div>
-          <p class="mr-muted"><button type="button" class="mr-link" data-nav="progress">View Progress</button> for your last 7 or 30 days · <button type="button" class="mr-link" data-nav="milestones">View Milestones &amp; Wins</button> · <button type="button" class="mr-link" data-nav="weekly">Weekly Review</button> · <button type="button" class="mr-link" data-nav="journal">Open Journal</button></p>
+          <p class="mr-muted"><button type="button" class="mr-link" data-nav="progress">View Progress</button> for your last 7 or 30 days · <button type="button" class="mr-link" data-nav="milestones">View Milestones &amp; Wins</button> · <button type="button" class="mr-link" data-nav="weekly">Weekly Review</button> · <button type="button" class="mr-link" data-nav="journal">Open Journal</button> · <button type="button" class="mr-link" data-nav="history">Recovery History</button></p>
         </section>
 
         <section class="form-card mr-card" id="mr-goal" aria-labelledby="mr-goal-title">
@@ -3701,6 +3803,7 @@
           <li><a href="#" data-nav="myrecovery">My Recovery</a></li>
           <li><a href="#" data-nav="progress">Progress</a></li>
           <li><a href="#" data-nav="milestones">Milestones &amp; Wins</a></li>
+          <li><a href="#" data-nav="history">Recovery History</a></li>
           <li><a href="#" data-nav="weekly">Weekly Review</a></li>
           <li><a href="#" data-nav="journal">Journal</a></li>
           <li><a href="#" data-nav="recoveryplan">My Recovery Plan</a></li>
@@ -17325,6 +17428,12 @@ const FPRBadge = (function(){
     fillForm(weekMonday(offset));
     load();
   }
+  // Recovery History: open a given week (its Monday) if it's within reach.
+  window.FPRWeeklyOpenWeek = function(mon){
+    const off = Math.round((fromYmd(mondayOf(mon)) - fromYmd(weekMonday(0))) / (7 * 86400000));
+    goTo('weekly');
+    if (off <= 0 && off >= -MAX_BACK) goWeek(off);
+  };
   $('wr-prev').addEventListener('click', function(){ goWeek(offset - 1); });
   $('wr-next').addEventListener('click', function(){ goWeek(offset + 1); });
   $('wr-thisweek').addEventListener('click', function(){ goWeek(0); });
@@ -17632,6 +17741,7 @@ const FPRBadge = (function(){
       const row = Array.isArray(data) ? data[0] : data;
       busy = false; $('jr-save').disabled = false;
       dirty = false; editingId = row.id; entry = row; listStale = true;
+      try { document.dispatchEvent(new CustomEvent('fpr:journalchange')); } catch(e3){} // Recovery History refreshes
       renderEntry('Saved ✓'); setView('entry');
       try { $('jr-entry-view').focus(); window.scrollTo({ top: 0, behavior: 'auto' }); } catch(e2){}
     } catch(ex){
@@ -17654,6 +17764,7 @@ const FPRBadge = (function(){
       items = items.filter(function(x){ return x.id !== id; });
       if (entry && entry.id === id) entry = null;
       listStale = true;
+      try { document.dispatchEvent(new CustomEvent('fpr:journalchange')); } catch(e3){} // Recovery History refreshes
       setView('list'); loadList(false);
       try { $('jr-new').focus(); } catch(e){}
     } catch(err){
@@ -17837,6 +17948,297 @@ const FPRBadge = (function(){
 
   renderNeeds();
   renderAll();
+})();
+
+/* ---------- Recovery History (Phase 11K) ----------
+   A private long-term view that stores nothing. For each year it makes
+   ONE metadata call (list_my_history_events: dates, mood/cravings,
+   reflection-presence flags, completed support names/categories, journal
+   and review dates, win titles - never journal/review/reflection/plan/note
+   text), plus, once per session, saved Daily Porch days and the profile
+   recovery date (milestones are calculated with the shared
+   FPRWinsMilestones). Month detail reuses the year's data. Facts only:
+   no scores, grades or interpretation. Cached per year until a feature
+   reports a change, the date changes, or the account changes. */
+(function(){
+  const page = document.getElementById('page-history');
+  const M = (typeof FPRMilestones !== 'undefined') ? FPRMilestones : null;
+  if (!page || !M) return;
+  const client = window.__fprSupabaseClient || null;
+  const $ = function(id){ return document.getElementById(id); };
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const MIN_YEAR = 2000;
+
+  let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0;
+  let year = new Date().getFullYear(), month = null;   // month: 0-11 or null
+  let years = {};          // year -> events array
+  let sess = null;         // { saved: [dates], recoveryDate }
+  let loadedFor = null;
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function btn(label, cls, onClick){ const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; }
+  function navBtn(label, cls, nav){ const b = btn(label, cls); b.setAttribute('data-nav', nav); return b; }
+  function pad(n){ return String(n).padStart(2, '0'); }
+  function ymd(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function todayStr(){ return ymd(new Date()); }
+  function fromYmd(s){ const p = String(s).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function addDays(s, n){ const t = fromYmd(s); t.setDate(t.getDate() + n); return ymd(t); }
+  function shortDay(s){ try { return fromYmd(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); } catch(e){ return s; } }
+  function rows(res){ return res && !res.error ? (Array.isArray(res.data) ? res.data : (res.data == null ? [] : [res.data])) : null; }
+  function avg(list){ return list.length ? list.reduce(function(a, b){ return a + b; }, 0) / list.length : null; }
+  function plural(n, one, many){ return n + ' ' + (n === 1 ? one : many); }
+  function monthKey(s){ return Number(String(s).slice(5, 7)) - 1; }
+  function body(id){ const b = page.querySelector('#' + id + ' .rh-body'); b.replaceChildren(); return b; }
+  function weekLabel(mon){ return typeof window.FPRWeeklyRangeLabel === 'function' ? window.FPRWeeklyRangeLabel(mon, true) : shortDay(mon); }
+
+  // ---- Facts (pure) ----
+  function milestonesIn(from, to){
+    if (!sess || !sess.recoveryDate || typeof window.FPRWinsMilestones !== 'function') return [];
+    return (window.FPRWinsMilestones(sess.recoveryDate, M.todayYMD()) || []).filter(function(m){ return m.reached && m.date >= from && m.date <= to; });
+  }
+  function facts(from, to){
+    const ev = (years[year] || []).filter(function(e){ return e.event_date >= from && e.event_date <= to; });
+    const of = function(k){ return ev.filter(function(e){ return e.kind === k; }); };
+    const logs = of('log'), refl = of('reflection');
+    return {
+      logs: logs,
+      moodAvg: avg(logs.filter(function(l){ return l.mood != null; }).map(function(l){ return Number(l.mood); })),
+      cravAvg: avg(logs.filter(function(l){ return l.cravings != null; }).map(function(l){ return Number(l.cravings); })),
+      support: of('support'), journal: of('journal'), reviews: of('review'), wins: of('win'),
+      morning: refl.filter(function(r){ return r.has_morning; }).length,
+      evening: refl.filter(function(r){ return r.has_evening; }).length,
+      saved: (sess && sess.saved || []).filter(function(d){ return d >= from && d <= to; }).length,
+      milestones: milestonesIn(from, to)
+    };
+  }
+  function anyActivity(f){ return f.logs.length || f.support.length || f.journal.length || f.reviews.length || f.wins.length || f.morning || f.evening || f.saved || f.milestones.length; }
+  function monthRange(m){ const from = year + '-' + pad(m + 1) + '-01'; const end = new Date(year, m + 1, 0); return [from, ymd(end)]; }
+  window.FPRHistoryFacts = function(from, to){ const f = facts(from, to); return { logs: f.logs.length, moodAvg: f.moodAvg, cravAvg: f.cravAvg, support: f.support.length, journal: f.journal.length, reviews: f.reviews.length, wins: f.wins.length, morning: f.morning, evening: f.evening, saved: f.saved, milestones: f.milestones.map(function(m){ return m.label + '@' + m.date; }) }; };
+
+  // ---- Render ----
+  function statGrid(items){
+    const g = el('div', 'pg-stats');
+    items.forEach(function(x){ const b = el('div', 'pg-stat'); b.appendChild(el('div', 'n', x[0])); b.appendChild(el('div', 'l', x[1])); g.appendChild(b); });
+    return g;
+  }
+  function renderGlance(f){
+    const b = body('rh-glance');
+    b.appendChild(statGrid([
+      [String(f.logs.length), f.logs.length === 1 ? 'day logged in My Recovery' : 'days logged in My Recovery'],
+      [String(f.journal.length), f.journal.length === 1 ? 'journal entry' : 'journal entries'],
+      [String(f.support.length), f.support.length === 1 ? 'support activity completed' : 'support activities completed'],
+      [String(f.morning + f.evening), (f.morning + f.evening) === 1 ? 'Daily Porch reflection' : 'Daily Porch reflections'],
+      [String(f.reviews.length), f.reviews.length === 1 ? 'Weekly Review saved' : 'Weekly Reviews saved'],
+      [String(f.wins.length), f.wins.length === 1 ? 'personal win' : 'personal wins'],
+      [String(f.milestones.length), f.milestones.length === 1 ? 'recovery milestone reached' : 'recovery milestones reached']
+    ]));
+  }
+  function renderMonths(){
+    const ol = $('rh-months'); ol.replaceChildren();
+    const t = todayStr(), cy = new Date().getFullYear(), cm = new Date().getMonth();
+    for (let m = 0; m < 12; m++) {
+      const li = el('li');
+      const name = MONTHS[m] + ' ' + year;
+      if (year === cy && m > cm) {
+        const d = el('div', 'rh-mcard'); d.appendChild(el('span', 'rh-mname', name)); d.appendChild(el('span', 'rh-mline', 'Upcoming'));
+        li.appendChild(d); ol.appendChild(li); continue;
+      }
+      const r = monthRange(m), f = facts(r[0], r[1] < t ? r[1] : t);
+      const b = btn('', 'rh-mcard', function(){ openMonth(m); });
+      b.setAttribute('aria-expanded', String(month === m));
+      b.appendChild(el('span', 'rh-mname', name));
+      if (year === cy && m === cm) b.appendChild(el('span', 'rh-mnote', 'So far this month'));
+      const lines = [];
+      if (f.logs.length) lines.push(plural(f.logs.length, 'My Recovery day', 'My Recovery days'));
+      if (f.journal.length) lines.push(plural(f.journal.length, 'journal entry', 'journal entries'));
+      if (f.support.length) lines.push(plural(f.support.length, 'support activity', 'support activities'));
+      if (f.morning + f.evening) lines.push(plural(f.morning + f.evening, 'Daily Porch reflection', 'Daily Porch reflections'));
+      if (f.reviews.length) lines.push(plural(f.reviews.length, 'Weekly Review', 'Weekly Reviews'));
+      if (f.wins.length) lines.push(plural(f.wins.length, 'win', 'wins'));
+      if (!lines.length && !f.milestones.length) b.appendChild(el('span', 'rh-mline', f.saved ? plural(f.saved, 'saved Daily Porch day', 'saved Daily Porch days') : 'No recovery activity logged.'));
+      lines.forEach(function(x){ b.appendChild(el('span', 'rh-mline', x)); });
+      f.milestones.forEach(function(ms){ b.appendChild(el('span', 'rh-mms', '✓ ' + ms.label + ' milestone')); });
+      b.setAttribute('aria-label', name + ': ' + (lines.concat(f.milestones.map(function(x){ return x.label + ' milestone'; })).join(', ') || 'no recovery activity logged') + '. Open month details.');
+      li.appendChild(b); ol.appendChild(li);
+    }
+  }
+  function listSection(parent, title, items){
+    parent.appendChild(el('h3', 'rh-sub', title));
+    const ul = el('ul', 'rh-list');
+    items.forEach(function(x){ ul.appendChild(x); });
+    parent.appendChild(ul);
+  }
+  function li2(k, t, right){ const li = el('li'); const left = el('span'); if (k) left.appendChild(el('span', 'rh-k', k)); left.appendChild(t.nodeType ? t : el('span', 'rh-t', t)); li.appendChild(left); if (right != null) li.appendChild(right.nodeType ? right : el('span', null, right)); return li; }
+  function renderMonth(){
+    const sec = $('rh-month');
+    if (month == null) { sec.hidden = true; body('rh-month'); return; }
+    sec.hidden = false;
+    const r = monthRange(month), t = todayStr(), to = r[1] < t ? r[1] : t;
+    $('rh-month-title').textContent = MONTHS[month] + ' ' + year;
+    const f = facts(r[0], to);
+    const b = body('rh-month');
+    // Summary
+    b.appendChild(statGrid([
+      [String(f.logs.length), 'My Recovery days logged'],
+      [f.moodAvg == null ? '—' : f.moodAvg.toFixed(1) + ' / 5', 'average mood'],
+      [f.cravAvg == null ? '—' : f.cravAvg.toFixed(1) + ' / 10', 'average cravings'],
+      [String(f.support.length), 'support activities completed'],
+      [String(f.journal.length), 'journal entries'],
+      [String(f.morning), 'morning reflections'],
+      [String(f.evening), 'evening reflections'],
+      [String(f.saved), 'saved Daily Porch days'],
+      [String(f.reviews.length), 'Weekly Reviews saved'],
+      [String(f.wins.length), 'personal wins'],
+      [String(f.milestones.length), 'milestones reached']
+    ]));
+    if (!anyActivity(f)) b.appendChild(el('p', 'pg-legend', 'No recovery activity logged this month.'));
+    const cols = el('div', 'rh-cols'); b.appendChild(cols);
+    const left = el('div'), right = el('div'); cols.appendChild(left); cols.appendChild(right);
+    // Milestones & wins
+    const mw = [];
+    f.milestones.forEach(function(m){ mw.push(li2('Recovery milestone', '✓ ' + m.label, shortDay(m.date))); });
+    f.wins.forEach(function(w){ const o = navBtn(w.label, 'mr-link', 'milestones'); o.setAttribute('aria-label', 'Personal win: ' + w.label + '. Open Milestones & Wins.'); mw.push(li2('Personal win', o, shortDay(w.event_date))); });
+    if (mw.length) listSection(left, 'Milestones & wins', mw);
+    // My Recovery calendar (through today); days in the last 30 open My Recovery
+    left.appendChild(el('h3', 'rh-sub', 'My Recovery'));
+    left.appendChild(el('p', 'pg-legend', '✓ Logged · – Not logged' + (to < r[1] ? '. Days after today aren’t shown.' : '')));
+    const cal = el('div', 'pg-cal');
+    ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach(function(w){ const x = el('div', 'wd', w); x.setAttribute('aria-hidden', 'true'); cal.appendChild(x); });
+    for (let i = 0, lead = (fromYmd(r[0]).getDay() + 6) % 7; i < lead; i++) { const sp = el('div'); sp.setAttribute('aria-hidden', 'true'); cal.appendChild(sp); }
+    const logged = {}; f.logs.forEach(function(l){ logged[l.event_date] = true; });
+    const reach = addDays(t, -29);
+    for (let d = r[0]; d <= to; d = addDays(d, 1)) {
+      const on = !!logged[d];
+      const label = fromYmd(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) + ': ' + (on ? 'Logged' : 'Not logged');
+      const openable = on && d >= reach && typeof window.FPRMyRecoveryOpenDate === 'function';
+      const cell = openable ? el('button', 'pg-day on') : el('div', 'pg-day' + (on ? ' on' : ''));
+      if (openable) { cell.type = 'button'; cell.setAttribute('aria-label', label + '. Open in My Recovery.'); cell.addEventListener('click', function(){ window.FPRMyRecoveryOpenDate(d); }); }
+      else { cell.setAttribute('role', 'img'); cell.setAttribute('aria-label', label); }
+      const num = el('b', null, String(fromYmd(d).getDate())); num.setAttribute('aria-hidden', 'true');
+      const mark = el('span', null, on ? '✓' : '–'); mark.setAttribute('aria-hidden', 'true');
+      cell.appendChild(num); cell.appendChild(mark); cal.appendChild(cell);
+    }
+    left.appendChild(cal);
+    // Support
+    const sup = {}; f.support.forEach(function(s){ const c = s.category || 'Other'; sup[c] = (sup[c] || 0) + 1; });
+    listSection(right, 'Support completed', Object.keys(sup).length
+      ? Object.keys(sup).sort(function(a, z){ return a.localeCompare(z); }).map(function(c){ return li2(null, c, String(sup[c])); })
+      : [li2(null, 'None marked done', '0')]);
+    // Daily Porch
+    listSection(right, 'Daily Porch', [li2(null, 'Morning reflections', String(f.morning)), li2(null, 'Evening reflections', String(f.evening)), li2(null, 'Saved days', String(f.saved))]);
+    // Journal (count only)
+    const jl = el('li'); jl.appendChild(el('span', 'rh-t', plural(f.journal.length, 'journal entry', 'journal entries'))); jl.appendChild(navBtn('Open Journal →', 'mr-link', 'journal'));
+    listSection(right, 'Journal', [jl]);
+    // Weekly Reviews (ranges only)
+    const rv = f.reviews.map(function(x){
+      const o = btn(weekLabel(x.event_date), 'mr-link', function(){ if (typeof window.FPRWeeklyOpenWeek === 'function') window.FPRWeeklyOpenWeek(x.event_date); else goTo('weekly'); });
+      o.setAttribute('aria-label', 'Open Weekly Review for ' + weekLabel(x.event_date));
+      return li2(null, o, 'Saved ✓');
+    });
+    listSection(right, 'Weekly Reviews · ' + f.reviews.length + ' saved', rv.length ? rv : [li2(null, 'None saved for weeks starting this month', '')]);
+    // Timeline
+    const tl = [];
+    f.milestones.forEach(function(m){ tl.push([m.date, 'Recovery milestone', '✓ ' + m.label]); });
+    f.wins.forEach(function(w){ tl.push([w.event_date, 'Personal win', w.label]); });
+    f.support.forEach(function(s){ tl.push([s.event_date, 'Support done', s.label || 'Support activity']); });
+    f.reviews.forEach(function(x){ tl.push([x.event_date, 'Weekly Review saved', weekLabel(x.event_date)]); });
+    f.journal.forEach(function(j){ tl.push([j.event_date, 'Journal', 'Journal entry written']); });
+    f.logs.forEach(function(l){ tl.push([l.event_date, 'My Recovery', 'Logged in My Recovery']); });
+    tl.sort(function(a, z){ return a[0] < z[0] ? -1 : a[0] > z[0] ? 1 : 0; });
+    const tsec = el('div'); b.appendChild(tsec);
+    listSection(tsec, 'This month', tl.length ? tl.map(function(x){ return li2(x[1] + ' · ' + shortDay(x[0]), x[2]); }) : [li2(null, 'Nothing recorded this month.', '')]);
+  }
+  function render(){
+    $('rh-signedout').hidden = signedIn;
+    $('rh-signedin').hidden = !signedIn;
+    $('rh-private').hidden = !signedIn;
+    $('rh-helper').hidden = !signedIn;
+    $('rh-year').textContent = String(year);
+    const cy = new Date().getFullYear();
+    $('rh-next').disabled = year >= cy;
+    $('rh-prev').disabled = year <= MIN_YEAR;
+    const ready = signedIn && sess && years[year];
+    $('rh-loading').hidden = !signedIn || !!ready || $('rh-load-error').classList.contains('show');
+    if (!ready) { ['rh-empty', 'rh-glance', 'rh-months-sec', 'rh-month'].forEach(function(id){ $(id).hidden = true; }); ['rh-glance', 'rh-month'].forEach(body); $('rh-months').replaceChildren(); return; }
+    const t = todayStr(), yf = facts(year + '-01-01', year === cy ? t : year + '-12-31');
+    const empty = !anyActivity(yf);
+    $('rh-empty').hidden = !empty;
+    $('rh-glance').hidden = empty;
+    $('rh-months-sec').hidden = empty;
+    if (empty) { month = null; $('rh-month').hidden = true; body('rh-month'); $('rh-months').replaceChildren(); return; }
+    renderGlance(yf); renderMonths(); renderMonth();
+  }
+  function openMonth(m){
+    month = (month === m) ? null : m;
+    renderMonths(); renderMonth();
+    if (month != null) { const s = $('rh-month'); try { s.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); s.focus({ preventScroll: true }); } catch(e){} }
+  }
+  $('rh-month-close').addEventListener('click', function(){ const m = month; month = null; renderMonths(); renderMonth(); const b = $('rh-months').children[m]; if (b && b.firstChild) try { b.firstChild.focus(); } catch(e){} });
+
+  // ---- Loading ----
+  function showLoadError(msg){ $('rh-load-error-text').textContent = msg || ''; $('rh-load-error').classList.toggle('show', !!msg); }
+  async function load(){
+    if (!client || !signedIn) return;
+    const mySeq = seq, myLoad = ++loadSeq, y = year;
+    const needSess = !sess, needYear = !years[y];
+    if (!needSess && !needYear) { render(); return; }
+    showLoadError(''); render();
+    const call = function(fn, args){ return client.rpc(fn, args).then(function(r){ return r; }, function(e){ return { error: e }; }); };
+    const jobs = [];
+    if (needYear) jobs.push(call('list_my_history_events', { p_from: y + '-01-01', p_to: y + '-12-31' }));
+    if (needSess) jobs.push(call('list_my_saved_daily_porch'), call('get_my_profile'));
+    const res = await Promise.all(jobs);
+    if (mySeq !== seq || myLoad !== loadSeq) return;
+    if (res.some(function(r){ return r && r.error; })) { showLoadError('We couldn’t load your history right now.'); render(); return; }
+    let i = 0;
+    if (needYear) years[y] = rows(res[i++]) || [];
+    if (needSess) {
+      const saved = (rows(res[i++]) || []).filter(function(s){ return s.saved_at; }).map(function(s){ return ymd(new Date(s.saved_at)); });
+      const prof = (rows(res[i++]) || [])[0] || null;
+      sess = { saved: saved, recoveryDate: prof ? prof.recovery_date : null };
+    }
+    loadedFor = todayStr();
+    render();
+  }
+  function goYear(y){
+    const cy = new Date().getFullYear();
+    y = Math.max(MIN_YEAR, Math.min(cy, y));
+    if (y === year) return;
+    year = y; month = null;
+    load();
+  }
+  $('rh-prev').addEventListener('click', function(){ goYear(year - 1); });
+  $('rh-next').addEventListener('click', function(){ goYear(year + 1); });
+  $('rh-retry').addEventListener('click', load);
+  $('rh-signin').addEventListener('click', function(){ const b = $('header-account-btn'); if (b) b.click(); });
+
+  // ---- Session / events ----
+  function pageActive(){ return page.classList.contains('active'); }
+  function onSession(session){
+    const nowUser = session && session.user ? session.user.id : null;
+    if (nowUser === sessionUser) return;
+    sessionUser = nowUser;
+    signedIn = !!nowUser;
+    seq++; years = {}; sess = null; loadedFor = null; month = null; year = new Date().getFullYear(); // never carry one account's history into another
+    showLoadError('');
+    render();
+    if (signedIn && pageActive()) load();
+  }
+  function invalidate(sessionToo){ years = {}; if (sessionToo) sess = null; if (signedIn && pageActive()) load(); }
+  ['fpr:recoverychange', 'fpr:supportchange', 'fpr:dailyreflectionchange', 'fpr:journalchange', 'fpr:weeklyreviewchange', 'fpr:winschange'].forEach(function(n){ document.addEventListener(n, function(){ invalidate(false); }); });
+  ['fpr:dailysavedchange', 'fpr:profilechange'].forEach(function(n){ document.addEventListener(n, function(){ invalidate(true); }); });
+  document.addEventListener('fpr:pagechange', function(e){
+    if (!(e && e.detail && e.detail.page === 'history') || !signedIn) return;
+    if (loadedFor !== todayStr()) { years = {}; sess = null; }
+    load();
+  });
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible' && signedIn && pageActive() && loadedFor !== todayStr()) { years = {}; sess = null; load(); }
+  });
+  render();
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  }
 })();
 
 /* ---------- Community celebration cards (separate from recovery badges) ----------

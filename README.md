@@ -29,6 +29,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
 - **My Recovery Plan v1 (Phase 11C)** — complete: a private, signed-in plan for hard moments (see below).
+- **Recovery History v1 (Phase 11K)** — complete: a private year-by-year and month-by-month record built from existing data (see below).
 - **Resources v2** — complete: a searchable national recovery-resource directory built from one shared catalog (see below).
 - **Journal v1 (Phase 11J)** — complete: a private freeform journal with search and tags (see below).
 - **Weekly Review v1 (Phase 11I)** — complete: a factual Monday–Sunday summary plus a private weekly reflection (see below).
@@ -144,6 +145,32 @@ The backend is `supabase/migrations/phase11d_toolbox_pins_v1.sql` (applied; see 
   - **No new storage and no migration.** One parallel batch of 8 existing RPCs per load: `list_my_recovery_logs`, `get_my_recovery_goal`, `list_my_saved_daily_porch`, `list_my_support_items`, `list_my_support_checkins`, `get_my_recovery_plan`, `list_my_toolbox_pins`, `get_my_profile`.
   - **Caching:** results are reused until something changes. The other features dispatch `fpr:recoverychange` (log/goal), `fpr:dailysavedchange`, `fpr:pinschange`, `fpr:planchange` and `fpr:supportchange`, and `fpr:profilechange` already existed. The cache is also dropped when the local date changes (checked on each Today visit and when the tab becomes visible) or when the account changes.
   - **No timers or polling.** Signing out or switching accounts clears everything.
+
+## Recovery History
+
+"Recovery History" (`#history`) asks: "What has my recovery looked like over time?" It's private, signed-in only, and stores nothing new. It presents the member's own record: no AI, scores, grades, comparisons or judgment.
+
+- **Navigation:** the mobile menu and footer, plus links from Progress, My Recovery and Milestones & Wins. It's not in the desktop nav.
+- **Signed out:** "Your recovery story, over time", a Sign in button, and Daily Porch / Check-In links. No private calls are made.
+- **Year selector:** Prev/Next back to 2000, never past the current year.
+- **Year at a glance:** days logged in My Recovery, journal entries, support activities completed, Daily Porch reflections, Weekly Reviews saved, personal wins, and recovery milestones reached (calculated from the profile recovery date with the shared milestone helper).
+- **Month by month:** January–December cards with concise counts and any "✓ X milestone". An empty month says "No recovery activity logged." In the current year, the current month is marked "So far this month" and later months are "Upcoming" and not clickable.
+- **Month detail** (tap a month; it reuses the year's data, with no extra request):
+  - **Summary:** days logged, average mood and cravings ("—" when there's nothing), support completed, journal entries, morning and evening reflections, saved Daily Porch days, Weekly Reviews, wins and milestones.
+  - **Milestones & wins:** win titles only (never notes), opening Milestones & Wins.
+  - **My Recovery calendar:** Logged / Not logged, through today only. Logged days from the last 30 days open My Recovery on that date; older ones aren't clickable, because My Recovery only edits its recent window.
+  - **Support completed:** by stored category, alphabetical.
+  - **Daily Porch:** counts only.
+  - **Journal:** a count only, with Open Journal.
+  - **Weekly Reviews:** week ranges only, which open that review if it's within Weekly Review's 12-week window. A review counts in the month its week starts.
+  - **"This month" timeline:** milestones, wins, "Support done", "Weekly Review saved", "Journal entry written" and "Logged in My Recovery", in date order.
+- **Empty year:** "Nothing logged here yet" with Open My Recovery, Open Journal and Open Daily Porch.
+- **Data:**
+  - **Per year:** one call to the new read-only `list_my_history_events(p_from, p_to)`, which returns dated metadata only and never journal, review, reflection, plan or note text.
+  - **Once per session:** `list_my_saved_daily_porch` and `get_my_profile` (for the recovery date).
+  - **Caching:** month detail and revisited years reuse the cache. It's refreshed by `fpr:recoverychange`, `fpr:supportchange`, `fpr:dailyreflectionchange`, `fpr:journalchange` (new; fired by Journal save and remove), `fpr:weeklyreviewchange`, `fpr:winschange`, `fpr:dailysavedchange`, `fpr:profilechange`, a date change or an account change. There's no polling.
+
+The backend is `supabase/migrations/phase11k_recovery_history_v1.sql` (applied; see `supabase/README.md`).
 
 ## Resources (national directory)
 
