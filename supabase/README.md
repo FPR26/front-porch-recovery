@@ -832,6 +832,34 @@ Migration: `migrations/phase11h_recovery_wins_v1.sql`. It's additive only (no DR
 - **Separate rollback block:** setting a 2024-02-29 date through `update_my_profile` with visibility unchanged (private) kept the name. The public view showed the date to the owner but hid it from member B and from anon.
 - **Browser fixture suite:** 65 checks passed, including leap-year, month-end and very-old date math.
 
+## Phase 11I — Weekly Review v1
+
+Migration: `migrations/phase11i_weekly_review_v1.sql`. It's additive only (no DROP, ALTER or DELETE; existing RPCs are unchanged). It was applied through the normal migration tool on 2026-10-19 and is recorded in `schema_migrations` as row 16, `phase11i_weekly_review_v1`. The weekly summary is **not** stored; only the member's writing is.
+
+- **`recovery_weekly_reviews`:**
+  - Columns: `id`, `user_id` (`ON DELETE CASCADE`), `week_start`, `went_well`, `was_hard`, `what_helped` (each 1–750 or NULL), `next_week_intention` (1–300 or NULL), `created_at`, `updated_at`.
+  - `unique (user_id, week_start)` gives one review per week, and a CHECK requires `week_start` to be a Monday (ISO day 1).
+- **RPCs:** all `security definer` with `search_path = public, pg_temp`, executable by `authenticated` only, scoped to `auth.uid()`, and never returning `user_id`.
+  - `save_my_weekly_review(p_week_start, …)` upserts one week. The Monday can't be after the current week (one day of slack) or before 2000. A new row needs at least one field; an existing row may be cleared, and empty rows aren't listed.
+  - `list_my_weekly_reviews(p_since)` returns non-empty reviews, newest first, at most 60.
+  - `list_my_recovery_logs_range(p_from, p_to)` returns date, mood and cravings only (no notes) for a range of up to 100 days.
+  - `list_my_daily_reflection_days(p_from, p_to)` returns only presence flags (`has_morning`, `has_evening`) for a range of up to 100 days. It has no text columns.
+
+  These two bounded helpers exist because the 11A/11B list RPCs return the newest 60 rows from a start date, which can miss older weeks.
+- **Access:** RLS is on with no policies and no table privileges for public, anon or authenticated. There's no admin path, no view, no trigger, and no Community/profile/notification link.
+
+**Verification (2026-10-19):**
+- **Privileges:** false for anon and authenticated; EXECUTE is authenticated-only on all four RPCs.
+- **Rollback DO block** (throwaway users, seeded logs and reflections). These passed:
+  - anon access to all four RPCs and the table is denied, and direct table access as authenticated is denied;
+  - an empty new review is rejected; saving trims, an edit works, the list is newest first, and a cleared review is hidden;
+  - a non-Monday, a future week, 751 characters and a 301-character intention are rejected, and 750/300 are accepted;
+  - the logs range returns the week's rows and rejects ranges over 100 days;
+  - the reflection-days helper returns correct flags and its signature has no text column;
+  - member B sees none of A's reviews, logs or reflection days, and B's save doesn't touch A's;
+  - Community counts are unchanged.
+- **Browser fixture suite:** 66 checks passed.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -860,4 +888,4 @@ Migration: `migrations/phase11h_recovery_wins_v1.sql`. It's additive only (no DR
 
 **Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and on-site payment processing. Optional Support FPR contributions use an external Cash App link; no payment credentials or transaction records are stored by this website.
 
-Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`, `phase11d_toolbox_pins_v1`, `phase11e_meetings_support_v1`, `phase11h_recovery_wins_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`, `phase11d_toolbox_pins_v1`, `phase11e_meetings_support_v1`, `phase11h_recovery_wins_v1`, `phase11i_weekly_review_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.

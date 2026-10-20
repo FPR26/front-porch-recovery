@@ -29,6 +29,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
 - **My Recovery Plan v1 (Phase 11C)** — complete: a private, signed-in plan for hard moments (see below).
+- **Weekly Review v1 (Phase 11I)** — complete: a factual Monday–Sunday summary plus a private weekly reflection (see below).
 - **Milestones & Wins v1 (Phase 11H)** — complete: calculated recovery milestones plus private personal wins in one timeline (see below).
 - **Progress v1 (Phase 11G)** — complete: a private 7/30-day history view computed from existing data, with no new storage (see below).
 - **Today v1 (Phase 11F)** — complete: a signed-in daily dashboard over existing data, with no new storage (see below).
@@ -141,6 +142,33 @@ The backend is `supabase/migrations/phase11d_toolbox_pins_v1.sql` (applied; see 
   - **No new storage and no migration.** One parallel batch of 8 existing RPCs per load: `list_my_recovery_logs`, `get_my_recovery_goal`, `list_my_saved_daily_porch`, `list_my_support_items`, `list_my_support_checkins`, `get_my_recovery_plan`, `list_my_toolbox_pins`, `get_my_profile`.
   - **Caching:** results are reused until something changes. The other features dispatch `fpr:recoverychange` (log/goal), `fpr:dailysavedchange`, `fpr:pinschange`, `fpr:planchange` and `fpr:supportchange`, and `fpr:profilechange` already existed. The cache is also dropped when the local date changes (checked on each Today visit and when the tab becomes visible) or when the account changes.
   - **No timers or polling.** Signing out or switching accounts clears everything.
+
+## Weekly Review
+
+"Weekly Review" (`#weekly`) asks: "What happened this week, what mattered, and what do I want to carry into next week?" The numbers come from the member's own activity, and the meaning comes from them: no AI, score, grade, streaks or nagging.
+
+- **Navigation:** the mobile menu and footer; "Weekly Review →" on Today (slightly bolder on Sundays, never a prompt); "Open Weekly Review →" on Progress; "Weekly Review" on My Recovery. It's not in the desktop nav.
+- **Weeks:** Monday–Sunday in local time, labelled like "October 19–25, 2026", "September 28 – October 4, 2026" or "December 28, 2026 – January 3, 2027". Prev/Next go back up to 12 weeks, never forward past this week, with "Back to this week".
+- **Signed out:** "Your week, in perspective", a Sign in button, and Daily Porch / Check-In links. No private calls are made.
+- **This week at a glance**, derived and never stored:
+  - days logged, average mood and cravings ("—" when there's nothing);
+  - support activities completed;
+  - morning reflections and evening reflections;
+  - personal wins;
+  - any recovery milestone reached that week.
+
+  A week with no activity shows "No recovery activity is logged for this week yet." and the form still works.
+- **Moments from this week:** milestones reached, personal wins (title and date), completed support activities (by name), and the current goal if it was completed that week, in date order. Daily Porch reflections, My Recovery notes and plan text are never shown.
+- **My reflection:** What went well? / What was hard? / What helped? (up to 750 characters each) and Next week (up to 300), with visible counters, "Saved ✓" / "Unsaved changes" in text, and a link to set or edit the Recovery Goal.
+  - One review per week (keyed by its Monday), editable any time within the 12 weeks.
+  - A new review needs at least one field filled in. Switching weeks with unsaved changes asks first.
+- **Previous Reviews:** saved reviews from the previous 12 weeks, showing the range, Saved ✓ and a short first-line preview. Tapping one opens that week.
+- **Data:**
+  - **Per selected week:** one parallel batch of 4 calls, cached per week: the new bounded `list_my_recovery_logs_range` and `list_my_daily_reflection_days` (presence flags only, never text), plus `list_my_support_items` / `list_my_support_checkins`.
+  - **Once per session:** `list_my_weekly_reviews`, `list_my_wins`, `get_my_recovery_goal` and `get_my_profile` (the recovery date, for milestones).
+  - **Refresh:** on `fpr:recoverychange`, `fpr:supportchange`, `fpr:dailyreflectionchange`, the new `fpr:winschange` (fired by Milestones & Wins), `fpr:profilechange`, a date change or an account change. Saving fires `fpr:weeklyreviewchange`. There's no polling.
+
+The backend is `supabase/migrations/phase11i_weekly_review_v1.sql` (applied; see `supabase/README.md`).
 
 ## Milestones & Wins
 

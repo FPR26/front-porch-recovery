@@ -888,7 +888,7 @@
      .tb-pin, ...) on the private pages and the Toolbox, like the other
      [hidden] rules above. */
   #page-myrecovery [hidden], #page-daily [hidden], #page-recoveryplan [hidden],
-  #page-toolbox [hidden], #page-meetings [hidden], #page-today [hidden], #page-progress [hidden], #page-milestones [hidden], #roughday-plan-link[hidden],
+  #page-toolbox [hidden], #page-meetings [hidden], #page-today [hidden], #page-progress [hidden], #page-milestones [hidden], #page-weekly [hidden], #roughday-plan-link[hidden],
   #home-today[hidden]{display:none !important;}
 
   /* ---------- Today (Phase 11F) ---------- */
@@ -921,6 +921,27 @@
   .td-links .btn{flex:1 1 120px; min-height:44px;}
   #td-signedout .btn-primary{margin-top:12px;}
   .td-progress-link{margin-top:16px; text-align:center; font-size:.95rem;}
+  .td-progress-link .td-strong{font-weight:800;}
+
+  /* ---------- Weekly Review (Phase 11I) ---------- */
+  .wr-wrap{max-width:720px;}
+  .wr-card{margin-top:14px;}
+  .wr-weeknav{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .wr-weeknav .btn{min-height:44px; padding:8px 14px; font-size:.85rem; flex:none;}
+  .wr-range{font-weight:700; text-align:center; flex:1; min-width:0; font-size:.95rem;}
+  .wr-field{margin-top:14px;}
+  .wr-field label{display:block; font-weight:700; font-size:.95rem;}
+  .wr-field .wr-kicker{display:block; font-size:.75rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--sage-text); margin-bottom:2px;}
+  .wr-field textarea{margin-top:6px; min-height:96px;}
+  .wr-status{font-weight:700; font-size:.9rem; margin-top:10px;}
+  .wr-status.dirty{color:#7a5a1e;}
+  .wr-status.saved{color:var(--sage-text);}
+  .wr-moments{list-style:none; padding:0; margin:6px 0 0;}
+  .wr-moments li{padding:8px 0; border-bottom:1px solid var(--line); font-size:.92rem;}
+  .wr-moments .wr-mk{display:block; font-size:.72rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--sage-text);}
+  .wr-moments .wr-mt{font-weight:600; overflow-wrap:anywhere;}
+  .wr-past{list-style:none; padding:0; margin:8px 0 0; display:flex; flex-direction:column; gap:8px;}
+  .wr-links{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:12px; font-size:.9rem;}
 
   /* ---------- Progress (Phase 11G) ---------- */
   .pg-wrap{max-width:760px;}
@@ -1178,6 +1199,7 @@
     <button data-nav="myrecovery">My Recovery</button>
     <button data-nav="progress">Progress</button>
     <button data-nav="milestones">Milestones &amp; Wins</button>
+    <button data-nav="weekly">Weekly Review</button>
     <button data-nav="recoveryplan">My Recovery Plan</button>
     <button data-nav="meetings">Meetings &amp; Support</button>
     <button data-nav="porch">The Porch</button>
@@ -1532,6 +1554,89 @@
   </section>
 </section>
 
+<!-- ================= WEEKLY REVIEW (Phase 11I) =================
+     Private. The weekly summary and moments are derived from existing
+     records (never stored); only the member's written reflection is saved
+     (recovery_weekly_reviews). Built by the Weekly Review script
+     (textContent only). -->
+<section class="page" id="page-weekly">
+  <section class="block bg-charcoal tight">
+    <div class="wrap td-wrap wr-wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;">Monday to Sunday</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Weekly Review</h1>
+      <p style="color:var(--gray); margin-top:6px; font-weight:600;" id="wr-heading-range"></p>
+      <p class="mr-private-pill" id="wr-private" hidden><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>Private to your account</p>
+      <p style="color:var(--gray); margin-top:10px; max-width:58ch;" id="wr-helper" hidden>Your Weekly Review is not public and does not appear in Community.</p>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap td-wrap wr-wrap">
+      <div class="form-card mr-card" id="wr-signedout">
+        <h2>Your week, in perspective</h2>
+        <p>Sign in to review your private recovery activity and write a weekly reflection.</p>
+        <button type="button" class="btn btn-primary" id="wr-signin">Sign in</button>
+        <div class="td-links">
+          <button type="button" class="btn btn-outline" data-nav="daily">Daily Porch</button>
+          <button type="button" class="btn btn-outline" data-nav="checkin">Check-In</button>
+        </div>
+      </div>
+
+      <div id="wr-signedin" hidden>
+        <div class="wr-weeknav">
+          <button type="button" class="btn btn-outline" id="wr-prev" aria-label="Previous week">‹ Prev</button>
+          <p class="wr-range" id="wr-range" aria-live="polite"></p>
+          <button type="button" class="btn btn-outline" id="wr-next" aria-label="Next week">Next ›</button>
+        </div>
+        <button type="button" class="card-link ms-thisweek" id="wr-thisweek" hidden style="background:none; border:none; cursor:pointer; padding:0;">Back to this week</button>
+        <div class="status-msg status-error" id="wr-load-error" role="alert"><span id="wr-load-error-text"></span> <button type="button" class="mr-link" id="wr-retry">Try again</button></div>
+        <p class="mr-state" id="wr-loading" role="status">Loading your week…</p>
+
+        <section class="td-card wr-card" id="wr-glance" aria-labelledby="wr-glance-title"><h2 id="wr-glance-title">This week at a glance</h2><div class="wr-body"></div></section>
+        <section class="td-card wr-card" id="wr-moments" aria-labelledby="wr-moments-title"><h2 id="wr-moments-title">Moments from this week</h2><div class="wr-body"></div></section>
+
+        <form class="td-card wr-card" id="wr-form" novalidate aria-labelledby="wr-form-title">
+          <h2 id="wr-form-title">My reflection</h2>
+          <p class="pg-legend">Private. Write as much or as little as you like.</p>
+          <div class="wr-field">
+            <label for="wr-well"><span class="wr-kicker">What went well?</span>What is one thing from this week I want to remember?</label>
+            <textarea id="wr-well" maxlength="750" rows="3" aria-describedby="wr-well-count"></textarea>
+            <p class="mr-count" id="wr-well-count">0 / 750</p>
+          </div>
+          <div class="wr-field">
+            <label for="wr-hard"><span class="wr-kicker">What was hard?</span>What challenged me this week?</label>
+            <textarea id="wr-hard" maxlength="750" rows="3" aria-describedby="wr-hard-count"></textarea>
+            <p class="mr-count" id="wr-hard-count">0 / 750</p>
+          </div>
+          <div class="wr-field">
+            <label for="wr-helped"><span class="wr-kicker">What helped?</span>What actually helped me get through the week?</label>
+            <textarea id="wr-helped" maxlength="750" rows="3" aria-describedby="wr-helped-count"></textarea>
+            <p class="mr-count" id="wr-helped-count">0 / 750</p>
+          </div>
+          <div class="wr-field">
+            <label for="wr-next-text"><span class="wr-kicker">Next week</span>What is one thing I want to carry into next week?</label>
+            <textarea id="wr-next-text" maxlength="300" rows="2" aria-describedby="wr-next-count"></textarea>
+            <p class="mr-count" id="wr-next-count">0 / 300</p>
+            <p class="mr-muted"><button type="button" class="mr-link" data-nav="myrecovery">Set or edit my Recovery Goal →</button></p>
+          </div>
+          <p class="wr-status" id="wr-status" role="status" aria-live="polite"></p>
+          <p class="field-error" id="wr-error" role="alert"></p>
+          <div class="mr-actions"><button type="submit" class="btn btn-primary" id="wr-save">Save my review</button></div>
+        </form>
+
+        <section class="td-card wr-card" id="wr-past" aria-labelledby="wr-past-title"><h2 id="wr-past-title">Previous Reviews</h2><div class="wr-body"></div></section>
+
+        <div class="wr-links">
+          <button type="button" class="mr-link" data-nav="milestones">View Milestones &amp; Wins →</button>
+          <button type="button" class="mr-link" data-nav="meetings">View Meetings &amp; Support →</button>
+          <button type="button" class="mr-link" data-nav="daily">Open Daily Porch →</button>
+          <button type="button" class="mr-link" data-nav="progress">View Progress →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+
 <!-- ================= MILESTONES & WINS (Phase 11H) =================
      Private. Milestones are calculated from the account profile recovery
      date (never stored); personal wins come from recovery_wins. No
@@ -1676,7 +1781,7 @@
           <section class="td-card pg-card" id="pg-porch" aria-labelledby="pg-porch-title"><h2 id="pg-porch-title">Daily Porch</h2><div class="pg-body"></div></section>
         </div>
         <section class="td-card pg-card" id="pg-goal" aria-labelledby="pg-goal-title" hidden><h2 id="pg-goal-title">Current goal</h2><div class="pg-body"></div></section>
-        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="milestones">Milestones &amp; Wins →</button></p>
+        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="weekly">Open Weekly Review →</button> · <button type="button" class="mr-link" data-nav="milestones">Milestones &amp; Wins →</button></p>
       </div>
     </div>
   </section>
@@ -1725,7 +1830,7 @@
             <div class="td-actions"><button type="button" class="btn btn-outline" data-nav="roughday">Open Rough Day</button></div>
           </section>
         </div>
-        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="progress">View my progress →</button> · <button type="button" class="mr-link" data-nav="milestones">View milestones &amp; wins →</button></p>
+        <p class="td-progress-link"><button type="button" class="mr-link" data-nav="progress">View my progress →</button> · <button type="button" class="mr-link" data-nav="milestones">View milestones &amp; wins →</button> · <button type="button" class="mr-link" data-nav="weekly" id="td-weekly-link">Weekly Review →</button></p>
       </div>
     </div>
   </section>
@@ -1802,7 +1907,7 @@
         <section class="form-card mr-card" id="mr-summary" aria-labelledby="mr-summary-title">
           <h2 id="mr-summary-title">Last 7 days</h2>
           <div id="mr-summary-body"></div>
-          <p class="mr-muted"><button type="button" class="mr-link" data-nav="progress">View Progress</button> for your last 7 or 30 days · <button type="button" class="mr-link" data-nav="milestones">View Milestones &amp; Wins</button></p>
+          <p class="mr-muted"><button type="button" class="mr-link" data-nav="progress">View Progress</button> for your last 7 or 30 days · <button type="button" class="mr-link" data-nav="milestones">View Milestones &amp; Wins</button> · <button type="button" class="mr-link" data-nav="weekly">Weekly Review</button></p>
         </section>
 
         <section class="form-card mr-card" id="mr-goal" aria-labelledby="mr-goal-title">
@@ -2872,6 +2977,9 @@
       <h2>My Recovery Plan (private to your account)</h2>
       <p>If you build a My Recovery Plan, what you write is saved with your account: your next steps, what helps you, your warning signs, why you're choosing recovery, and up to five people you list with an optional phone number or note. You type these in yourself. The site never reads your phone's contacts, and Call/Text buttons just open your phone's own dialer or messaging app; nothing is called or sent automatically. Your plan follows the same rules as My Recovery: only you can see it in the site, it never appears in the Community, on your profile, or in notifications, it isn't shared or exported, and FPR's admin tools have no screen for it. It's your own plan, not medical care or an emergency service.</p>
 
+      <h2>Weekly Review (private to your account)</h2>
+      <p>If you write a Weekly Review, your answers to its prompts and your intention for the next week are saved with your account, one review per week. The weekly summary shown next to it is worked out from your existing activity each time and isn't stored again, and it never shows your Daily Porch reflections or other private notes. Only you can see your reviews in the site. They never appear in the Community, on your profile, or in notifications, and FPR's admin tools have no screen for them.</p>
+
       <h2>Milestones &amp; Wins (private to your account)</h2>
       <p>Milestones are worked out from the recovery date in your account profile; nothing extra is stored for them, and who can see that date stays exactly as you've set it. If your account has no recovery date, you can add one from Milestones &amp; Wins; it's saved as private (only you), and the Recovery Counter date on your device is only added if you choose to and confirm it. The personal wins you add (a title, a date, and an optional note) are saved with your account. Only you can see them in the site. They never appear in the Community, on your profile, or in notifications, there are no badges, points, or sharing, and FPR's admin tools have no screen for them.</p>
 
@@ -3353,6 +3461,7 @@
           <li><a href="#" data-nav="myrecovery">My Recovery</a></li>
           <li><a href="#" data-nav="progress">Progress</a></li>
           <li><a href="#" data-nav="milestones">Milestones &amp; Wins</a></li>
+          <li><a href="#" data-nav="weekly">Weekly Review</a></li>
           <li><a href="#" data-nav="recoveryplan">My Recovery Plan</a></li>
           <li><a href="#" data-nav="meetings">Meetings &amp; Support</a></li>
           <li><a href="#" data-nav="porch">The Porch</a></li>
@@ -15783,6 +15892,8 @@ const FPRBadge = (function(){
     $('td-greeting').textContent = signedIn ? part + (name ? ', ' + name + '.' : '.') : 'Today';
     $('td-private').hidden = !signedIn;
     $('td-helper').hidden = !signedIn;
+    const wl = $('td-weekly-link');
+    if (wl) wl.classList.toggle('td-strong', now.getDay() === 0); // a little more visible on Sundays; no prompts
   }
 
   // ---- Cards ----
@@ -16543,6 +16654,7 @@ const FPRBadge = (function(){
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
       wins = wins.filter(function(w){ return w.id !== row.id; }).concat([row]);
+      try { document.dispatchEvent(new CustomEvent('fpr:winschange')); } catch(e){} // Weekly Review refreshes
       busy = false; $('mw-win-save').disabled = false;
       closeWinForm();
     } catch(err){
@@ -16562,6 +16674,7 @@ const FPRBadge = (function(){
       if (mySeq !== seq) return;
       if (error) throw error;
       wins = wins.filter(function(x){ return x.id !== w.id; });
+      try { document.dispatchEvent(new CustomEvent('fpr:winschange')); } catch(e){} // Weekly Review refreshes
       busy = false;
       render();
       try { $('mw-timeline-title').setAttribute('tabindex', '-1'); $('mw-timeline-title').focus(); } catch(e){}
@@ -16618,6 +16731,293 @@ const FPRBadge = (function(){
   document.addEventListener('visibilitychange', function(){
     if (document.visibilityState === 'visible' && signedIn && pageActive() && loadedFor !== todayStr()) load();
   });
+  render();
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  }
+})();
+
+/* ---------- Weekly Review (Phase 11I) ----------
+   Monday-Sunday weeks in the device's local time, this week back to 12
+   weeks ago (never into the future). The factual summary and "Moments"
+   are DERIVED from existing records and never stored:
+     - per week (one parallel batch, cached per week): My Recovery logs and
+       Daily Porch reflection presence via the bounded range helpers
+       (list_my_recovery_logs_range, list_my_daily_reflection_days - flags
+       only, never text), plus Meetings & Support items + check-offs;
+     - once per session: the reviews list, personal wins, current goal and
+       profile recovery date (for milestones reached that week).
+   Only the member's own reflection is saved (save_my_weekly_review).
+   Facts only: no score, grade, interpretation or nagging. Daily Porch,
+   My Recovery notes and plan text are never shown here. textContent only. */
+(function(){
+  const page = document.getElementById('page-weekly');
+  const M = (typeof FPRMilestones !== 'undefined') ? FPRMilestones : null;
+  if (!page || !M) return;
+  const client = window.__fprSupabaseClient || null;
+  const $ = function(id){ return document.getElementById(id); };
+  const MAX_BACK = 12;
+  const FIELDS = [['wr-well', 'went_well', 750], ['wr-hard', 'was_hard', 750], ['wr-helped', 'what_helped', 750], ['wr-next-text', 'next_week_intention', 300]];
+
+  let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0, busy = false;
+  let offset = 0;                // 0 = this week, -1 = last week, ... -12
+  let sess = null;               // { reviews: {monday: row}, wins, goal, recoveryDate } for this account
+  let weeks = {};                // monday -> { logs, refl, items, checks } (derived-data cache)
+  let dirty = false, sessionFor = null, loadedFor = null;
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function pad(n){ return String(n).padStart(2, '0'); }
+  function ymd(dt){ return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()); }
+  function fromYmd(s){ const p = String(s).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function addDays(s, n){ const t = fromYmd(s); t.setDate(t.getDate() + n); return ymd(t); }
+  function todayStr(){ return ymd(new Date()); }
+  function mondayOf(s){ const t = fromYmd(s); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return ymd(t); }
+  function weekMonday(off){ return addDays(mondayOf(todayStr()), off * 7); }
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  // "October 19–25, 2026" / "September 28 – October 4, 2026" / "December 29, 2025 – January 4, 2026"
+  function rangeLabel(mon, short){
+    const a = fromYmd(mon), b = fromYmd(addDays(mon, 6));
+    const mn = function(d){ return short ? MONTHS[d.getMonth()].slice(0, 3) : MONTHS[d.getMonth()]; };
+    if (a.getFullYear() !== b.getFullYear()) return short
+      ? mn(a) + ' ' + a.getDate() + ', ' + a.getFullYear() + '–' + mn(b) + ' ' + b.getDate() + ', ' + b.getFullYear()
+      : mn(a) + ' ' + a.getDate() + ', ' + a.getFullYear() + ' – ' + mn(b) + ' ' + b.getDate() + ', ' + b.getFullYear();
+    if (a.getMonth() !== b.getMonth()) return short
+      ? mn(a) + ' ' + a.getDate() + '–' + mn(b) + ' ' + b.getDate()
+      : mn(a) + ' ' + a.getDate() + ' – ' + mn(b) + ' ' + b.getDate() + ', ' + b.getFullYear();
+    return mn(a) + ' ' + a.getDate() + '–' + b.getDate() + (short ? '' : ', ' + b.getFullYear());
+  }
+  function dayLabel(s){ try { return fromYmd(s).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); } catch(e){ return s; } }
+  function body(id){ const b = page.querySelector('#' + id + ' .wr-body'); b.replaceChildren(); return b; }
+  function rows(res){ return res && !res.error ? (Array.isArray(res.data) ? res.data : (res.data == null ? [] : [res.data])) : null; }
+  function avg(list){ return list.length ? list.reduce(function(a, b){ return a + b; }, 0) / list.length : null; }
+  window.FPRWeeklyRangeLabel = rangeLabel; // pure helpers, exposed for checks
+  window.FPRWeeklyMondayOf = mondayOf;
+
+  // ---- Derived facts for the selected week (pure) ----
+  function facts(mon){
+    const sun = addDays(mon, 6), w = weeks[mon];
+    const inWeek = function(x){ return x >= mon && x <= sun; };
+    const logs = w.logs || [];
+    const moods = logs.filter(function(l){ return l.mood != null; }).map(function(l){ return Number(l.mood); });
+    const cravs = logs.filter(function(l){ return l.cravings != null; }).map(function(l){ return Number(l.cravings); });
+    const names = {}; (w.items || []).forEach(function(it){ names[it.id] = it.name; });
+    const checks = (w.checks || []).filter(function(c){ return inWeek(c.occurrence_date); });
+    const refl = w.refl || [];
+    const wins = (sess.wins || []).filter(function(x){ return inWeek(x.win_date); });
+    const ms = sess.recoveryDate && window.FPRWinsMilestones ? (window.FPRWinsMilestones(sess.recoveryDate, M.todayYMD()) || []).filter(function(m){ return m.reached && inWeek(m.date); }) : [];
+    const g = sess.goal;
+    const goalDone = g && g.completed && g.completed_at && inWeek(ymd(new Date(g.completed_at))) ? g : null;
+    return {
+      logs: logs.length, moodAvg: avg(moods), cravAvg: avg(cravs),
+      checks: checks, names: names,
+      morning: refl.filter(function(r){ return r.has_morning; }).length,
+      evening: refl.filter(function(r){ return r.has_evening; }).length,
+      wins: wins, milestones: ms, goalDone: goalDone,
+      any: logs.length || checks.length || refl.length || wins.length || ms.length || goalDone
+    };
+  }
+
+  // ---- Render ----
+  function renderGlance(f){
+    const b = body('wr-glance');
+    if (!f.any) { b.appendChild(el('p', null, 'No recovery activity is logged for this week yet.')); return; }
+    const grid = el('div', 'pg-stats');
+    [[String(f.logs), f.logs === 1 ? 'day logged' : 'days logged'],
+     [f.moodAvg == null ? '—' : f.moodAvg.toFixed(1) + ' / 5', 'average mood'],
+     [f.cravAvg == null ? '—' : f.cravAvg.toFixed(1) + ' / 10', 'average cravings'],
+     [String(f.checks.length), f.checks.length === 1 ? 'support activity completed' : 'support activities completed'],
+     [String(f.morning), f.morning === 1 ? 'morning reflection' : 'morning reflections'],
+     [String(f.evening), f.evening === 1 ? 'evening reflection' : 'evening reflections'],
+     [String(f.wins.length), f.wins.length === 1 ? 'personal win' : 'personal wins']
+    ].forEach(function(x){ const box = el('div', 'pg-stat'); box.appendChild(el('div', 'n', x[0])); box.appendChild(el('div', 'l', x[1])); grid.appendChild(box); });
+    b.appendChild(grid);
+    if (f.milestones.length) b.appendChild(el('p', 'pg-lead', 'Milestone reached: ' + f.milestones.map(function(m){ return m.label; }).join(', ')));
+    if (f.moodAvg == null || f.cravAvg == null) b.appendChild(el('p', 'pg-legend', '— means nothing was logged for that this week.'));
+  }
+  function renderMoments(f){
+    const b = body('wr-moments');
+    const list = [];
+    f.milestones.forEach(function(m){ list.push({ date: m.date, kind: 'Recovery milestone', text: '✓ ' + m.label }); });
+    f.wins.forEach(function(w){ list.push({ date: w.win_date, kind: 'Personal win', text: w.title }); });
+    f.checks.forEach(function(c){ list.push({ date: c.occurrence_date, kind: 'Support completed', text: f.names[c.item_id] || 'Support activity' }); });
+    if (f.goalDone) list.push({ date: ymd(new Date(f.goalDone.completed_at)), kind: 'Goal completed', text: f.goalDone.goal_text });
+    if (!list.length) { b.appendChild(el('p', null, 'Nothing recorded for this week.')); return; }
+    list.sort(function(a, z){ return a.date < z.date ? -1 : a.date > z.date ? 1 : 0; });
+    const ul = el('ul', 'wr-moments');
+    list.forEach(function(x){
+      const li = el('li');
+      li.appendChild(el('span', 'wr-mk', x.kind + ' · ' + dayLabel(x.date)));
+      li.appendChild(el('span', 'wr-mt', x.text));
+      ul.appendChild(li);
+    });
+    b.appendChild(ul);
+  }
+  function counts(){ FIELDS.forEach(function(f){ $(f[0].replace('-text', '') === 'wr-next' ? 'wr-next-count' : f[0] + '-count').textContent = $(f[0]).value.length + ' / ' + f[2]; }); }
+  function fillForm(mon){
+    const r = sess && sess.reviews[mon];
+    FIELDS.forEach(function(f){ $(f[0]).value = (r && r[f[1]]) || ''; });
+    dirty = false;
+    counts(); paintStatus();
+    $('wr-error').textContent = ''; $('wr-error').classList.remove('show');
+  }
+  function paintStatus(){
+    const s = $('wr-status'), r = sess && sess.reviews[weekMonday(offset)];
+    s.classList.remove('dirty', 'saved');
+    if (dirty) { s.textContent = 'Unsaved changes'; s.classList.add('dirty'); }
+    else if (r) { s.textContent = 'Saved ✓'; s.classList.add('saved'); }
+    else s.textContent = '';
+  }
+  function renderPast(){
+    const b = body('wr-past');
+    const cur = weekMonday(0), oldest = weekMonday(-MAX_BACK);
+    const list = Object.keys(sess.reviews).filter(function(m){ return m < cur && m >= oldest; }).sort().reverse();
+    if (!list.length) { b.appendChild(el('p', null, 'Reviews you save for earlier weeks will appear here.')); return; }
+    const ul = el('ul', 'wr-past');
+    list.forEach(function(m){
+      const r = sess.reviews[m];
+      const li = el('li');
+      const btn = el('button', 'mr-day'); btn.type = 'button';
+      if (m === weekMonday(offset)) btn.setAttribute('aria-current', 'true');
+      const top = el('span', 'mr-day-top');
+      top.appendChild(el('span', null, rangeLabel(m, true)));
+      top.appendChild(el('span', 'mr-day-nums', 'Saved ✓'));
+      btn.appendChild(top);
+      const first = String(r.went_well || r.next_week_intention || r.what_helped || r.was_hard || '').split('\n')[0];
+      if (first) btn.appendChild(el('span', 'mr-day-preview', first.length > 70 ? first.slice(0, 69) + '…' : first));
+      btn.addEventListener('click', function(){ goWeek(Math.round((fromYmd(m) - fromYmd(cur)) / (7 * 86400000))); });
+      li.appendChild(btn); ul.appendChild(li);
+    });
+    b.appendChild(ul);
+  }
+  function render(){
+    $('wr-signedout').hidden = signedIn;
+    $('wr-signedin').hidden = !signedIn;
+    $('wr-private').hidden = !signedIn;
+    $('wr-helper').hidden = !signedIn;
+    const mon = weekMonday(offset);
+    $('wr-heading-range').textContent = rangeLabel(mon, false);
+    $('wr-range').textContent = (offset === 0 ? 'This week · ' : offset === -1 ? 'Last week · ' : '') + rangeLabel(mon, true);
+    $('wr-prev').disabled = offset <= -MAX_BACK;
+    $('wr-next').disabled = offset >= 0;
+    $('wr-thisweek').hidden = offset === 0;
+    const ready = signedIn && sess && weeks[mon];
+    $('wr-loading').hidden = !signedIn || !!ready || $('wr-load-error').classList.contains('show');
+    ['wr-glance', 'wr-moments', 'wr-form', 'wr-past'].forEach(function(id){ $(id).hidden = !ready; });
+    if (!ready) { ['wr-glance', 'wr-moments', 'wr-past'].forEach(body); return; }
+    const f = facts(mon);
+    renderGlance(f); renderMoments(f); renderPast(); paintStatus();
+  }
+
+  // ---- Loading ----
+  function showLoadError(msg){ $('wr-load-error-text').textContent = msg || ''; $('wr-load-error').classList.toggle('show', !!msg); }
+  async function load(){
+    if (!client || !signedIn) return;
+    const mySeq = seq, myLoad = ++loadSeq, mon = weekMonday(offset), sun = addDays(mon, 6);
+    const call = function(fn, args){ return client.rpc(fn, args).then(function(r){ return r; }, function(e){ return { error: e }; }); };
+    const needSess = !sess || sessionFor !== todayStr();
+    const needWeek = !weeks[mon];
+    if (!needSess && !needWeek) { render(); return; }
+    showLoadError('');
+    render();
+    const jobs = [];
+    if (needSess) jobs.push(call('list_my_weekly_reviews', { p_since: weekMonday(-MAX_BACK) }), call('list_my_wins'), call('get_my_recovery_goal'), call('get_my_profile'));
+    if (needWeek) jobs.push(call('list_my_recovery_logs_range', { p_from: mon, p_to: sun }), call('list_my_daily_reflection_days', { p_from: mon, p_to: sun }),
+                           call('list_my_support_items', { p_from: mon, p_to: sun }), call('list_my_support_checkins', { p_from: mon, p_to: sun }));
+    const res = await Promise.all(jobs);
+    if (mySeq !== seq || myLoad !== loadSeq) return;
+    if (res.some(function(r){ return r && r.error; })) { showLoadError('We couldn’t load this week right now.'); render(); return; }
+    let i = 0;
+    if (needSess) {
+      const reviews = {}; (rows(res[i++]) || []).forEach(function(r){ reviews[r.week_start] = r; });
+      const wins = rows(res[i++]) || [];
+      const goal = (rows(res[i++]) || [])[0] || null;
+      const prof = (rows(res[i++]) || [])[0] || null;
+      sess = { reviews: reviews, wins: wins, goal: goal, recoveryDate: prof ? prof.recovery_date : null };
+      sessionFor = todayStr();
+    }
+    if (needWeek) {
+      weeks[mon] = { logs: rows(res[i++]), refl: rows(res[i++]), items: rows(res[i++]), checks: rows(res[i++]) };
+    }
+    loadedFor = todayStr();
+    if (!dirty) fillForm(mon);
+    render();
+  }
+  function goWeek(off){
+    off = Math.max(-MAX_BACK, Math.min(0, off));
+    if (off === offset) return;
+    if (dirty && !window.confirm('Discard your unsaved changes to this week’s review?')) return;
+    offset = off; dirty = false;
+    fillForm(weekMonday(offset));
+    load();
+  }
+  $('wr-prev').addEventListener('click', function(){ goWeek(offset - 1); });
+  $('wr-next').addEventListener('click', function(){ goWeek(offset + 1); });
+  $('wr-thisweek').addEventListener('click', function(){ goWeek(0); });
+  $('wr-retry').addEventListener('click', load);
+  $('wr-signin').addEventListener('click', function(){ const b = $('header-account-btn'); if (b) b.click(); });
+
+  // ---- Save ----
+  FIELDS.forEach(function(f){ $(f[0]).addEventListener('input', function(){ dirty = true; counts(); paintStatus(); $('wr-error').classList.remove('show'); }); });
+  $('wr-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (!client || !signedIn || busy || !sess) return;
+    const mon = weekMonday(offset);
+    const vals = FIELDS.map(function(f){ return $(f[0]).value.trim(); });
+    const err = $('wr-error');
+    if (!sess.reviews[mon] && vals.every(function(v){ return !v; })) { err.textContent = 'Write something before saving.'; err.classList.add('show'); return; }
+    const mySeq = seq;
+    busy = true; $('wr-save').disabled = true; err.classList.remove('show');
+    try {
+      const { data, error } = await client.rpc('save_my_weekly_review', {
+        p_week_start: mon, p_went_well: vals[0], p_was_hard: vals[1], p_what_helped: vals[2], p_next_week_intention: vals[3]
+      });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row && (row.went_well || row.was_hard || row.what_helped || row.next_week_intention)) sess.reviews[mon] = row; else delete sess.reviews[mon];
+      dirty = false;
+      busy = false; $('wr-save').disabled = false;
+      render();
+      try { document.dispatchEvent(new CustomEvent('fpr:weeklyreviewchange')); } catch(e2){}
+    } catch(ex){
+      if (mySeq !== seq) return;
+      busy = false; $('wr-save').disabled = false;
+      err.textContent = ex && ex.code === '22023' ? ex.message : 'Couldn’t save your review right now. Please try again.';
+      err.classList.add('show');
+    }
+  });
+
+  // ---- Session / events ----
+  function pageActive(){ return page.classList.contains('active'); }
+  function onSession(session){
+    const nowUser = session && session.user ? session.user.id : null;
+    if (nowUser === sessionUser) return;
+    sessionUser = nowUser;
+    signedIn = !!nowUser;
+    seq++; busy = false; offset = 0; sess = null; weeks = {}; dirty = false; sessionFor = null; loadedFor = null; // never carry one account's weeks into another
+    FIELDS.forEach(function(f){ $(f[0]).value = ''; });
+    counts(); showLoadError('');
+    render();
+    if (signedIn && pageActive()) load();
+  }
+  function invalidate(what){
+    if (what === 'weeks') weeks = {}; else sessionFor = null;
+    if (signedIn && pageActive()) load();
+  }
+  document.addEventListener('fpr:recoverychange', function(){ weeks = {}; sessionFor = null; if (signedIn && pageActive()) load(); }); // logs + goal
+  document.addEventListener('fpr:supportchange', function(){ invalidate('weeks'); });
+  document.addEventListener('fpr:dailyreflectionchange', function(){ invalidate('weeks'); });
+  document.addEventListener('fpr:winschange', function(){ invalidate('session'); });
+  document.addEventListener('fpr:profilechange', function(){ invalidate('session'); });
+  document.addEventListener('fpr:pagechange', function(e){
+    if (!(e && e.detail && e.detail.page === 'weekly') || !signedIn) return;
+    if (loadedFor !== todayStr()) { weeks = {}; sessionFor = null; }
+    load();
+  });
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible' && signedIn && pageActive() && loadedFor !== todayStr()) { weeks = {}; sessionFor = null; load(); }
+  });
+  counts();
   render();
   if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
     client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
