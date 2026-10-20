@@ -938,6 +938,31 @@
   .mr-entry dt{font-size:.75rem; font-weight:700; color:var(--sage-text); margin-top:8px;}
   .mr-entry dd{margin:2px 0 0; white-space:pre-wrap; overflow-wrap:anywhere;}
   #mr-history-more{margin-top:12px; width:100%;}
+  .mr-plan-link{font-size:.88rem; color:var(--charcoal-soft); margin:-8px 0 18px;}
+
+  /* ---------- My Recovery Plan (Phase 11C) ---------- */
+  .rp-steps{list-style:none; counter-reset:rp; padding:0; margin:12px 0 0; display:flex; flex-direction:column; gap:10px;}
+  .rp-steps li{counter-increment:rp; display:flex; gap:12px; align-items:flex-start; font-size:1.05rem; font-weight:600; line-height:1.4; overflow-wrap:anywhere;}
+  .rp-steps li::before{content:counter(rp); flex:none; width:32px; height:32px; border-radius:50%; background:var(--charcoal); color:var(--white); display:flex; align-items:center; justify-content:center; font-size:.95rem; font-weight:700;}
+  .rp-people{list-style:none; padding:0; margin:12px 0 0; display:flex; flex-direction:column; gap:10px;}
+  .rp-person{border:1.5px solid var(--line); border-radius:12px; padding:12px 14px;}
+  .rp-person-name{font-weight:700; font-size:1rem; overflow-wrap:anywhere;}
+  .rp-person-role{font-weight:500; font-size:.85rem; color:var(--sage-text); margin-left:6px;}
+  .rp-person-contact{font-size:.92rem; color:var(--charcoal-soft); margin-top:4px; white-space:pre-wrap; overflow-wrap:anywhere;}
+  .rp-person-actions{display:flex; gap:8px; margin-top:10px;}
+  .rp-person-actions a{flex:1 1 0; min-height:46px; padding:10px 14px;}
+  .rp-actions-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
+  .rp-actions-row .btn{flex:1 1 150px; padding:13px 14px; white-space:nowrap;}
+  .rp-text{white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.65; color:var(--charcoal-soft); margin-top:8px;}
+  .rp-why-card{background:var(--amber-soft); border-color:transparent;}
+  .rp-why-text{font-size:1.08rem; font-weight:600; color:#4a3613;}
+  .rp-help{display:block; font-size:.82rem; margin:0 0 8px;}
+  .rp-contact-row{border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px;}
+  .rp-contact-row .field{margin-bottom:10px;}
+  .rp-contact-row .rp-remove{margin-top:2px;}
+  .rp-disclaimer{margin-top:22px; text-align:center;}
+  .rp-disclaimer a{color:var(--charcoal); font-weight:700; text-decoration:underline; text-underline-offset:2px;}
+  .rp-toolbox-link{margin:0 0 16px; font-size:.92rem; color:var(--charcoal-soft);}
 </style>
 <!-- Supabase client (Phase 1): optional member accounts only. Loaded from
      jsdelivr's CDN mirror of the published npm package; nothing here can
@@ -990,6 +1015,7 @@
     <button data-nav="home">Home</button>
     <button data-nav="checkin">Check In</button>
     <button data-nav="myrecovery">My Recovery</button>
+    <button data-nav="recoveryplan">My Recovery Plan</button>
     <button data-nav="porch">The Porch</button>
     <button data-nav="books">Books</button>
     <button data-nav="shop">Shop</button>
@@ -1346,6 +1372,7 @@
   <section class="block bg-cream">
     <div class="wrap mr-wrap">
       <p class="mr-distinction">My Recovery is private to your account and can follow you across devices. Your existing Check-In and Recovery Counter still stay on this device unless you choose to use My Recovery. <button type="button" class="mr-link" data-nav="privacy">Privacy</button></p>
+      <p class="mr-plan-link">For harder moments: <button type="button" class="mr-link" data-nav="recoveryplan">My Recovery Plan</button>, what you want available when things get hard.</p>
 
       <div class="form-card mr-card" id="mr-signedout">
         <h2>Sign in to use My Recovery</h2>
@@ -1430,6 +1457,120 @@
           <button type="button" class="btn btn-outline" id="mr-history-more" hidden>Show the last 30 days</button>
         </section>
       </div>
+    </div>
+  </section>
+</section>
+
+<!-- ================= MY RECOVERY PLAN (Phase 11C) =================
+     The member's own private plan for hard moments. Not clinical or
+     emergency care; Rough Day and crisis resources stay separate and
+     public. Built by the My Recovery Plan script (textContent only). -->
+<section class="page" id="page-recoveryplan">
+  <section class="block bg-charcoal tight">
+    <div class="wrap mr-wrap">
+      <p class="hero-eyebrow" style="color:#A7B8A8;">For when things get hard</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">My Recovery Plan</h1>
+      <p class="mr-private-pill"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>Private to your account</p>
+      <p style="color:var(--gray); margin-top:10px; max-width:58ch;">Your Recovery Plan is not public and does not appear in Community.</p>
+    </div>
+  </section>
+
+  <section class="block bg-cream">
+    <div class="wrap mr-wrap">
+      <div class="form-card mr-card" id="rp-signedout">
+        <h2>Your plan, ready before you need it</h2>
+        <p>With a free account you can write down your next steps, the people you can reach out to, what helps you, your warning signs, and why you’re choosing recovery. It’s private to you and available on any device you sign in on.</p>
+        <button type="button" class="btn btn-primary" id="rp-signin">Sign in</button>
+        <p class="mr-muted">No account needed for <button type="button" class="mr-link" data-nav="roughday">Rough Day</button> or the <button type="button" class="mr-link" data-nav="toolbox">Recovery Toolbox</button>.</p>
+      </div>
+
+      <div id="rp-signedin" hidden>
+        <div class="status-msg status-error" id="rp-load-error" role="alert"><span id="rp-load-error-text"></span> <button type="button" class="mr-link" id="rp-retry">Try again</button></div>
+        <p class="mr-state" id="rp-loading" role="status">Loading your plan…</p>
+
+        <div class="form-card mr-card" id="rp-empty" hidden>
+          <h2>Build your recovery plan</h2>
+          <p>You don’t have to figure everything out in the hard moment. Put a few things here now that you want available when you need them.</p>
+          <div class="mr-actions">
+            <button type="button" class="btn btn-primary" id="rp-build">Build my plan</button>
+            <button type="button" class="btn btn-outline" data-nav="roughday">Open Rough Day</button>
+          </div>
+        </div>
+
+        <div id="rp-view" hidden>
+          <p class="mr-state saved" id="rp-saved-note" role="status" aria-live="polite"></p>
+          <section class="form-card mr-card rp-steps-card" id="rp-v-steps" aria-labelledby="rp-v-steps-title">
+            <h2 id="rp-v-steps-title">My next three steps</h2>
+            <ol class="rp-steps" id="rp-v-steps-list"></ol>
+          </section>
+          <section class="form-card mr-card" id="rp-v-people" aria-labelledby="rp-v-people-title">
+            <h2 id="rp-v-people-title">People I can reach out to</h2>
+            <ul class="rp-people" id="rp-v-people-list"></ul>
+          </section>
+          <div class="rp-actions-row">
+            <button type="button" class="btn btn-amber" data-nav="roughday">Open Rough Day</button>
+            <button type="button" class="btn btn-outline" id="rp-edit">Edit my plan</button>
+          </div>
+          <section class="form-card mr-card" id="rp-v-helps" aria-labelledby="rp-v-helps-title">
+            <h2 id="rp-v-helps-title">What helps me</h2>
+            <p class="rp-text" id="rp-v-helps-text"></p>
+          </section>
+          <section class="form-card mr-card" id="rp-v-warning" aria-labelledby="rp-v-warning-title">
+            <h2 id="rp-v-warning-title">My warning signs</h2>
+            <p class="rp-text" id="rp-v-warning-text"></p>
+          </section>
+          <section class="form-card mr-card rp-why-card" id="rp-v-why" aria-labelledby="rp-v-why-title">
+            <h2 id="rp-v-why-title">Why I’m choosing recovery</h2>
+            <p class="rp-text rp-why-text" id="rp-v-why-text"></p>
+          </section>
+        </div>
+
+        <form class="form-card mr-card" id="rp-form" novalidate hidden aria-labelledby="rp-form-title">
+          <h2 id="rp-form-title">Edit my plan</h2>
+          <p class="mr-muted">Everything is optional. Fill in what’s useful and leave the rest blank.</p>
+
+          <fieldset class="mr-fieldset">
+            <legend>My next three steps</legend>
+            <p class="mr-hint rp-help">Short and simple, in the order you’d do them. For example: leave the situation, call someone, open Rough Day.</p>
+            <div class="field"><label for="rp-step-1">Step 1</label><input type="text" id="rp-step-1" maxlength="150" autocomplete="off"></div>
+            <div class="field"><label for="rp-step-2">Step 2</label><input type="text" id="rp-step-2" maxlength="150" autocomplete="off"></div>
+            <div class="field"><label for="rp-step-3">Step 3</label><input type="text" id="rp-step-3" maxlength="150" autocomplete="off"></div>
+          </fieldset>
+
+          <fieldset class="mr-fieldset">
+            <legend>People I can reach out to</legend>
+            <p class="mr-hint rp-help">Up to 5. A phone number is optional; you can write a note instead. Typed in by you only; nothing is read from your phone’s contacts.</p>
+            <div id="rp-contacts"></div>
+            <button type="button" class="btn btn-outline" id="rp-add-contact">Add a person</button>
+          </fieldset>
+
+          <div class="field">
+            <label for="rp-helps">What helps me steady myself?</label>
+            <p class="mr-hint rp-help" id="rp-helps-hint">For example: walking, music, prayer, a meeting, calling someone, getting somewhere safe.</p>
+            <textarea id="rp-helps" maxlength="750" rows="4" aria-describedby="rp-helps-hint"></textarea>
+            <p class="mr-count" id="rp-helps-count" aria-live="polite"></p>
+          </div>
+          <div class="field">
+            <label for="rp-warning">What tells me I might be getting off track?</label>
+            <p class="mr-hint rp-help" id="rp-warning-hint">For example: isolating, not sleeping, skipping support, romanticizing old behavior.</p>
+            <textarea id="rp-warning" maxlength="750" rows="4" aria-describedby="rp-warning-hint"></textarea>
+            <p class="mr-count" id="rp-warning-count" aria-live="polite"></p>
+          </div>
+          <div class="field">
+            <label for="rp-why">What am I protecting by staying in recovery?</label>
+            <textarea id="rp-why" maxlength="750" rows="4"></textarea>
+            <p class="mr-count" id="rp-why-count" aria-live="polite"></p>
+          </div>
+
+          <p class="field-error" id="rp-form-error" role="alert"></p>
+          <div class="mr-actions">
+            <button type="submit" class="btn btn-primary" id="rp-save">Save my plan</button>
+            <button type="button" class="btn btn-outline" id="rp-cancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <p class="mr-muted rp-disclaimer">This is your own plan. It isn’t medical care, therapy, or an emergency service. In an emergency, call <a class="crisis-num" href="tel:911">911</a>. For crisis support, call or text <a class="crisis-num" href="tel:988">988</a>.</p>
     </div>
   </section>
 </section>
@@ -1570,6 +1711,7 @@
   </section>
   <section class="block bg-cream">
     <div class="wrap">
+      <p class="rp-toolbox-link">Build a private plan for hard moments: <button type="button" class="mr-link" data-nav="recoveryplan">My Recovery Plan</button></p>
       <div class="toolbox-search-wrap">
         <label for="toolbox-search" class="sr-only">Search the recovery toolbox</label>
         <input type="text" id="toolbox-search" placeholder="Search the recovery toolbox…" autocomplete="off">
@@ -2030,6 +2172,10 @@
         <div style="margin-top:10px;">
           <button class="btn btn-outline-light btn-block" data-nav="porch">Go sit on the Porch</button>
         </div>
+        <!-- Phase 11C: shown only to signed-in members (My Recovery Plan script). -->
+        <div style="margin-top:10px;" id="roughday-plan-link" hidden>
+          <button class="btn btn-outline-light btn-block" data-nav="recoveryplan">Open My Recovery Plan</button>
+        </div>
       </div>
 
       <div class="crisis-box light">
@@ -2181,7 +2327,7 @@
           <li>Front Porch Recovery has no ads, no analytics, and no tracking pixels, and it does not set its own cookies. Signing in is optional.</li>
           <li>The Daily Check-In and Recovery Counter save a small amount of information <strong>in your own browser</strong>. It is never sent to Front Porch Recovery, and we can't see it.</li>
           <li>If you sign in, your account and Community profile are saved on our servers: your display name and anything you choose to add — a short bio, a profile photo, and a recovery date with who can see it. The profile recovery date is separate from the Recovery Counter.</li>
-        <li>If you use My Recovery, or write a Daily Porch reflection or save a Daily Porch day, that's saved privately with your account so it's available on any device you sign in on.</li>
+        <li>If you use My Recovery or My Recovery Plan, or write a Daily Porch reflection or save a Daily Porch day, that's saved privately with your account so it's available on any device you sign in on.</li>
           <li>If you use the Contact form, your message is delivered to us through a service called Formspree.</li>
           <li>We don't sell or rent your information, and we don't share it for advertising.</li>
           <li>Our web host and a few outside services receive basic technical information when the site loads.</li>
@@ -2224,6 +2370,9 @@
         <li>FPR's admin tools have no screen for My Recovery, and we don't review it.</li>
         <li>My Recovery never copies your Daily Check-In or Recovery Counter. Those stay in your browser unless you choose to type something into My Recovery yourself.</li>
       </ul>
+
+      <h2>My Recovery Plan (private to your account)</h2>
+      <p>If you build a My Recovery Plan, what you write is saved with your account: your next steps, what helps you, your warning signs, why you're choosing recovery, and up to five people you list with an optional phone number or note. You type these in yourself. The site never reads your phone's contacts, and Call/Text buttons just open your phone's own dialer or messaging app; nothing is called or sent automatically. Your plan follows the same rules as My Recovery: only you can see it in the site, it never appears in the Community, on your profile, or in notifications, it isn't shared or exported, and FPR's admin tools have no screen for it. It's your own plan, not medical care or an emergency service.</p>
 
       <h2>Daily Porch reflections and saved days (private to your account)</h2>
       <p>Anyone can read the Daily Porch without an account. If you sign in, you can write a private morning and evening reflection for a day and save days you want to come back to. These are saved with your account and follow the same rules as My Recovery: only you can see them in the site, they never appear in the Community, on your profile, or in notifications, there are no public save counts, and FPR's admin tools have no screen for them. Nothing is stored on your device when you're signed out.</p>
@@ -2694,6 +2843,7 @@
         <ul>
           <li><a href="#" data-nav="checkin">Check In</a></li>
           <li><a href="#" data-nav="myrecovery">My Recovery</a></li>
+          <li><a href="#" data-nav="recoveryplan">My Recovery Plan</a></li>
           <li><a href="#" data-nav="porch">The Porch</a></li>
           <li><a href="#" data-nav="toolbox">Recovery Toolbox</a></li>
           <li><a href="#" data-nav="daily">Daily Porch</a></li>
@@ -14090,6 +14240,270 @@ const FPRBadge = (function(){
   }
   document.addEventListener('fpr:pagechange', function(e){
     if (e && e.detail && e.detail.page === 'daily' && signedIn) load();
+  });
+})();
+
+/* ---------- My Recovery Plan (Phase 11C) ----------
+   The member's own private plan: next three steps, people to reach out
+   to (manual entry, max 5; Call/Text via plain tel:/sms: links only when
+   the entry looks like a phone number), what helps, warning signs, and
+   why they're choosing recovery. Signed in, it opens in a clean read
+   view; Edit shows the form. Data comes only from get_/save_my_recovery_plan
+   (own row, no ids). Nothing is analysed, shared, exported or shown
+   anywhere else. Member text is rendered with textContent only and is
+   dropped from memory on sign-out or account switch. */
+(function(){
+  const page = document.getElementById('page-recoveryplan');
+  if (!page) return;
+  const client = window.__fprSupabaseClient || null;
+  const $ = function(id){ return document.getElementById(id); };
+  const signedOutView = $('rp-signedout'), signedInView = $('rp-signedin');
+  const loadErr = $('rp-load-error'), loadErrText = $('rp-load-error-text'), loadingNote = $('rp-loading');
+  const emptyView = $('rp-empty'), view = $('rp-view'), form = $('rp-form'), savedNote = $('rp-saved-note');
+  const contactsBox = $('rp-contacts'), addContactBtn = $('rp-add-contact');
+  const formError = $('rp-form-error'), saveBtn = $('rp-save');
+  const roughdayLink = $('roughday-plan-link');
+  const TEXT_FIELDS = [['rp-helps', 'what_helps'], ['rp-warning', 'warning_signs'], ['rp-why', 'reasons_for_recovery']];
+  const STEP_FIELDS = [['rp-step-1', 'step_1'], ['rp-step-2', 'step_2'], ['rp-step-3', 'step_3']];
+  const MAX_CONTACTS = 5;
+
+  let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0, loaded = false;
+  let plan = null;        // saved plan or null
+  let mode = 'view';      // 'view' | 'edit'
+  let dirty = false, busy = false, contactSeq = 0;
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function showErr(node, msg){ node.textContent = msg || ''; node.classList.toggle('show', !!msg); }
+  // A contact value counts as a phone number only if it's digits and
+  // common separators with 7-15 digits; anything else is shown as a note.
+  function phoneOf(v){
+    const s = String(v || '').trim();
+    if (!/^\+?[\d\s().-]+$/.test(s)) return null;
+    const digits = s.replace(/\D/g, '');
+    if (digits.length < 7 || digits.length > 15) return null;
+    return (s.charAt(0) === '+' ? '+' : '') + digits;
+  }
+  function isEmptyPlan(p){
+    if (!p) return true;
+    const texts = [p.warning_signs, p.what_helps, p.reasons_for_recovery, p.step_1, p.step_2, p.step_3];
+    return texts.every(function(t){ return !t; }) && !(Array.isArray(p.contacts) && p.contacts.length);
+  }
+
+  // ---- View ----
+  function setSection(id, show){ $(id).hidden = !show; }
+  function renderView(){
+    const p = plan || {};
+    const steps = [p.step_1, p.step_2, p.step_3].filter(Boolean);
+    const list = $('rp-v-steps-list'); list.replaceChildren();
+    steps.forEach(function(s){ list.appendChild(el('li', null, s)); });
+    setSection('rp-v-steps', steps.length > 0);
+
+    const people = $('rp-v-people-list'); people.replaceChildren();
+    const contacts = Array.isArray(p.contacts) ? p.contacts : [];
+    contacts.forEach(function(c){
+      if (!c || !c.name) return;
+      const li = el('li', 'rp-person');
+      const head = el('p', 'rp-person-name', c.name);
+      if (c.role) head.appendChild(el('span', 'rp-person-role', c.role));
+      li.appendChild(head);
+      if (c.contact) li.appendChild(el('p', 'rp-person-contact', c.contact));
+      const tel = phoneOf(c.contact);
+      if (tel) {
+        const actions = el('div', 'rp-person-actions');
+        const call = el('a', 'btn btn-primary', 'Call'); call.href = 'tel:' + tel; call.setAttribute('aria-label', 'Call ' + c.name);
+        const text = el('a', 'btn btn-outline', 'Text'); text.href = 'sms:' + tel; text.setAttribute('aria-label', 'Text ' + c.name);
+        actions.appendChild(call); actions.appendChild(text);
+        li.appendChild(actions);
+      }
+      people.appendChild(li);
+    });
+    setSection('rp-v-people', people.children.length > 0);
+
+    $('rp-v-helps-text').textContent = p.what_helps || '';
+    setSection('rp-v-helps', !!p.what_helps);
+    $('rp-v-warning-text').textContent = p.warning_signs || '';
+    setSection('rp-v-warning', !!p.warning_signs);
+    $('rp-v-why-text').textContent = p.reasons_for_recovery || '';
+    setSection('rp-v-why', !!p.reasons_for_recovery);
+  }
+
+  // ---- Edit form ----
+  function counts(){
+    TEXT_FIELDS.forEach(function(f){ const t = $(f[0]); $(f[0] + '-count').textContent = t.value.length ? t.value.length + ' / 750' : ''; });
+  }
+  function contactRow(c){
+    const n = ++contactSeq;
+    const row = el('div', 'rp-contact-row');
+    row.setAttribute('role', 'group');
+    [['name', 'Name or label', 80, 'e.g. Sam, or My sponsor'], ['contact', 'Phone number or note', 120, 'e.g. 555-123-4567, or Sundays after church'], ['role', 'Relationship or role (optional)', 60, 'e.g. Sponsor, Friend, Counselor']].forEach(function(f){
+      const wrap = el('div', 'field');
+      const id = 'rp-c' + n + '-' + f[0];
+      const label = el('label', null, f[1]); label.htmlFor = id;
+      const input = el('input'); input.type = f[0] === 'contact' ? 'text' : 'text'; input.id = id; input.maxLength = f[2];
+      input.autocomplete = 'off'; input.placeholder = f[3]; input.dataset.key = f[0];
+      if (f[0] === 'contact') input.setAttribute('inputmode', 'text');
+      input.value = (c && c[f[0]]) || '';
+      wrap.appendChild(label); wrap.appendChild(input);
+      row.appendChild(wrap);
+    });
+    const remove = el('button', 'btn btn-outline rp-remove', 'Remove this person'); remove.type = 'button';
+    remove.addEventListener('click', function(){
+      const next = row.nextElementSibling || row.previousElementSibling;
+      row.remove(); dirty = true; updateAddButton();
+      const focusTarget = next ? next.querySelector('input') : addContactBtn;
+      try { focusTarget.focus(); } catch(e){}
+    });
+    row.appendChild(remove);
+    row.setAttribute('aria-label', 'Person');
+    return row;
+  }
+  function relabelRows(){
+    Array.prototype.forEach.call(contactsBox.children, function(row, i){
+      row.setAttribute('aria-label', 'Person ' + (i + 1));
+      const rm = row.querySelector('.rp-remove'); if (rm) rm.textContent = 'Remove person ' + (i + 1);
+    });
+  }
+  function updateAddButton(){
+    relabelRows();
+    addContactBtn.hidden = contactsBox.children.length >= MAX_CONTACTS;
+  }
+  addContactBtn.addEventListener('click', function(){
+    if (contactsBox.children.length >= MAX_CONTACTS) return;
+    const row = contactRow(null);
+    contactsBox.appendChild(row); dirty = true; updateAddButton();
+    try { row.querySelector('input').focus(); } catch(e){}
+  });
+  function fillForm(){
+    const p = plan || {};
+    STEP_FIELDS.forEach(function(f){ $(f[0]).value = p[f[1]] || ''; });
+    TEXT_FIELDS.forEach(function(f){ $(f[0]).value = p[f[1]] || ''; });
+    contactsBox.replaceChildren();
+    (Array.isArray(p.contacts) ? p.contacts : []).slice(0, MAX_CONTACTS).forEach(function(c){ contactsBox.appendChild(contactRow(c)); });
+    if (!contactsBox.children.length) contactsBox.appendChild(contactRow(null));
+    updateAddButton(); counts();
+    showErr(formError, '');
+    dirty = false;
+  }
+  form.addEventListener('input', function(){ dirty = true; counts(); showErr(formError, ''); });
+  function readForm(){
+    const out = {};
+    STEP_FIELDS.forEach(function(f){ out[f[1]] = $(f[0]).value.trim(); });
+    TEXT_FIELDS.forEach(function(f){ out[f[1]] = $(f[0]).value.trim(); });
+    out.contacts = [];
+    Array.prototype.forEach.call(contactsBox.children, function(row){
+      const c = {};
+      row.querySelectorAll('input').forEach(function(i){ c[i.dataset.key] = i.value.trim(); });
+      if (c.name || c.contact || c.role) out.contacts.push(c);
+    });
+    return out;
+  }
+
+  // ---- Mode switching ----
+  function render(){
+    signedOutView.hidden = signedIn;
+    signedInView.hidden = !signedIn;
+    if (roughdayLink) roughdayLink.hidden = !signedIn;
+    if (!signedIn) return;
+    loadingNote.hidden = loaded || loadErr.classList.contains('show');
+    const empty = isEmptyPlan(plan);
+    form.hidden = !(loaded && mode === 'edit');
+    emptyView.hidden = !(loaded && mode === 'view' && empty);
+    view.hidden = !(loaded && mode === 'view' && !empty);
+    if (loaded && mode === 'view' && !empty) renderView();
+  }
+  function openEdit(){
+    mode = 'edit'; savedNote.textContent = '';
+    fillForm(); render();
+    const first = $('rp-step-1');
+    try { form.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); } catch(e){}
+    try { first.focus({ preventScroll: true }); } catch(e){}
+  }
+  function closeEdit(){
+    mode = 'view'; dirty = false; render();
+    const target = isEmptyPlan(plan) ? $('rp-build') : $('rp-edit');
+    try { target.focus(); } catch(e){}
+  }
+  $('rp-build').addEventListener('click', openEdit);
+  $('rp-edit').addEventListener('click', openEdit);
+  $('rp-cancel').addEventListener('click', function(){
+    if (dirty && !window.confirm('Discard your changes to the plan?')) return;
+    closeEdit();
+  });
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (!client || !signedIn || busy) return;
+    const v = readForm();
+    if (v.contacts.some(function(c){ return !c.name; })) { showErr(formError, 'Each person needs a name or label.'); return; }
+    const mySeq = seq;
+    busy = true; saveBtn.disabled = true; showErr(formError, '');
+    try {
+      const { data, error } = await client.rpc('save_my_recovery_plan', {
+        p_warning_signs: v.warning_signs, p_what_helps: v.what_helps, p_reasons_for_recovery: v.reasons_for_recovery,
+        p_step_1: v.step_1, p_step_2: v.step_2, p_step_3: v.step_3, p_contacts: v.contacts
+      });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      plan = (Array.isArray(data) ? data[0] : data) || null;
+      closeEdit();
+      savedNote.textContent = isEmptyPlan(plan) ? '' : 'Saved ✓ Your plan is up to date.';
+    } catch(err){
+      if (mySeq !== seq) return;
+      const code = err && err.code;
+      showErr(formError, code === '42501' ? 'Please sign in again to save your plan.'
+        : code === '22023' ? (err.message || 'Please check your plan and try again.')
+        : 'Couldn’t save your plan right now. Please try again.');
+    } finally {
+      if (mySeq === seq) { busy = false; saveBtn.disabled = false; }
+    }
+  });
+
+  // ---- Loading / session ----
+  function showLoadError(msg){ loadErrText.textContent = msg; loadErr.classList.toggle('show', !!msg); }
+  async function load(){
+    if (!client || !signedIn || mode === 'edit') return;
+    const mySeq = seq, myLoad = ++loadSeq;
+    showLoadError('');
+    render();
+    try {
+      const { data, error } = await client.rpc('get_my_recovery_plan');
+      if (mySeq !== seq || myLoad !== loadSeq) return;
+      if (error) throw error;
+      plan = (Array.isArray(data) ? data[0] : data) || null;
+      loaded = true;
+    } catch(err){
+      if (mySeq !== seq || myLoad !== loadSeq) return;
+      showLoadError(err && err.code === '42501' ? 'Please sign in again to see your plan.' : 'We couldn’t load your plan right now.');
+    }
+    render();
+  }
+  $('rp-retry').addEventListener('click', load);
+  $('rp-signin').addEventListener('click', function(){ const b = $('header-account-btn'); if (b) b.click(); });
+
+  function reset(){
+    seq++; loaded = false; plan = null; mode = 'view'; dirty = false; busy = false;
+    saveBtn.disabled = false; savedNote.textContent = '';
+    STEP_FIELDS.concat(TEXT_FIELDS).forEach(function(f){ $(f[0]).value = ''; });
+    contactsBox.replaceChildren();
+    ['rp-v-steps-list', 'rp-v-people-list'].forEach(function(id){ $(id).replaceChildren(); });
+    ['rp-v-helps-text', 'rp-v-warning-text', 'rp-v-why-text'].forEach(function(id){ $(id).textContent = ''; });
+    showLoadError(''); showErr(formError, '');
+  }
+  function pageActive(){ return page.classList.contains('active'); }
+  function onSession(session){
+    const nowUser = session && session.user ? session.user.id : null;
+    if (nowUser === sessionUser) return;
+    sessionUser = nowUser;
+    signedIn = !!nowUser;
+    reset(); // never carry one account's plan into another
+    render();
+    if (signedIn && pageActive()) load();
+  }
+  render();
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  }
+  document.addEventListener('fpr:pagechange', function(e){
+    if (e && e.detail && e.detail.page === 'recoveryplan') { savedNote.textContent = ''; if (signedIn) load(); }
   });
 })();
 

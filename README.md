@@ -28,6 +28,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 9D — Safety polish** — complete: Mute · Block · Report share one subdued row in the profile panel, the account window groups Blocked and Muted members under "Safety & visibility", confirmation copy is consistent across the three, and the admin Reports tab adds a type filter (All/Member/Post/Comment) with Open as the default status.
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
+- **My Recovery Plan v1 (Phase 11C)** — complete: a private, signed-in plan for hard moments (see below).
 - **Daily Porch v1 (Phase 11B)** — complete: the existing 365-day Daily Porch page upgraded with today's date view, private morning/evening reflections, saved days, and recent days (see below).
 - **Admin mobile layout** — deployed and checked on a phone: wrapping tabs, readable text, account header, and filters. Current checkpoint: main at e9ad981 on 2026-10-19.
 
@@ -60,6 +61,32 @@ The Daily Porch (`#daily`, "Daily Porch" in the nav) gives everyone something to
 - **My Recovery** stays separate: Daily Porch is for something to carry through the day, and My Recovery tracks how you're doing. The page links to it. There's no mood, cravings or goal here, and no AI, interpretation or scoring.
 
 The backend is `supabase/migrations/phase11b_daily_porch_v1.sql` (applied; see `supabase/README.md`).
+
+## My Recovery Plan
+
+"My Recovery Plan" (`#recoveryplan`) is the member's own private plan, built ahead of time for when things get hard. It's not a clinical, therapy or emergency tool. A short note on the page says so and links 911 and 988, and Rough Day and the Toolbox stay public.
+
+- **Signed out:** an explanation and a Sign in button, with links to Rough Day and the Recovery Toolbox, which need no account.
+- **Empty state (signed in, no plan):** "Build your recovery plan", a short reassurance, and two buttons: **Build my plan** and **Open Rough Day**.
+- **View mode** is the default once a plan exists, ordered for a stressful moment:
+  1. **My next three steps**, as a numbered list.
+  2. **People I can reach out to.** If an entry looks like a phone number (7–15 digits), it gets large **Call** (`tel:`) and **Text** (`sms:`) buttons. Otherwise the entry is shown as a note.
+  3. **Open Rough Day** and **Edit my plan**.
+  4. **What helps me**.
+  5. **My warning signs**.
+  6. **Why I'm choosing recovery**, highlighted.
+
+  Empty sections are hidden.
+- **Edit mode:** a simple form with Save and Cancel. Cancel asks before discarding changes. The fields are:
+  - 3 step fields, up to 150 characters each;
+  - up to 5 people (name or label, a phone number or note, an optional role), with Add and Remove;
+  - three 750-character sections with example helper text. Nothing is pre-filled.
+
+  Blank fields are cleared on save, and clearing everything returns to the empty state.
+- **Links:** an "Open My Recovery Plan" button in Rough Day's "Reach out" card, shown signed in only (the crisis box is unchanged). A small link on My Recovery and a one-line link on the Recovery Toolbox. The plan is also in the mobile menu and the footer. The desktop nav is unchanged.
+- **Private only:** no sharing, export, Community, profile or admin exposure, no contact-permission access, and nothing called or sent automatically. There's no AI analysis, scoring or classification.
+
+The backend is `supabase/migrations/phase11c_recovery_plan_v1.sql` (applied; see `supabase/README.md`).
 
 ## Community features
 

@@ -704,6 +704,38 @@ Migration: `migrations/phase11b_daily_porch_v1.sql`. It's additive only (no DROP
   - My Recovery logs and Community post, comment and notification counts are unchanged.
 - **Browser fixture suite:** 72 checks passed (see the Daily Porch section of the main README).
 
+## Phase 11C — My Recovery Plan v1
+
+Migration: `migrations/phase11c_recovery_plan_v1.sql`. It's additive only (no DROP, ALTER or DELETE). It was applied through the normal migration tool on 2026-10-19 and is recorded in `schema_migrations` as row 12, `phase11c_recovery_plan_v1`.
+
+- **`recovery_plans`:** one row per member (primary key `user_id`, references `auth.users`, `ON DELETE CASCADE`).
+  - `warning_signs`, `what_helps`, `reasons_for_recovery`: 1–750 characters or NULL.
+  - `step_1`, `step_2`, `step_3`: 1–150 characters or NULL.
+  - `contacts`: a jsonb array of at most 5 entries (CHECK).
+  - `created_at`, `updated_at`.
+- **Contacts design:** contacts are a small JSON array on the plan row, not a second table, so a plan saves and loads atomically with one RPC each. The save RPC validates and normalises every entry:
+  - it must be an object, and only `name` (1–80), `contact` (0–120) and `role` (0–60) are kept;
+  - values are trimmed and blank becomes NULL;
+  - fully blank entries are dropped;
+  - an entry with a contact or role needs a name.
+- **Access:** RLS is on with **no policies**, and `public`, `anon` and `authenticated` have **no table privileges**. Members use only:
+  - `get_my_recovery_plan()`, which returns zero or one row;
+  - `save_my_recovery_plan(text, text, text, text, text, text, jsonb)`, which replaces the whole plan and stores blank text as NULL.
+
+  Both are `security definer` with `search_path = public, pg_temp`, executable by `authenticated` only. They act on `auth.uid()`'s row and never return `user_id`. Errors use `42501` for no session and `22023` for validation.
+- **No other paths:** there's no admin policy or RPC, no view, no trigger, no sharing or export, and no link to Community, profiles, followers or notifications.
+
+**Verification (2026-10-19):**
+- **Privileges:** `has_table_privilege` is false for anon and authenticated, and EXECUTE is authenticated-only.
+- **Rollback DO block** (two throwaway users). These passed:
+  - anon RPC and table access are denied, and direct table access as authenticated is denied;
+  - get returns empty before the first save;
+  - save trims text, drops unknown keys and blank contact rows, and keeps contact order; an edit clears fields (NULL) and replaces contacts;
+  - validation rejects 751 characters, a 151-character step, 6 contacts, a contact without a name, non-array contacts and a non-object contact, and accepts 750/150; NULL contacts become `[]`;
+  - member B sees no plan from A, and B's save doesn't touch A's;
+  - Community post, comment and notification counts are unchanged.
+- **Browser fixture suite:** 68 checks passed.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -732,4 +764,4 @@ Migration: `migrations/phase11b_daily_porch_v1.sql`. It's additive only (no DROP
 
 **Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and on-site payment processing. Optional Support FPR contributions use an external Cash App link; no payment credentials or transaction records are stored by this website.
 
-Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
