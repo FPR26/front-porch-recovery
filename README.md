@@ -29,6 +29,7 @@ Live site: https://fpr26.github.io/front-porch-recovery/
 - **Phase 9C — Report a member** — complete: profile report form and private admin review alongside existing content reports. Live checks covered submission, duplicate-open-report prevention, reporting again after dismissal, target identification, Dismiss, Resolve, and dismissal persistence after refresh.
 - **My Recovery v1 (Phase 11A)** — complete: a signed-in, account-private daily recovery dashboard (see below).
 - **My Recovery Plan v1 (Phase 11C)** — complete: a private, signed-in plan for hard moments (see below).
+- **Recovery Toolbox v1 (Phase 11D)** — complete: the existing Toolbox page reorganised into built-in tools with private pinning, grounding and breathing tools, and plan contacts (see below).
 - **Daily Porch v1 (Phase 11B)** — complete: the existing 365-day Daily Porch page upgraded with today's date view, private morning/evening reflections, saved days, and recent days (see below).
 - **Admin mobile layout** — deployed and checked on a phone: wrapping tabs, readable text, account header, and filters. Current checkpoint: main at e9ad981 on 2026-10-19.
 
@@ -83,10 +84,39 @@ The backend is `supabase/migrations/phase11b_daily_porch_v1.sql` (applied; see `
   - three 750-character sections with example helper text. Nothing is pre-filled.
 
   Blank fields are cleared on save, and clearing everything returns to the empty state.
-- **Links:** an "Open My Recovery Plan" button in Rough Day's "Reach out" card, shown signed in only (the crisis box is unchanged). A small link on My Recovery and a one-line link on the Recovery Toolbox. The plan is also in the mobile menu and the footer. The desktop nav is unchanged.
+- **Links:** an "Open My Recovery Plan" button in Rough Day's "Reach out" card, shown signed in only (the crisis box is unchanged). A small link on My Recovery and a "My Recovery Plan" card in the Toolbox's "Right now" group. The plan is also in the mobile menu and the footer. The desktop nav is unchanged.
 - **Private only:** no sharing, export, Community, profile or admin exposure, no contact-permission access, and nothing called or sent automatically. There's no AI analysis, scoring or classification.
 
 The backend is `supabase/migrations/phase11c_recovery_plan_v1.sql` (applied; see `supabase/README.md`).
+
+## Recovery Toolbox
+
+The Recovery Toolbox (`#toolbox`, "Toolbox" in the nav) is the same page as before, reorganised rather than duplicated. From the top, it has:
+
+1. **My Toolbox:**
+   - **Signed in:** the member's pinned tools, as compact shortcuts in the order they were pinned (re-pinning moves a tool to the end). There's no drag and drop.
+   - **Signed out:** a note that everything works without an account, and that signing in lets you pin favourites across devices.
+2. **Built-in tools**, in four groups. They're defined in the Toolbox script (`TOOLS`) with stable keys:
+   - **Right now:** `rough_day`, `recovery_plan`, `grounding_54321`, `box_breathing`.
+   - **Daily:** `daily_porch`, `my_recovery`, `check_in`, `recovery_counter` (scrolls to the counter on this page).
+   - **Connection:** `community`, `support_people`.
+   - **Reset:** `walk`, `water`, `music`, `prayer`, `journal`.
+3. **Guides and resources:** the existing 12 searchable guides (`CONFIG.toolboxResources`), unchanged.
+4. **The Recovery Counter**, unchanged and shared with Home.
+
+How the tools behave:
+
+- **Pin / Unpin:** a "☆ Pin" / "★ Pinned" button (`aria-pressed` plus a full label) on every tool, shown to signed-in members only. Pins are private, with no counts and no notifications. Only built-in keys are stored, never URLs or markup.
+- **5-4-3-2-1 grounding:** Start, then Back/Next step by step (see, feel, hear, smell, taste), then Done and Start again. There's no timer, focus stays on the controls, and the steps are announced in a polite live region. Nothing is stored or sent.
+- **Box breathing:** Start/Stop with a 4-4-4-4 text count (breathe in, hold, breathe out, hold) and a small optional box. Phase changes are announced politely, and the per-second count is hidden from screen readers. Reduced motion turns the box transition off. It stops when you leave the page, and nothing is stored.
+- **Quick resets** (walk, water, music, prayer): a short prompt with an "I'll do this" toggle that isn't stored. Music also links to Music from the Porch.
+- **Write for five minutes** links to the existing private Daily Porch reflection and My Recovery log, with no new journal storage.
+- **People I can reach out to** reads the member's own My Recovery Plan (`get_my_recovery_plan`) and shows the same Call (`tel:`) / Text (`sms:`) buttons, reusing the plan's phone-number check. With no contacts it says "Add support people to My Recovery Plan." Signed out, it invites sign-in.
+- **Private tools** (My Recovery, My Recovery Plan, People) carry a "Free account" tag when signed out, and open their own sign-in screens.
+
+Rough Day keeps its own page and crisis resources; the Toolbox links to it. There's no AI, diagnosis, scoring or gamification.
+
+The backend is `supabase/migrations/phase11d_toolbox_pins_v1.sql` (applied; see `supabase/README.md`).
 
 ## Community features
 

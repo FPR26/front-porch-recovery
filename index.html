@@ -884,6 +884,12 @@
   .account-handle-check.bad{color:#7A2E24;}
   .member-profile-handle{font-size:.92rem; color:var(--charcoal-soft); margin-top:2px;}
 
+  /* The `hidden` attribute must win over component display rules (.btn,
+     .tb-pin, ...) on the private pages and the Toolbox, like the other
+     [hidden] rules above. */
+  #page-myrecovery [hidden], #page-daily [hidden], #page-recoveryplan [hidden],
+  #page-toolbox [hidden], #roughday-plan-link[hidden]{display:none !important;}
+
   /* ---------- My Recovery (Phase 11A) ---------- */
   .mr-wrap{max-width:680px;}
   .mr-private-pill{display:inline-flex; align-items:center; gap:6px; margin-top:12px; padding:5px 12px; border-radius:999px; background:rgba(167,184,168,.18); color:#DCE5DC; font-size:.85rem; font-weight:600;}
@@ -962,7 +968,37 @@
   .rp-contact-row .rp-remove{margin-top:2px;}
   .rp-disclaimer{margin-top:22px; text-align:center;}
   .rp-disclaimer a{color:var(--charcoal); font-weight:700; text-decoration:underline; text-underline-offset:2px;}
-  .rp-toolbox-link{margin:0 0 16px; font-size:.92rem; color:var(--charcoal-soft);}
+
+  /* ---------- Recovery Toolbox v1 (Phase 11D) ---------- */
+  .tb-wrap{max-width:900px;}
+  .tb-group{margin-bottom:30px;}
+  .tb-group h2{font-size:1.3rem;}
+  .tb-group-sub{font-size:.9rem; color:var(--charcoal-soft); margin-top:4px;}
+  .tb-grid{display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px;}
+  @media(min-width:640px){ .tb-grid{grid-template-columns:repeat(2, minmax(0,1fr));} }
+  .tb-card{background:var(--white); border:1px solid var(--line); border-radius:var(--radius-m); padding:16px; display:flex; flex-direction:column; gap:8px; min-width:0;}
+  .tb-card.tb-wide{grid-column:1 / -1;}
+  .tb-card-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+  .tb-card h3{font-size:1.05rem;}
+  .tb-card p{font-size:.9rem; color:var(--charcoal-soft); line-height:1.55;}
+  .tb-acct{font-size:.72rem; font-weight:700; color:var(--sage-text); background:rgba(167,184,168,.25); border-radius:999px; padding:2px 8px; margin-left:6px; vertical-align:middle; white-space:nowrap;}
+  .tb-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:auto; padding-top:4px;}
+  .tb-actions .btn{min-height:44px; padding:10px 16px; font-size:.88rem; flex:1 1 auto;}
+  .tb-pin{flex:none; display:inline-flex; align-items:center; gap:4px; min-height:40px; padding:6px 10px; border-radius:999px; border:1.5px solid var(--line); background:var(--white); color:var(--charcoal); font:inherit; font-size:.8rem; font-weight:600; cursor:pointer; white-space:nowrap;}
+  .tb-pin[aria-pressed="true"]{background:var(--charcoal); border-color:var(--charcoal); color:var(--white);}
+  .tb-pin[disabled]{opacity:.6; cursor:default;}
+  .tb-step{font-size:1.15rem; font-weight:700; color:var(--charcoal); margin-top:4px;}
+  .tb-step-help{font-size:.88rem; color:var(--charcoal-soft);}
+  .tb-progress{font-size:.78rem; font-weight:700; color:var(--sage-text); text-transform:uppercase; letter-spacing:.04em;}
+  .tb-breath{display:flex; align-items:center; gap:16px; margin-top:4px;}
+  .tb-breath-box{flex:none; width:64px; height:64px; border-radius:12px; background:var(--amber-soft); border:2px solid var(--amber); transform:scale(.7); transition:transform 4s linear;}
+  .tb-breath-box.big{transform:scale(1);}
+  @media (prefers-reduced-motion: reduce){ .tb-breath-box{transition:none;} }
+  .tb-breath-phase{font-size:1.2rem; font-weight:700;}
+  .tb-breath-count{font-size:.9rem; color:var(--charcoal-soft);}
+  .tb-done-note{font-size:.88rem; font-weight:600; color:var(--sage-text);}
+  .tb-people{list-style:none; padding:0; margin:4px 0 0; display:flex; flex-direction:column; gap:8px;}
+  .tb-library-title{font-size:1.3rem; margin-bottom:12px;}
 </style>
 <!-- Supabase client (Phase 1): optional member accounts only. Loaded from
      jsdelivr's CDN mirror of the published npm package; nothing here can
@@ -1704,14 +1740,28 @@
 <section class="page" id="page-toolbox">
   <section class="block bg-charcoal tight">
     <div class="wrap">
-      <p class="hero-eyebrow" style="color:#A7B8A8;">Recovery Toolbox</p>
-      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Practical tools, not slogans.</h1>
+      <p class="hero-eyebrow" style="color:#A7B8A8;">Practical tools, not slogans</p>
+      <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Recovery Toolbox</h1>
       <p style="color:var(--gray); margin-top:10px; max-width:60ch;">Front Porch Recovery supports multiple pathways to recovery. No single program works for everyone — take what's useful, leave what isn't.</p>
     </div>
   </section>
-  <section class="block bg-cream">
+
+  <!-- Recovery Toolbox v1 (Phase 11D). Tool cards are built by the Toolbox
+       script from a fixed list of built-in tools (textContent only). -->
+  <section class="block bg-cream tb-tools">
+    <div class="wrap tb-wrap">
+      <section class="tb-group" id="tb-mine" aria-labelledby="tb-mine-title">
+        <h2 id="tb-mine-title">My Toolbox</h2>
+        <p class="tb-group-sub" id="tb-mine-note"></p>
+        <div class="tb-grid" id="tb-mine-grid"></div>
+      </section>
+      <div id="tb-groups"></div>
+    </div>
+  </section>
+
+  <section class="block bg-cream" style="padding-top:0;">
     <div class="wrap">
-      <p class="rp-toolbox-link">Build a private plan for hard moments: <button type="button" class="mr-link" data-nav="recoveryplan">My Recovery Plan</button></p>
+      <h2 class="tb-library-title" id="tb-library-title">Guides and resources</h2>
       <div class="toolbox-search-wrap">
         <label for="toolbox-search" class="sr-only">Search the recovery toolbox</label>
         <input type="text" id="toolbox-search" placeholder="Search the recovery toolbox…" autocomplete="off">
@@ -1721,7 +1771,7 @@
     </div>
   </section>
 
-  <section class="block bg-sage">
+  <section class="block bg-sage" id="tb-counter" tabindex="-1">
     <div class="wrap grid grid-2" style="align-items:center;">
       <div class="milestone-box">
         <h2 style="font-size:1.5rem;">Your recovery counter</h2>
@@ -2373,6 +2423,9 @@
 
       <h2>My Recovery Plan (private to your account)</h2>
       <p>If you build a My Recovery Plan, what you write is saved with your account: your next steps, what helps you, your warning signs, why you're choosing recovery, and up to five people you list with an optional phone number or note. You type these in yourself. The site never reads your phone's contacts, and Call/Text buttons just open your phone's own dialer or messaging app; nothing is called or sent automatically. Your plan follows the same rules as My Recovery: only you can see it in the site, it never appears in the Community, on your profile, or in notifications, it isn't shared or exported, and FPR's admin tools have no screen for it. It's your own plan, not medical care or an emergency service.</p>
+
+      <h2>Recovery Toolbox pins (private to your account)</h2>
+      <p>If you pin tools to My Toolbox, the list of pinned tools is saved with your account so it follows you to any device. Only you can see it, and there are no public counts. Using the grounding, breathing, or quick-reset tools isn't saved or sent anywhere. The Toolbox's "People I can reach out to" shows the contacts from your own My Recovery Plan; they aren't copied anywhere else.</p>
 
       <h2>Daily Porch reflections and saved days (private to your account)</h2>
       <p>Anyone can read the Daily Porch without an account. If you sign in, you can write a private morning and evening reflection for a day and save days you want to come back to. These are saved with your account and follow the same rules as My Recovery: only you can see them in the site, they never appear in the Community, on your profile, or in notifications, there are no public save counts, and FPR's admin tools have no screen for them. Nothing is stored on your device when you're signed out.</p>
@@ -14283,6 +14336,7 @@ const FPRBadge = (function(){
     if (digits.length < 7 || digits.length > 15) return null;
     return (s.charAt(0) === '+' ? '+' : '') + digits;
   }
+  window.FPRPhoneOf = phoneOf; // shared with the Toolbox's "People I can reach out to"
   function isEmptyPlan(p){
     if (!p) return true;
     const texts = [p.warning_signs, p.what_helps, p.reasons_for_recovery, p.step_1, p.step_2, p.step_3];
@@ -14504,6 +14558,340 @@ const FPRBadge = (function(){
   }
   document.addEventListener('fpr:pagechange', function(e){
     if (e && e.detail && e.detail.page === 'recoveryplan') { savedNote.textContent = ''; if (signedIn) load(); }
+  });
+})();
+
+/* ---------- Recovery Toolbox v1 (Phase 11D) ----------
+   Built-in tools (fixed list below, stable keys) grouped as Right now /
+   Daily / Connection / Reset, plus a private "My Toolbox" of pinned tools
+   for signed-in members (list_my_toolbox_pins / set_toolbox_pin: own
+   rows, keys only, no ids). Grounding, box breathing and the quick
+   prompts run only in the page and store nothing. "People I can reach
+   out to" reads the member's existing My Recovery Plan (no second copy).
+   Everything is built with textContent; the public tools never need an
+   account. */
+(function(){
+  const page = document.getElementById('page-toolbox');
+  const groupsBox = document.getElementById('tb-groups');
+  if (!page || !groupsBox) return;
+  const client = window.__fprSupabaseClient || null;
+  const $ = function(id){ return document.getElementById(id); };
+  const mineGrid = $('tb-mine-grid'), mineNote = $('tb-mine-note');
+
+  const GROUPS = [
+    { id: 'now', title: 'Right now', sub: 'For the next few minutes.' },
+    { id: 'daily', title: 'Daily', sub: 'Small things that keep you steady.' },
+    { id: 'connection', title: 'Connection', sub: 'You don’t have to do this alone.' },
+    { id: 'reset', title: 'Reset', sub: 'Quick ways to change the moment.' }
+  ];
+  const TOOLS = [
+    { key: 'rough_day', group: 'now', title: 'Rough Day', desc: 'Breathing, grounding, and people to reach, for when today is hard.', nav: 'roughday', label: 'Open Rough Day' },
+    { key: 'recovery_plan', group: 'now', title: 'My Recovery Plan', desc: 'Your own next steps, people, and reasons, ready before you need them.', nav: 'recoveryplan', label: 'Open my plan', account: true },
+    { key: 'grounding_54321', group: 'now', kind: 'grounding', title: '5-4-3-2-1 grounding', desc: 'Come back to the room you’re in, one sense at a time. Nothing you name is saved.' },
+    { key: 'box_breathing', group: 'now', kind: 'breathing', title: 'Box breathing', desc: 'In for 4, hold for 4, out for 4, hold for 4. Go at your own pace and stop any time.' },
+    { key: 'daily_porch', group: 'daily', title: 'Daily Porch', desc: 'Today’s reflection, something to think about, and one small move.', nav: 'daily', label: 'Read today’s Daily Porch' },
+    { key: 'my_recovery', group: 'daily', title: 'My Recovery', desc: 'Log today’s mood and cravings, and see your recent days.', nav: 'myrecovery', label: 'Open My Recovery', account: true },
+    { key: 'check_in', group: 'daily', title: 'Check-In', desc: 'A one-minute check-in that stays on this device.', nav: 'checkin', label: 'Check in' },
+    { key: 'recovery_counter', group: 'daily', title: 'Recovery Counter', desc: 'Your days, weeks, and milestones, kept on this device.', nav: 'toolbox', scroll: 'tb-counter', label: 'Open the counter' },
+    { key: 'community', group: 'connection', title: 'Community', desc: 'Read what others on the porch are sharing. Sign in to post or reply.', nav: 'community', label: 'Open Community' },
+    { key: 'support_people', group: 'connection', kind: 'contacts', title: 'People I can reach out to', desc: 'The people from your My Recovery Plan, one tap away.', account: true, wide: true },
+    { key: 'walk', group: 'reset', kind: 'quick', title: 'Take a short walk', desc: 'Five or ten minutes outside or around the block. Change the scenery, not your whole life.' },
+    { key: 'water', group: 'reset', kind: 'quick', title: 'Drink some water', desc: 'Get a glass and drink it slowly. Simple, and it helps more than you’d think.' },
+    { key: 'music', group: 'reset', kind: 'quick', title: 'Put on music', desc: 'One song that steadies you. Or something from the porch.', nav: 'music', label: 'Music from the Porch' },
+    { key: 'prayer', group: 'reset', kind: 'quick', title: 'Prayer or quiet time', desc: 'A few minutes of quiet: prayer, meditation, or just sitting still. Whatever that looks like for you.' },
+    { key: 'journal', group: 'reset', kind: 'journal', title: 'Write for five minutes', desc: 'Get it out of your head. Write privately in today’s Daily Porch reflection, or log how you’re doing in My Recovery.' }
+  ];
+  const byKey = {}; TOOLS.forEach(function(t){ byKey[t.key] = t; });
+
+  let signedIn = false, sessionUser = null, seq = 0, loadSeq = 0;
+  let pinsLoaded = false, pins = [];      // pinned keys in pin order
+  let planState = 'idle', contacts = [];  // 'idle' | 'loading' | 'ready' | 'error'
+  let pinBusy = {};
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function btn(label, cls, onClick){ const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; }
+  function navBtn(label, cls, nav, scroll){ const b = btn(label, cls); b.setAttribute('data-nav', nav); if (scroll) b.setAttribute('data-scroll-target', scroll); return b; }
+  function openAccount(){ const b = $('header-account-btn'); if (b) b.click(); }
+
+  // ---- Pin buttons ----
+  function pinButton(tool){
+    const b = btn('', 'tb-pin');
+    b.dataset.pinKey = tool.key;
+    b.addEventListener('click', function(){ togglePin(tool.key); });
+    paintPin(b);
+    return b;
+  }
+  function paintPin(b){
+    const tool = byKey[b.dataset.pinKey];
+    const on = pins.indexOf(tool.key) !== -1;
+    b.hidden = !signedIn;
+    b.textContent = on ? '★ Pinned' : '☆ Pin';
+    b.setAttribute('aria-pressed', String(on));
+    b.setAttribute('aria-label', on ? 'Unpin ' + tool.title + ' from My Toolbox' : 'Pin ' + tool.title + ' to My Toolbox');
+    b.disabled = !pinsLoaded || !!pinBusy[tool.key];
+  }
+  function paintPins(){ page.querySelectorAll('.tb-pin').forEach(paintPin); }
+  async function togglePin(key){
+    if (!client || !signedIn || !pinsLoaded || pinBusy[key]) return;
+    const want = pins.indexOf(key) === -1, mySeq = seq;
+    pinBusy[key] = true; paintPins();
+    let failed = false;
+    try {
+      const { data, error } = await client.rpc('set_toolbox_pin', { p_tool_key: key, p_pinned: want });
+      if (mySeq !== seq) return;
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      pins = pins.filter(function(k){ return k !== key; });
+      if (row && row.pinned) pins.push(key);
+    } catch(err){
+      if (mySeq !== seq) return;
+      failed = true;
+    } finally {
+      if (mySeq === seq) {
+        pinBusy[key] = false; renderMine(); paintPins();
+        if (failed) mineNote.textContent = 'Couldn’t update your pins right now. Please try again.';
+      }
+    }
+  }
+
+  // ---- Interactive tools (nothing stored) ----
+  function groundingBody(card){
+    const STEPS = [
+      ['5 things you can see', 'Look around slowly. Name them out loud or in your head.'],
+      ['4 things you can feel', 'Your feet on the floor, the chair under you, the air on your skin.'],
+      ['3 things you can hear', 'Near or far. Traffic, a fan, your own breathing.'],
+      ['2 things you can smell', 'If nothing stands out, notice the air, or move to somewhere with a scent.'],
+      ['1 thing you can taste', 'A sip of water, a mint, or just the taste in your mouth right now.']
+    ];
+    let i = -1;
+    const live = el('div'); live.setAttribute('aria-live', 'polite');
+    const progress = el('p', 'tb-progress'), step = el('p', 'tb-step'), help = el('p', 'tb-step-help');
+    live.appendChild(progress); live.appendChild(step); live.appendChild(help);
+    const actions = el('div', 'tb-actions');
+    const start = btn('Start', 'btn btn-primary'), back = btn('Back', 'btn btn-outline'), next = btn('Next', 'btn btn-primary'), again = btn('Start again', 'btn btn-outline');
+    function paint(){
+      start.hidden = i !== -1; back.hidden = next.hidden = !(i >= 0 && i < STEPS.length); again.hidden = i !== STEPS.length;
+      back.disabled = i <= 0;
+      if (i === -1) { progress.textContent = ''; step.textContent = ''; help.textContent = 'Take it slow. There’s no timer.'; }
+      else if (i < STEPS.length) { progress.textContent = 'Step ' + (i + 1) + ' of 5'; step.textContent = STEPS[i][0]; help.textContent = STEPS[i][1]; next.textContent = i === STEPS.length - 1 ? 'Done' : 'Next'; }
+      else { progress.textContent = 'Done'; step.textContent = 'Nice work.'; help.textContent = 'Take a breath and notice how you feel now. You can do this again any time.'; }
+    }
+    start.addEventListener('click', function(){ i = 0; paint(); next.focus(); });
+    back.addEventListener('click', function(){ if (i > 0) { i--; paint(); } (i === 0 ? next : back).focus(); });
+    next.addEventListener('click', function(){ i++; paint(); if (i === STEPS.length) again.focus(); });
+    again.addEventListener('click', function(){ i = 0; paint(); next.focus(); });
+    [start, back, next, again].forEach(function(b){ actions.appendChild(b); });
+    card.appendChild(live); card.appendChild(actions);
+    paint();
+  }
+  let stopBreathing = function(){};
+  function breathingBody(card){
+    const PHASES = [['Breathe in', true], ['Hold', true], ['Breathe out', false], ['Hold', false]];
+    const wrap = el('div', 'tb-breath');
+    const box = el('div', 'tb-breath-box'); box.setAttribute('aria-hidden', 'true');
+    const textWrap = el('div');
+    const phase = el('p', 'tb-breath-phase', 'Ready when you are.'); phase.setAttribute('aria-live', 'polite');
+    const count = el('p', 'tb-breath-count', 'Four counts each: in, hold, out, hold.'); count.setAttribute('aria-hidden', 'true');
+    textWrap.appendChild(phase); textWrap.appendChild(count);
+    wrap.appendChild(box); wrap.appendChild(textWrap);
+    const actions = el('div', 'tb-actions');
+    const start = btn('Start', 'btn btn-primary'), stop = btn('Stop', 'btn btn-outline');
+    stop.hidden = true;
+    let timer = null, p = 0, n = 4;
+    function show(){ phase.textContent = PHASES[p][0]; count.textContent = String(n); box.classList.toggle('big', PHASES[p][1]); }
+    function tick(){ n--; if (n === 0) { p = (p + 1) % 4; n = 4; } show(); }
+    function halt(){
+      if (timer) clearInterval(timer);
+      timer = null; start.hidden = false; stop.hidden = true; box.classList.remove('big');
+      phase.textContent = 'Ready when you are.'; count.textContent = 'Four counts each: in, hold, out, hold.';
+    }
+    start.addEventListener('click', function(){ p = 0; n = 4; show(); timer = setInterval(tick, 1000); start.hidden = true; stop.hidden = false; stop.focus(); });
+    stop.addEventListener('click', function(){ halt(); start.focus(); });
+    stopBreathing = function(){ if (timer) halt(); };
+    actions.appendChild(start); actions.appendChild(stop);
+    card.appendChild(wrap); card.appendChild(actions);
+  }
+  function quickBody(card, tool){
+    const actions = el('div', 'tb-actions');
+    const doIt = btn('I’ll do this', 'btn btn-outline');
+    doIt.setAttribute('aria-pressed', 'false');
+    doIt.addEventListener('click', function(){
+      const on = doIt.getAttribute('aria-pressed') !== 'true';
+      doIt.setAttribute('aria-pressed', String(on));
+      doIt.textContent = on ? '✓ Good. Go do it.' : 'I’ll do this';
+    });
+    actions.appendChild(doIt);
+    if (tool.nav) actions.appendChild(navBtn(tool.label, 'btn btn-outline', tool.nav, tool.scroll));
+    card.appendChild(actions);
+  }
+  function journalBody(card){
+    const actions = el('div', 'tb-actions');
+    actions.appendChild(navBtn('Daily Porch reflection', 'btn btn-outline', 'daily'));
+    actions.appendChild(navBtn('My Recovery log', 'btn btn-outline', 'myrecovery'));
+    card.appendChild(actions);
+  }
+  function contactsBody(card){
+    const body = el('div'); body.id = 'tb-people-body';
+    card.appendChild(body);
+    renderContacts();
+  }
+  function renderContacts(){
+    const body = $('tb-people-body');
+    if (!body) return;
+    body.replaceChildren();
+    if (!signedIn) {
+      body.appendChild(el('p', null, 'Sign in to see the people from your My Recovery Plan here.'));
+      const a = el('div', 'tb-actions'); a.appendChild(btn('Sign in', 'btn btn-outline', openAccount)); body.appendChild(a);
+      return;
+    }
+    if (planState === 'loading' || planState === 'idle') { body.appendChild(el('p', null, 'Loading your people…')); return; }
+    if (planState === 'error') { body.appendChild(el('p', null, 'Couldn’t load your people right now. Reload to try again.')); return; }
+    if (!contacts.length) {
+      body.appendChild(el('p', null, 'Add support people to My Recovery Plan.'));
+      const a = el('div', 'tb-actions'); a.appendChild(navBtn('Open My Recovery Plan', 'btn btn-outline', 'recoveryplan')); body.appendChild(a);
+      return;
+    }
+    const phoneOf = typeof window.FPRPhoneOf === 'function' ? window.FPRPhoneOf : function(){ return null; };
+    const ul = el('ul', 'tb-people');
+    contacts.forEach(function(c){
+      if (!c || !c.name) return;
+      const li = el('li', 'rp-person');
+      const head = el('p', 'rp-person-name', c.name);
+      if (c.role) head.appendChild(el('span', 'rp-person-role', c.role));
+      li.appendChild(head);
+      if (c.contact) li.appendChild(el('p', 'rp-person-contact', c.contact));
+      const tel = phoneOf(c.contact);
+      if (tel) {
+        const actions = el('div', 'rp-person-actions');
+        const call = el('a', 'btn btn-primary', 'Call'); call.href = 'tel:' + tel; call.setAttribute('aria-label', 'Call ' + c.name);
+        const text = el('a', 'btn btn-outline', 'Text'); text.href = 'sms:' + tel; text.setAttribute('aria-label', 'Text ' + c.name);
+        actions.appendChild(call); actions.appendChild(text);
+        li.appendChild(actions);
+      }
+      ul.appendChild(li);
+    });
+    body.appendChild(ul);
+    const edit = el('p', 'mr-muted'); edit.appendChild(navBtn('Edit in My Recovery Plan', 'mr-link', 'recoveryplan'));
+    body.appendChild(edit);
+  }
+
+  // ---- Cards ----
+  function accountTag(tool, h){ if (tool.account && !signedIn) { const t = el('span', 'tb-acct', 'Free account'); t.dataset.acct = '1'; h.appendChild(t); } }
+  function fullCard(tool){
+    const card = el('article', 'tb-card' + (tool.wide ? ' tb-wide' : ''));
+    card.id = 'tb-tool-' + tool.key;
+    card.tabIndex = -1;
+    const head = el('div', 'tb-card-head');
+    const h = el('h3', null, tool.title); h.id = 'tb-h-' + tool.key;
+    card.setAttribute('aria-labelledby', h.id);
+    accountTag(tool, h);
+    head.appendChild(h); head.appendChild(pinButton(tool));
+    card.appendChild(head);
+    card.appendChild(el('p', null, tool.desc));
+    if (tool.kind === 'grounding') groundingBody(card);
+    else if (tool.kind === 'breathing') breathingBody(card);
+    else if (tool.kind === 'quick') quickBody(card, tool);
+    else if (tool.kind === 'journal') journalBody(card);
+    else if (tool.kind === 'contacts') contactsBody(card);
+    else { const a = el('div', 'tb-actions'); a.appendChild(navBtn(tool.label, 'btn btn-primary', tool.nav, tool.scroll)); card.appendChild(a); }
+    return card;
+  }
+  // My Toolbox shows compact shortcuts (no duplicate interactive widgets).
+  function shortcutCard(tool){
+    const card = el('article', 'tb-card');
+    const head = el('div', 'tb-card-head');
+    head.appendChild(el('h3', null, tool.title));
+    head.appendChild(pinButton(tool));
+    card.appendChild(head);
+    card.appendChild(el('p', null, tool.desc));
+    const a = el('div', 'tb-actions');
+    if (!tool.kind && tool.nav) a.appendChild(navBtn(tool.label, 'btn btn-primary', tool.nav, tool.scroll));
+    else a.appendChild(btn('Open', 'btn btn-primary', function(){
+      const target = $('tb-tool-' + tool.key);
+      if (!target) return;
+      try { target.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); } catch(e){}
+      try { target.focus({ preventScroll: true }); } catch(e){}
+    }));
+    card.appendChild(a);
+    return card;
+  }
+  function renderGroups(){
+    groupsBox.replaceChildren();
+    GROUPS.forEach(function(g){
+      const sec = el('section', 'tb-group'); sec.id = 'tb-group-' + g.id;
+      const h = el('h2', null, g.title); h.id = 'tb-group-title-' + g.id;
+      sec.setAttribute('aria-labelledby', h.id);
+      sec.appendChild(h);
+      sec.appendChild(el('p', 'tb-group-sub', g.sub));
+      const grid = el('div', 'tb-grid');
+      TOOLS.filter(function(t){ return t.group === g.id; }).forEach(function(t){ grid.appendChild(fullCard(t)); });
+      sec.appendChild(grid);
+      groupsBox.appendChild(sec);
+    });
+  }
+  function renderMine(){
+    mineGrid.replaceChildren();
+    mineNote.replaceChildren();
+    if (!signedIn) {
+      mineNote.appendChild(document.createTextNode('Everything here works without an account. Sign in to pin the tools you use most; pins are private and follow you to any device. '));
+      mineNote.appendChild(btn('Sign in', 'mr-link', openAccount));
+      return;
+    }
+    if (!pinsLoaded) { mineNote.textContent = 'Loading your pinned tools…'; return; }
+    const mine = pins.map(function(k){ return byKey[k]; }).filter(Boolean);
+    if (!mine.length) { mineNote.textContent = 'Tap “☆ Pin” on any tool below to keep it here. Only you can see your pins.'; return; }
+    mineNote.textContent = 'Your pinned tools, in the order you pinned them. Only you can see these.';
+    mine.forEach(function(t){ mineGrid.appendChild(shortcutCard(t)); });
+  }
+  function refreshAccountBits(){
+    page.querySelectorAll('[data-acct]').forEach(function(t){ t.remove(); });
+    TOOLS.forEach(function(t){ const h = $('tb-h-' + t.key); if (h) accountTag(t, h); });
+    paintPins(); renderMine(); renderContacts();
+  }
+
+  // ---- Loading / session ----
+  async function load(){
+    if (!client || !signedIn) return;
+    const mySeq = seq, myLoad = ++loadSeq;
+    if (planState !== 'ready') planState = 'loading';
+    renderContacts();
+    const res = await Promise.all([
+      client.rpc('list_my_toolbox_pins').then(function(r){ return r; }, function(e){ return { error: e }; }),
+      client.rpc('get_my_recovery_plan').then(function(r){ return r; }, function(e){ return { error: e }; })
+    ]);
+    if (mySeq !== seq || myLoad !== loadSeq) return;
+    if (!res[0].error) { pins = (res[0].data || []).map(function(r){ return r.tool_key; }); pinsLoaded = true; }
+    else mineNote.textContent = 'Couldn’t load your pinned tools right now.';
+    if (!res[1].error) {
+      const row = Array.isArray(res[1].data) ? res[1].data[0] : res[1].data;
+      contacts = row && Array.isArray(row.contacts) ? row.contacts : [];
+      planState = 'ready';
+    } else planState = 'error';
+    paintPins();
+    if (!res[0].error) renderMine();
+    renderContacts();
+  }
+  function pageActive(){ return page.classList.contains('active'); }
+  function onSession(session){
+    const nowUser = session && session.user ? session.user.id : null;
+    if (nowUser === sessionUser) return;
+    sessionUser = nowUser;
+    signedIn = !!nowUser;
+    seq++; pins = []; pinsLoaded = false; contacts = []; planState = 'idle'; pinBusy = {};
+    refreshAccountBits(); // never carry one account's pins or people into another
+    if (signedIn && pageActive()) load();
+  }
+
+  renderGroups();
+  renderContacts(); // the people card's body exists only once the groups are in the page
+  renderMine();
+  if (client && client.auth && typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(_event, session){ setTimeout(function(){ onSession(session); }, 0); });
+  }
+  document.addEventListener('fpr:pagechange', function(e){
+    const pg = e && e.detail && e.detail.page;
+    if (pg !== 'toolbox') { stopBreathing(); return; }
+    if (signedIn) load();
   });
 })();
 

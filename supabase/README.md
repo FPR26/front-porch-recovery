@@ -736,6 +736,31 @@ Migration: `migrations/phase11c_recovery_plan_v1.sql`. It's additive only (no DR
   - Community post, comment and notification counts are unchanged.
 - **Browser fixture suite:** 68 checks passed.
 
+## Phase 11D — Recovery Toolbox v1 (pins)
+
+Migration: `migrations/phase11d_toolbox_pins_v1.sql`. It's additive only (no DROP, ALTER or DELETE). It was applied through the normal migration tool on 2026-10-19 and is recorded in `schema_migrations` as row 13, `phase11d_toolbox_pins_v1`. The tools themselves are built into `index.html`; only pins are stored.
+
+- **`recovery_toolbox_pins`:**
+  - Columns: `user_id` (`ON DELETE CASCADE`), `tool_key`, `pinned`, `sort_order`, `created_at`, `updated_at`. The primary key is `(user_id, tool_key)`.
+  - A CHECK requires `tool_key ~ '^[a-z0-9_]{1,40}$'`, so no URLs or markup can be stored.
+  - Unpin sets `pinned = false`, which keeps the migration free of DELETE.
+- **Access:** RLS is on with **no policies**, and `public`, `anon` and `authenticated` have **no table privileges**. Members use only:
+  - `list_my_toolbox_pins()`, which returns pinned keys in pin order, at most 30;
+  - `set_toolbox_pin(p_tool_key, p_pinned)`. Pinning appends to the end, a repeat pin keeps its place, and unpinning a never-pinned key is a no-op. There's a cap of 30 pinned tools.
+
+  Both are `security definer` with `search_path = public, pg_temp`, executable by `authenticated` only. They act on `auth.uid()`'s rows and never return `user_id`. Errors use `42501` for no session and `22023` for a bad key, a null flag, or more than 30 pins.
+- **No other storage:** grounding, breathing and the quick resets store nothing. "People I can reach out to" reads `get_my_recovery_plan`, so contacts aren't copied.
+
+**Verification (2026-10-19):**
+- **Privileges:** `has_table_privilege` is false for anon and authenticated, and EXECUTE is authenticated-only.
+- **Rollback DO block** (two throwaway users). These passed:
+  - anon RPC and table access are denied, and direct table access as authenticated is denied;
+  - pins come back in pin order, a repeat pin keeps its place, unpin and unpin-unknown work, and re-pinning moves a tool to the end;
+  - URL, HTML and 41-character keys are rejected, as is a 31st pin;
+  - member B sees no pins from A, and B's unpin doesn't touch A's;
+  - `recovery_plans` and Community counts are unchanged.
+- **Browser fixture suite:** 79 checks passed.
+
 ## What's next
 
 **Phase 0 is complete and verified** — `schema.sql` ran clean against the dedicated FPR Supabase project, and all verification checks above passed, including the previously-deferred admin-access test.
@@ -764,4 +789,4 @@ Migration: `migrations/phase11c_recovery_plan_v1.sql`. It's additive only (no DR
 
 **Still not built:** DMs, public follower lists or counts, a member directory, anonymous posting, general uploads (only profile photos), groups, push/email/SMS notifications, and on-site payment processing. Optional Support FPR contributions use an external Cash App link; no payment credentials or transaction records are stored by this website.
 
-Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
+Live migration history: `phase0_fpr_schema`, `fix_porch_stories_public_grants`, `phase4_porch_story_moderation`, `phase6a_community_posts_foundation`, `phase6b_comments_replies_reports`, `phase6c_community_engagement`, `phase7a_member_profiles_foundation`, `phase7b_revoke_direct_profile_update`, `phase7d_admin_avatar_removal`, `phase11a_my_recovery_v1`, `phase11b_daily_porch_v1`, `phase11c_recovery_plan_v1`, `phase11d_toolbox_pins_v1`. `phase8a_member_follows` was applied directly in the SQL Editor (unchanged from `migrations/phase8a_member_follows.sql`), so it does not appear in the migration history. The Phase 6A member-read fix and the Phase 6B open-report fix were applied directly; their SQL is kept in `migrations/` as a record.
