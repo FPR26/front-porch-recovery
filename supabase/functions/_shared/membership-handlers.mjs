@@ -13,10 +13,17 @@ export function makeMembershipHandlers({stripe,store,verifyUser,verifyEvent,conf
     if(page.has_more) throw Error('Subscription review required');
     return page.data;
   }
+  function cancellationTime(sub){
+    return Number.isFinite(sub.cancel_at) && sub.cancel_at>0 ? sub.cancel_at : null;
+  }
+  function accessEnd(sub){
+    const periodEnd=sub.items?.data?.[0]?.current_period_end;
+    return Math.min(periodEnd,cancellationTime(sub) ?? Infinity);
+  }
   function eligible(sub){
     return sub.livemode===false && sub.status==='active' && sub.latest_invoice?.status==='paid' &&
       sub.items?.data?.length===1 && Object.values(config.prices).includes(sub.items.data[0].price.id) &&
-      Number.isFinite(sub.items.data[0].current_period_end) && sub.items.data[0].current_period_end*1000>now();
+      Number.isFinite(sub.items.data[0].current_period_end) && accessEnd(sub)*1000>now();
   }
   async function synchronize(row,token){
     const all=await subscriptions(row.customer_id);
@@ -24,8 +31,10 @@ export function makeMembershipHandlers({stripe,store,verifyUser,verifyEvent,conf
     const latest=paid || all.slice().sort((a,b)=>b.created-a.created)[0];
     await store.snapshot(row.user_id,token,{
       subscription_id:latest?.id || null,status:paid?'active':(latest?.status==='active'?'payment_pending':latest?.status || 'none'),
-      access_until:paid?new Date(paid.items.data[0].current_period_end*1000).toISOString():null,
-      cancel_at_period_end:paid?.cancel_at_period_end || false
+      access_until:paid?new Date(accessEnd(paid)*1000).toISOString():null,
+      // Normalize classic's boolean and flexible billing's cancel_at date
+      // into the existing scheduled-cancellation field used by the UI.
+      cancel_at_period_end:!!paid && (paid.cancel_at_period_end===true || cancellationTime(paid)!==null)
     });
     return all;
   }

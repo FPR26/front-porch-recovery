@@ -24,3 +24,18 @@ test('signed webhooks fetch canonical Stripe state; retries/out-of-order payload
 test('signature, mode and unknown customer checks',async()=>{const f=fixture();assert.equal((await f.webhook(new Request('https://x',{method:'POST',body:'{}'}))).status,400);assert.equal((await f.webhook(f.event({customer:'cus_A'},undefined,{livemode:true}))).status,400);assert.equal((await f.webhook(f.event({customer:'unknown'}))).status,200);assert.equal(f.rows.size,0);});
 test('expired, unpaid and unapproved-price subscriptions never grant access; existing subscription blocks duplicate purchase',async()=>{for(const mutation of [s=>s.latest_invoice.status='open',s=>s.items.data[0].current_period_end=500,s=>s.items.data[0].price.id='other']){const f=fixture();await f.api(f.req({action:'checkout',plan:'monthly'}));const s=paid();mutation(s);f.subs.push(s);await f.webhook(f.event({customer:'cus_A'}));assert.equal(f.rows.get('A').access_until,null);assert.equal((await f.api(f.req({action:'checkout',plan:'monthly'}))).status,409);}});
 test('portal uses only the verified user customer; return redirect alone grants nothing',async()=>{const f=fixture();assert.equal((await f.api(f.req({action:'portal',customer:'cus_A'},'admin-B'))).status,409);await f.api(f.req({action:'checkout',plan:'monthly'}));assert.equal((await f.api(f.req({action:'portal',customer:'cus_B'}))).status,200);assert.equal(f.rows.get('A').access_until,null);});
+
+test('flexible billing cancellation date sets the UI flag while keeping paid access',async()=>{
+ const f=fixture();await f.api(f.req({action:'checkout',plan:'monthly'}));const s=paid();s.cancel_at_period_end=false;s.cancel_at=2000;f.subs.push(s);
+ await f.webhook(f.event({customer:'cus_A'}));assert.equal(f.rows.get('A').cancel_at_period_end,true);assert.equal(f.rows.get('A').access_until,new Date(2000000).toISOString());
+ // Undoing cancellation clears the flag, including after an old event replay.
+ s.cancel_at=null;await f.webhook(f.event({customer:'cus_A',cancel_at:2000}));assert.equal(f.rows.get('A').cancel_at_period_end,false);
+});
+test('custom cancellation caps access; a past cancellation cannot retain access',async()=>{
+ const f=fixture();await f.api(f.req({action:'checkout',plan:'monthly'}));const s=paid();s.cancel_at_period_end=false;s.cancel_at=1500;f.subs.push(s);
+ await f.api(f.req({action:'sync'}));assert.equal(f.rows.get('A').access_until,new Date(1500000).toISOString());assert.equal(f.rows.get('A').cancel_at_period_end,true);
+ s.cancel_at=900;await f.api(f.req({action:'sync'}));assert.equal(f.rows.get('A').access_until,null);assert.notEqual(f.rows.get('A').status,'active');
+});
+test('normal renewals and invalid cancellation dates do not show cancellation',async()=>{
+ for(const date of [null,undefined,0,'2000',NaN]){const f=fixture();await f.api(f.req({action:'checkout',plan:'monthly'}));const s=paid();s.cancel_at_period_end=false;s.cancel_at=date;f.subs.push(s);await f.api(f.req({action:'sync'}));assert.equal(f.rows.get('A').cancel_at_period_end,false);assert.equal(f.rows.get('A').status,'active');}
+});
