@@ -1,0 +1,7 @@
+[functions.membership-api]
+# The handler validates the bearer token with Supabase Auth for EVERY action.
+verify_jwt = false
+
+[functions.stripe-webhook]
+# Stripe signature verification replaces Supabase JWT authentication here.
+verify_jwt = false

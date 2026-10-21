@@ -425,3 +425,7 @@ Apply `supabase/migrations/phase12a_porch_visits_v1.sql` before deploying the fr
 Optional membership preview at #supporter, reached from Shop → Support FPR. Approved proposed pricing is $3/month or $25/year; no billing, subscription activation, entitlement checks, or access restrictions are implemented. All current tools remain free. Sponsored access and personalization are explicitly planned, not active. Existing Cash App support remains separate.
 
 Includes a seven-part Pull Up a Chair workbook sample (prompts only, no answer collection or storage) and two downloadable sample PNG designs using the official brand mark. Both exports visibly say DESIGN PREVIEW · SAMPLE. Journal navigation uses the existing free page; no changes to journal storage, privacy, auth, admin, notifications, or milestone eligibility. A payment provider and server-verified entitlements/admin sponsorship controls are needed before a membership launch.
+
+## Membership sandbox server
+
+Admin-only Stripe test checkout, portal and signature-verified subscription updates are implemented, default disabled. No live payments or production paid access. Deployment order and pending hosted acceptance checks are in supabase/MEMBERSHIP_SANDBOX_SETUP.md. Server secrets belong only in Supabase Edge Function Secrets.

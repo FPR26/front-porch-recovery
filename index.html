@@ -2680,6 +2680,12 @@
       <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="journal">Write in your free Journal</button></div>
       <p class="supporter-preview-note">This preview contains prompts only. It does not collect or save answers. Your Journal keeps its existing privacy settings.</p>
     </section>
+    <section id="supporter-sandbox" class="supporter-panel" style="margin-top:28px;" hidden aria-labelledby="supporter-sandbox-title">
+      <h2 id="supporter-sandbox-title">Admin · Membership sandbox</h2>
+      <p>Test payments only. This does not activate a real paid membership or change access to any free tools.</p>
+      <div class="supporter-actions"><button type="button" class="btn btn-outline" data-member-action="checkout" data-member-plan="monthly">Test $3 monthly checkout</button><button type="button" class="btn btn-outline" data-member-action="checkout" data-member-plan="yearly">Test $25 yearly checkout</button><button type="button" class="btn btn-outline" data-member-action="portal">Manage test membership</button><button type="button" class="btn btn-outline" data-member-action="sync">Refresh test status</button></div>
+      <p id="supporter-sandbox-status" class="supporter-preview-note" role="status" aria-live="polite"></p>
+    </section>
     <h2 style="margin-top:36px;">A little more room to celebrate</h2>
     <p style="margin-top:12px;">Two sample designs for the planned supporter collection. Existing celebration cards remain free.</p>
     <div class="supporter-grid" id="supporter-card-samples">
@@ -3427,6 +3433,9 @@
       </ul>
       <p>Mute controls what you see, Block limits how someone can interact with you, and Report asks FPR to review someone's behavior. You can use any of them on its own.</p>
       <p>The Recovery Counter and Daily Check-In are not part of your account. They stay in your browser as described above, even when you're signed in. You can change or remove your bio, photo, and recovery date at any time from your profile.</p>
+
+      <h2>Membership testing</h2>
+      <p>FPR is testing optional membership checkout with Stripe, available only to administrators in a sandbox. Stripe handles the test checkout and billing portal. FPR stores a billing account identifier, subscription status, and access dates separately from recovery records. Journal entries, reflections, and recovery history are not sent to Stripe. Real paid memberships are not enabled.</p>
 
       <h2>Porch Visits</h2>
       <p>FPR maintains an aggregate Porch Visits counter. It does not identify individual visitors or store personal information for that counter. A temporary flag in your browser tab counts a visit once per session; it is independent of your account.</p>
@@ -18918,6 +18927,50 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     if(ready) ready.style.display = 'none';
     if(body) body.classList.add('app-installed');
   });
+})();
+
+/* Sandbox checkout tools: visible to admins only; server independently verifies admin. */
+(function initMembershipSandbox(){
+  const panel=document.getElementById('supporter-sandbox');
+  const status=document.getElementById('supporter-sandbox-status');
+  const client=window.__fprSupabaseClient;
+  if(!panel || !status || !client)return;
+  let revision=0,admin=false,busy=false;
+  const buttons=panel.querySelectorAll('[data-member-action]');
+  function disable(value){buttons.forEach(b=>b.disabled=value);}
+  async function identity(){
+    const seq=++revision;admin=false;panel.hidden=true;status.textContent='';
+    const session=await client.auth.getSession();
+    if(seq!==revision || !session.data?.session)return;
+    const result=await client.rpc('is_admin');
+    if(seq!==revision || result.error || result.data!==true)return;
+    admin=true;panel.hidden=false;
+    status.textContent='Sandbox connection is ready to test after the server setup is deployed.';
+  }
+  async function showStatus(seq){
+    const result=await client.rpc('get_my_supporter_membership');
+    if(seq!==revision)return;
+    if(result.error)throw Error('Status unavailable');
+    const row=result.data?.[0];
+    if(!row || row.sandbox!==true)throw Error('Invalid membership state');
+    status.textContent=row.has_access?'Sandbox subscription verified. Test access ends '+new Date(row.access_until).toLocaleDateString()+ (row.cancel_at_period_end?'; cancellation is scheduled.':'.'):'Sandbox membership status: '+String(row.status)+'. No real paid membership is active.';
+  }
+  buttons.forEach(button=>button.addEventListener('click',async()=>{
+    if(!admin || busy)return;const seq=revision;busy=true;disable(true);status.textContent='Contacting the membership sandbox…';
+    try{
+      const result=await client.functions.invoke('membership-api',{body:{action:button.dataset.memberAction,plan:button.dataset.memberPlan}});
+      if(seq!==revision)return;
+      if(result.error || result.data?.error)throw Error('Sandbox request failed');
+      if(button.dataset.memberAction==='sync'){await showStatus(seq);return;}
+      const target=new URL(result.data.url);
+      if(result.data.sandbox!==true || target.protocol!=='https:' || !['checkout.stripe.com','billing.stripe.com'].includes(target.hostname))throw Error('Invalid checkout destination');
+      if(seq===revision && admin)window.location.assign(target.href);
+    }catch(_){if(seq===revision)status.textContent='The sandbox connection is not available yet. No membership access was changed. If a test subscription already exists, use Manage test membership.';}
+    finally{busy=false;disable(false);}
+  }));
+  client.auth.onAuthStateChange(()=>{++revision;admin=false;panel.hidden=true;status.textContent='';setTimeout(()=>identity().catch(()=>{}),0);});
+  document.addEventListener('fpr:pagechange',e=>{if(e.detail?.page==='supporter')identity().catch(()=>{});});
+  identity().catch(()=>{});
 })();
 </script>
 
