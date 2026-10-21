@@ -8,7 +8,7 @@ export function membershipRuntime() {
   // Deliberately no live-mode path in this release.
   const key=env('STRIPE_TEST_SECRET_KEY');
   const webhookSecret=env('STRIPE_TEST_WEBHOOK_SECRET');
-  if(!enabled || !key.startsWith('sk_test_') || !webhookSecret.startsWith('whsec_')) {
+  if(!enabled || !(/^(sk|rk)_test_/.test(key)) || !webhookSecret.startsWith('whsec_')) {
     const disabled=()=>new Response(JSON.stringify({error:'Membership testing is not configured.'}),{status:503,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
     return {api:disabled,webhook:disabled};
   }
