@@ -419,3 +419,9 @@ Home shows a small aggregate visit count beneath “From the porch.” A visit i
 Porch Visits is a lightweight aggregate visit counter, not a unique-visitor analytics system. It can be inflated by repeated sessions or direct calls. No visitor identifiers, per-visit timestamps, cookies, fingerprints, location, referrers, or activity records are stored by this feature. Only one key/count row is stored. Offline/failure hides the display; a later Home navigation or reconnect can retry, with no queue or retry loop. A lost response after the database commits can cause a later retry to count again; exact-once delivery across network failures would require additional deduplication data.
 
 Apply `supabase/migrations/phase12a_porch_visits_v1.sql` before deploying the frontend. Both public RPCs are available to anon/authenticated; direct table access is revoked and RLS is enabled. Increment uses one atomic UPDATE, so concurrent calls cannot lose updates. No service-worker changes are needed: Supabase requests already bypass its public-file cache.
+
+## Porch Supporter preview
+
+Optional membership preview at #supporter, reached from Shop → Support FPR. Approved proposed pricing is $3/month or $25/year; no billing, subscription activation, entitlement checks, or access restrictions are implemented. All current tools remain free. Sponsored access and personalization are explicitly planned, not active. Existing Cash App support remains separate.
+
+Includes a seven-part Pull Up a Chair workbook sample (prompts only, no answer collection or storage) and two downloadable sample PNG designs using the official brand mark. Both exports visibly say DESIGN PREVIEW · SAMPLE. Journal navigation uses the existing free page; no changes to journal storage, privacy, auth, admin, notifications, or milestone eligibility. A payment provider and server-verified entitlements/admin sponsorship controls are needed before a membership launch.

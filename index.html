@@ -1244,6 +1244,20 @@
   .ms-link a{font-weight:700; color:var(--charcoal); text-decoration:underline; text-underline-offset:3px; display:inline-block; min-height:28px;}
   .ms-link p{font-size:.86rem; color:var(--charcoal-soft); margin-top:2px;}
   .ms-crisis{color:var(--charcoal); font-weight:700; text-decoration:underline;}
+/* Optional membership preview: no billing or access restrictions. */
+  .supporter-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; margin-top:24px;}
+  .supporter-panel{background:var(--white); border:1px solid var(--line); border-radius:var(--radius); padding:24px; min-width:0;}
+  .supporter-panel h2,.supporter-panel h3{margin-bottom:12px;}
+  .supporter-panel p+p{margin-top:12px;}
+  .supporter-list{padding-left:20px; margin:16px 0; list-style:disc;}
+  .supporter-list li+li{margin-top:10px;}
+  .supporter-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;}
+  .supporter-days{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0;}
+  .supporter-days button{min-width:44px; min-height:44px; border:1px solid var(--sage-deep);border-radius:8px;padding:8px 12px;background:white;color:var(--charcoal);cursor:pointer;font:inherit;}
+  .supporter-days button[aria-pressed="true"]{background:var(--sage-deep);color:white;}
+  .supporter-preview-note{font-size:.92rem;color:var(--charcoal-soft);margin-top:12px;}
+  .supporter-card-image{display:block;width:100%;height:auto;border-radius:12px;margin:14px 0;}
+  @media(max-width:640px){.supporter-grid{grid-template-columns:1fr;}.supporter-panel{padding:20px;}}
 </style>
 <!-- Supabase client (Phase 1): optional member accounts only. Loaded from
      jsdelivr's CDN mirror of the published npm package; nothing here can
@@ -2627,9 +2641,55 @@
         <p class="support-fpr-helper">Opens Cash App ($FPR2026).<br>Please check that the recipient is Front Porch Recovery before sending.</p>
         <p class="support-fpr-secondary">You can also support FPR through the <a href="#books" data-nav="books">books</a> and the <a href="https://frontporchrecovery.etsy.com" target="_blank" rel="noopener noreferrer">shop</a>.</p>
         <p class="support-fpr-note">Support is always optional. Taking care of yourself comes first.</p>
+        <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="supporter">Explore the membership preview</button></div>
       </div>
     </div>
   </section>
+</section>
+
+<!-- ================= PORCH SUPPORTER PREVIEW ================= -->
+<section class="page" id="page-supporter">
+  <section class="block bg-charcoal tight"><div class="wrap">
+    <p class="hero-eyebrow" style="color:var(--sage);">A little support. A porch for everyone.</p>
+    <h1 style="color:white;margin-top:10px;">Porch Supporter</h1>
+    <p style="color:var(--gray);max-width:58ch;margin-top:14px;">Help keep the porch light on, with a few thoughtful extras for your own honest days.</p>
+  </div></section>
+  <section class="block bg-cream"><div class="wrap">
+    <p class="tag">Membership preview · payments are not open</p>
+    <div class="supporter-grid">
+      <section class="supporter-panel" aria-labelledby="supporter-free-title">
+        <h2 id="supporter-free-title">Your seat is always free</h2>
+        <p>All the recovery tools available today stay free. Signing up for a free account gives you the Community and your personal recovery tools.</p>
+        <ul class="supporter-list"><li>Recovery counter, resources, and Daily Porch</li><li>Community, with the same safety and moderation tools</li><li>Journal, recovery plan, reviews, and history</li><li>The existing milestone and celebration designs</li></ul>
+        <button type="button" class="btn btn-outline" data-nav="today">Keep exploring for free</button>
+      </section>
+      <section class="supporter-panel" aria-labelledby="supporter-paid-title">
+        <h2 id="supporter-paid-title">Something extra. Something shared.</h2>
+        <p><strong>Planned membership: $3/month or $25/year.</strong> The yearly option works out to about $2.08 per month, billed annually.</p>
+        <ul class="supporter-list"><li>Guided reflection workbooks</li><li>Additional celebration-card designs</li><li>Personalization options planned for a later release</li></ul>
+        <p>Sponsored access is planned for people who cannot afford membership. The same extras, without a payment requirement.</p>
+        <p class="supporter-preview-note">Membership is still being built. No payment is collected here, and these samples do not activate a subscription.</p>
+      </section>
+    </div>
+    <section class="supporter-panel" style="margin-top:28px;" aria-labelledby="supporter-workbook-title">
+      <p class="hero-eyebrow" style="color:var(--sage-text);">Try the workbook</p>
+      <h2 id="supporter-workbook-title" style="margin-top:10px;">Pull Up a Chair</h2>
+      <p>Seven small reflections for finding your footing. Take them in any order, at your own pace. There is no streak to protect and no deadline to meet.</p>
+      <div class="supporter-days" id="supporter-workbook-days" role="group" aria-label="Choose a workbook reflection"></div>
+      <div id="supporter-workbook-reflection" aria-live="polite" aria-atomic="true"></div>
+      <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="journal">Write in your free Journal</button></div>
+      <p class="supporter-preview-note">This preview contains prompts only. It does not collect or save answers. Your Journal keeps its existing privacy settings.</p>
+    </section>
+    <h2 style="margin-top:36px;">A little more room to celebrate</h2>
+    <p style="margin-top:12px;">Two sample designs for the planned supporter collection. Existing celebration cards remain free.</p>
+    <div class="supporter-grid" id="supporter-card-samples">
+      <section class="supporter-panel"><h3>Porch Light</h3><p>A warm reminder that showing up matters.</p><canvas class="supporter-card-image" width="1200" height="1200" data-supporter-card="light" role="img" aria-label="Porch Light sample celebration card: I kept showing up. Design preview."></canvas><button type="button" class="btn btn-outline" data-supporter-download="light" disabled>Download sample PNG</button></section>
+      <section class="supporter-panel"><h3>New Morning</h3><p>A fresh start, one honest day at a time.</p><canvas class="supporter-card-image" width="1200" height="1200" data-supporter-card="morning" role="img" aria-label="New Morning sample celebration card: One honest day. Design preview."></canvas><button type="button" class="btn btn-outline" data-supporter-download="morning" disabled>Download sample PNG</button></section>
+    </div>
+    <p id="supporter-card-status" class="supporter-preview-note" role="status"></p>
+    <button type="button" class="btn btn-outline" id="supporter-card-retry" hidden>Load card samples again</button>
+    <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="shop" data-scroll-target="support-fpr">Back to Support FPR</button></div>
+  </div></section>
 </section>
 
 <!-- ================= TOOLBOX ================= -->
@@ -8221,6 +8281,79 @@ function renderHome(){
   window.addEventListener('online', refresh);
   window.addEventListener('offline', function(){ block.hidden = true; });
   refresh();
+})();
+
+const SUPPORTER_WORKBOOK = [
+  { title: 'Start where you are', intro: 'You do not have to have everything figured out to take one useful step.', prompts: ['What feels heaviest today?', 'What is one thing you can make a little easier?', 'What would enough look like for today?'], action: 'Choose one small task that is within reach.' },
+  { title: 'Remember your why', intro: 'Your reasons can change. They can be ordinary, personal, and entirely yours.', prompts: ['What do you want more room for in your life?', 'What has recovery already made possible, however small?', 'What would you like to remind yourself on a difficult day?'], action: 'Write one sentence you can come back to.' },
+  { title: 'Notice the hard moments', intro: 'Noticing a pattern is information, not a verdict on you.', prompts: ['When does the day tend to get harder?', 'What do you notice in your body or surroundings then?', 'What has helped you pause before?'], action: 'Choose a place, activity, or person that can help with a pause.' },
+  { title: 'Make room for support', intro: 'Support can come from different people, communities, and practical resources.', prompts: ['Who helps you feel heard?', 'What kind of help would actually be useful?', 'What is one small way you could ask for it?'], action: 'Draft a simple request for support, without pressure to send it.' },
+  { title: 'Build a gentler day', intro: 'A useful routine supports your life. It does not have to fill every hour.', prompts: ['What part of your day needs a little more care?', 'Which basic need have you been putting off?', 'What is one routine you could make smaller and easier?'], action: 'Choose one manageable act of care for today.' },
+  { title: 'Leave room to begin again', intro: 'A difficult day does not erase the work you have done.', prompts: ['What would you say to a friend in your situation?', 'What can you learn without turning it into blame?', 'What would help with your next safe step?'], action: 'Write a kind, practical next-step reminder.' },
+  { title: 'Carry something forward', intro: 'Progress can be quiet. You are allowed to notice it.', prompts: ['What have you learned about what helps you?', 'Which small change would you like to keep?', 'What deserves a little credit today?'], action: 'Choose one thing to carry into the coming week.' }
+];
+
+function drawSupporterSample(ctx, logo, style){
+  const dark = style === 'light';
+  ctx.fillStyle = dark ? '#263F38' : '#F6F5F2'; ctx.fillRect(0,0,1200,1200);
+  ctx.fillStyle = dark ? '#D9A65B' : '#A7B8A8';
+  ctx.beginPath();ctx.arc(600,540,320,Math.PI,0);ctx.fill();
+  ctx.fillStyle = dark ? '#263F38' : '#F6F5F2'; ctx.fillRect(0,510,1200,690);
+  ctx.strokeStyle = dark ? '#D9A65B' : '#4F5A50';ctx.lineWidth=3;ctx.strokeRect(40,40,1120,1120);
+  ctx.drawImage(logo,440,110,320,Math.min(210,320*logo.height/logo.width));
+  ctx.textAlign='center';ctx.fillStyle=dark?'#FFFFFF':'#1A1A1A';ctx.font='bold 76px Arial';
+  ctx.fillText(dark?'I kept':'One honest',600,585);ctx.fillText(dark?'showing up.':'day.',600,685);
+  ctx.font='32px Arial';ctx.fillText('There is a place for you on the porch.',600,800);
+  ctx.font='bold 30px Arial';ctx.fillText('FRONT PORCH RECOVERY',600,940);
+  ctx.font='25px Arial';ctx.fillText('DESIGN PREVIEW · SAMPLE',600,1070);
+}
+(function initSupporterPreview(){
+  const days=document.getElementById('supporter-workbook-days');
+  const reflection=document.getElementById('supporter-workbook-reflection');
+  if(!days || !reflection) return;
+  function select(index){
+    days.querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));
+    const day=SUPPORTER_WORKBOOK[index];
+    reflection.replaceChildren();
+    const title=document.createElement('h3');title.textContent=(index+1)+'. '+day.title;reflection.appendChild(title);
+    const intro=document.createElement('p');intro.textContent=day.intro;reflection.appendChild(intro);
+    const list=document.createElement('ol');list.className='supporter-list';
+    day.prompts.forEach(prompt=>{const li=document.createElement('li');li.textContent=prompt;list.appendChild(li);});reflection.appendChild(list);
+    const action=document.createElement('p');action.textContent='One small step: '+day.action;reflection.appendChild(action);
+  }
+  SUPPORTER_WORKBOOK.forEach((day,i)=>{const button=document.createElement('button');button.type='button';button.textContent=String(i+1);button.setAttribute('aria-label','Reflection '+(i+1)+': '+day.title);button.addEventListener('click',()=>select(i));days.appendChild(button);});
+  select(0);
+  const status=document.getElementById('supporter-card-status');
+  const retry=document.getElementById('supporter-card-retry');
+  let ready=false,loading=false;
+  function load(){
+    if(loading || ready) return;loading=true;retry.hidden=true;status.textContent='Loading sample designs…';
+    const logo=new Image();
+    logo.onload=()=>{
+      try {
+        document.querySelectorAll('[data-supporter-card]').forEach(canvas=>drawSupporterSample(canvas.getContext('2d'),logo,canvas.dataset.supporterCard));
+        ready=true;document.querySelectorAll('[data-supporter-download]').forEach(b=>b.disabled=false);
+        status.textContent='Sample cards include a design-preview label. No personal information is added.';
+      }catch(_){status.textContent='The sample images could not load. The workbook preview is still available.';retry.hidden=false;}
+      loading=false;
+    };
+    logo.onerror=()=>{loading=false;status.textContent='The sample images could not load. Try again when online.';retry.hidden=false;};
+    logo.src=CONFIG.brand.brandLogoUrl;
+  }
+  retry.addEventListener('click',load);
+  document.addEventListener('fpr:pagechange',e=>{if(e.detail && e.detail.page==='supporter')load();});
+  // Also covers a direct #supporter link before the navigation listener fires.
+  if(location.hash==='#supporter')load();
+  document.querySelectorAll('[data-supporter-download]').forEach(button=>button.addEventListener('click',()=>{
+    if(!ready || button.disabled)return;button.disabled=true;
+    const canvas=document.querySelector('[data-supporter-card="'+button.dataset.supporterDownload+'"]');
+    try {canvas.toBlob(blob=>{
+      button.disabled=false;if(!blob){status.textContent='The download could not be created. Please try again.';return;}
+      const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='fpr-'+button.dataset.supporterDownload+'-sample.png';document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      status.textContent='Download requested. On a phone, use the download or sharing menu to save the sample.';
+    },'image/png');}catch(_){button.disabled=false;status.textContent='The download could not be created. Please try again.';}
+  }));
 })();
 
 function findPorchTopic(slug){
