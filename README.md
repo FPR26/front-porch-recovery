@@ -429,3 +429,7 @@ Includes a seven-part Pull Up a Chair workbook sample (prompts only, no answer c
 ## Membership sandbox server
 
 Admin-only Stripe test checkout, portal and signature-verified subscription updates are implemented, default disabled. No live payments or production paid access. Deployment order and pending hosted acceptance checks are in supabase/MEMBERSHIP_SANDBOX_SETUP.md. Server secrets belong only in Supabase Edge Function Secrets.
+
+## Private supporter workbook and no-charge access
+
+Seven private saved reflection sessions and admin grant/extend/revoke controls are prepared. Workbook access is independent of Stripe sandbox billing; paid production access remains disabled. Existing previews and Journal remain free. Apply phase12c_supporter_workbook.sql before publishing. Deployment, privacy and verification details: supabase/SUPPORTER_WORKBOOK.md.

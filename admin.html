@@ -362,6 +362,16 @@
            moderate_member_profile(): reset name, clear bio, clear photo,
            hide recovery date. No free-form editing of member text. -->
       <div id="profiles-dashboard" hidden>
+        <details class="story-row" style="padding:20px;margin:16px 0;">
+          <summary style="cursor:pointer;font-weight:700;">Supporter workbook access</summary>
+          <p style="margin-top:12px;">Grant workbook access at no charge. This does not create or cancel a subscription. Workbook answers are private and are not available to admins.</p>
+          <form id="supporter-access-search-form" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+            <label for="supporter-access-search">Member name or handle</label><input id="supporter-access-search" maxlength="80" type="search" style="max-width:100%;" autocomplete="off"><button class="btn" type="submit">Search members</button><button class="btn" type="button" id="supporter-access-refresh">Refresh access</button>
+          </form>
+          <p id="supporter-access-status" role="status" aria-live="polite" style="margin:12px 0;"></p>
+          <div id="supporter-access-list"></div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;"><button class="btn" type="button" id="supporter-access-previous">Previous members</button><button class="btn" type="button" id="supporter-access-next">Next members</button></div>
+        </details>
         <div class="dash-toolbar">
           <div class="filters" id="profiles-filters" role="tablist" aria-label="Filter member profiles"></div>
           <span class="refresh-note" id="profiles-refresh-note"></span>
@@ -1990,7 +2000,56 @@
     visible.forEach(p => els.profilesList.appendChild(buildProfileCard(p)));
   }
 
+  // No-charge workbook access. No recovery answers are read here.
+  const supportAccess={list:document.getElementById('supporter-access-list'),status:document.getElementById('supporter-access-status'),search:document.getElementById('supporter-access-search'),previous:document.getElementById('supporter-access-previous'),next:document.getElementById('supporter-access-next')};
+  let supportAccessOffset=0,supportAccessEpoch=0,supportAccessUser=null,supportAccessPending=false;
+  async function loadSupporterAccess(){
+    const seq=++supportAccessEpoch;supportAccess.status.textContent='Loading workbook access…';supportAccess.list.replaceChildren();supportAccess.previous.disabled=true;supportAccess.next.disabled=true;
+    try{
+      const result=await client.rpc('admin_list_supporter_access',{p_search:supportAccess.search.value.trim(),p_offset:supportAccessOffset});
+      if(seq!==supportAccessEpoch)return;if(result.error)throw result.error;
+      const rows=result.data || [];supportAccess.status.textContent=rows.length?'Workbook access is separate from billing.':'No matching confirmed members.';
+      rows.slice(0,50).forEach(member=>{
+        const card=document.createElement('section');card.className='story-row';card.style.padding='16px';card.style.marginTop='12px';
+        const title=document.createElement('h3');title.textContent=member.display_name || 'Community member';card.appendChild(title);
+        const id=document.createElement('p');id.className='story-meta';id.textContent=(member.handle?'@'+member.handle+' · ':'')+'Profile '+member.public_id;id.style.overflowWrap='anywhere';card.appendChild(id);
+        const active=!member.revoked_at && member.access_until && new Date(member.access_until)>new Date();
+        const state=document.createElement('p');state.textContent=active?'No-charge access through '+new Date(member.access_until).toLocaleDateString():member.revoked_at?'No-charge access revoked.':member.access_until?'No-charge access expired.':'No no-charge access grant.';card.appendChild(state);
+        const controls=document.createElement('div');controls.className='action-row';
+        const label=document.createElement('label');label.textContent='Access duration ';const select=document.createElement('select');[30,90,365].forEach(days=>{const option=document.createElement('option');option.value=String(days);option.textContent=days+' days';select.appendChild(option);});select.value='90';label.appendChild(select);controls.appendChild(label);
+        const grant=document.createElement('button');grant.className='btn';grant.type='button';grant.textContent=active?'Extend no-charge access':'Grant no-charge access';
+        const revoke=document.createElement('button');revoke.className='btn';revoke.type='button';revoke.textContent='Revoke no-charge access';revoke.disabled=!active;
+        const history=document.createElement('button');history.className='btn';history.type='button';history.textContent='View access history';
+        const note=document.createElement('p');note.setAttribute('role','status');const events=document.createElement('div');
+        async function change(days){
+          if(supportAccessPending)return;
+          const text=days?'Grant '+days+' days of workbook access at no charge to '+title.textContent+'? Existing longer access will be kept.':'Revoke no-charge workbook access for '+title.textContent+'? Their saved answers remain available to them. Billing is unchanged.';
+          if(!window.confirm(text))return;
+          supportAccessPending=true;grant.disabled=true;revoke.disabled=true;note.textContent='Saving access…';
+          try{const result=await client.rpc('admin_set_supporter_access',{p_public_id:member.public_id,p_days:days});if(seq!==supportAccessEpoch)return;if(result.error)throw result.error;await loadSupporterAccess();}
+          catch(_){if(seq===supportAccessEpoch)note.textContent='Could not update access. Nothing was confirmed; refresh access before retrying.';}
+          finally{supportAccessPending=false;if(seq===supportAccessEpoch){grant.disabled=false;revoke.disabled=!active;}}
+        }
+        grant.addEventListener('click',()=>change(Number(select.value)));revoke.addEventListener('click',()=>change(0));
+        history.addEventListener('click',async()=>{
+          history.disabled=true;note.textContent='Loading access history…';
+          try{const result=await client.rpc('admin_supporter_access_history',{p_public_id:member.public_id});if(seq!==supportAccessEpoch)return;if(result.error)throw result.error;events.replaceChildren();
+            (result.data || []).forEach(event=>{const line=document.createElement('p');line.className='story-meta';line.textContent=event.action+' · '+new Date(event.occurred_at).toLocaleString()+' · '+event.actor_name+(event.access_until?' · access through '+new Date(event.access_until).toLocaleDateString():'');events.appendChild(line);});note.textContent=result.data?.length?'Latest access changes shown.':'No access changes recorded.';
+          }catch(_){if(seq===supportAccessEpoch)note.textContent='Could not load access history.';}finally{history.disabled=false;}
+        });
+        controls.append(grant,revoke,history);card.append(controls,note,events);supportAccess.list.appendChild(card);
+      });
+      supportAccess.previous.disabled=supportAccessOffset===0;supportAccess.next.disabled=rows.length<=50;
+    }catch(_){if(seq===supportAccessEpoch)supportAccess.status.textContent='Workbook access controls are not connected yet. Other moderation tools remain available.';}
+  }
+  document.getElementById('supporter-access-search-form').addEventListener('submit',e=>{e.preventDefault();supportAccessOffset=0;loadSupporterAccess();});
+  document.getElementById('supporter-access-refresh').addEventListener('click',()=>loadSupporterAccess());
+  supportAccess.previous.addEventListener('click',()=>{supportAccessOffset=Math.max(0,supportAccessOffset-50);loadSupporterAccess();});
+  supportAccess.next.addEventListener('click',()=>{supportAccessOffset+=50;loadSupporterAccess();});
+  client.auth.onAuthStateChange((_event,session)=>{const id=session?.user?.id || null;if(id!==supportAccessUser){supportAccessUser=id;++supportAccessEpoch;supportAccess.list.replaceChildren();supportAccess.status.textContent='';supportAccessOffset=0;}});
+
   async function loadMemberProfiles(){
+    loadSupporterAccess();
     const { data, error } = await client
       .from('profiles')
       .select('public_id, display_name, bio, avatar_path, recovery_date, recovery_visibility, created_at, profile_updated_at, handle')

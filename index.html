@@ -2678,7 +2678,18 @@
       <div class="supporter-days" id="supporter-workbook-days" role="group" aria-label="Choose a workbook reflection"></div>
       <div id="supporter-workbook-reflection" aria-live="polite" aria-atomic="true"></div>
       <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="journal">Write in your free Journal</button></div>
-      <p class="supporter-preview-note">This preview contains prompts only. It does not collect or save answers. Your Journal keeps its existing privacy settings.</p>
+      <p class="supporter-preview-note">The prompts above are free to explore. Your free Journal remains available to everyone.</p>
+      <section id="supporter-workbook-private" style="margin-top:24px;border-top:1px solid var(--line);padding-top:24px;" aria-labelledby="supporter-answers-title">
+        <h3 id="supporter-answers-title">Your private workbook</h3>
+        <p id="supporter-workbook-status" role="status" aria-live="polite">Sign in to check workbook access. The free preview does not save answers.</p>
+        <p id="supporter-workbook-progress" class="supporter-preview-note"></p>
+        <form id="supporter-workbook-form" hidden>
+          <div id="supporter-answer-fields"></div>
+          <label style="display:flex;gap:10px;align-items:center;margin-top:16px;"><input type="checkbox" id="supporter-workbook-complete"> Mark this reflection complete</label>
+          <div class="supporter-actions"><button type="submit" class="btn btn-primary" id="supporter-workbook-save">Save reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-reload">Reload saved reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-clear">Clear saved reflection</button></div>
+          <p class="supporter-preview-note">Saved to your account only when you press Save. Admins manage access but cannot read these answers through the app. You can read or clear your saved reflections after access ends.</p>
+        </form>
+      </section>
     </section>
     <section id="supporter-sandbox" class="supporter-panel" style="margin-top:28px;" hidden aria-labelledby="supporter-sandbox-title">
       <h2 id="supporter-sandbox-title">Admin · Membership sandbox</h2>
@@ -3433,6 +3444,9 @@
       </ul>
       <p>Mute controls what you see, Block limits how someone can interact with you, and Report asks FPR to review someone's behavior. You can use any of them on its own.</p>
       <p>The Recovery Counter and Daily Check-In are not part of your account. They stay in your browser as described above, even when you're signed in. You can change or remove your bio, photo, and recovery date at any time from your profile.</p>
+
+      <h2>Private supporter workbook</h2>
+      <p>If you have workbook access and choose to save a reflection, its answers and completion state are stored privately with your account in Supabase. They are not posted to the Community or sent to Stripe. Administrators can grant, extend, or revoke no-charge access, but the app does not let them read your answers. Access changes are recorded for administration. You can still read or clear your saved reflections after workbook access ends.</p>
 
       <h2>Membership testing</h2>
       <p>FPR is testing optional membership checkout with Stripe, available only to administrators in a sandbox. Stripe handles the test checkout and billing portal. FPR stores a billing account identifier, subscription status, and access dates separately from recovery records. Journal entries, reflections, and recovery history are not sent to Stripe. Real paid memberships are not enabled.</p>
@@ -8321,6 +8335,7 @@ function drawSupporterSample(ctx, logo, style){
   const reflection=document.getElementById('supporter-workbook-reflection');
   if(!days || !reflection) return;
   function select(index){
+    if(!document.dispatchEvent(new CustomEvent('fpr:workbookselect',{detail:{index},cancelable:true})))return;
     days.querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));
     const day=SUPPORTER_WORKBOOK[index];
     reflection.replaceChildren();
@@ -18971,6 +18986,83 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   client.auth.onAuthStateChange(()=>{++revision;admin=false;panel.hidden=true;status.textContent='';setTimeout(()=>identity().catch(()=>{}),0);});
   document.addEventListener('fpr:pagechange',e=>{if(e.detail?.page==='supporter')identity().catch(()=>{});});
   identity().catch(()=>{});
+})();
+
+/* Private workbook: no browser persistence, no sandbox billing entitlement. */
+(function initPrivateSupporterWorkbook(){
+  const client=window.__fprSupabaseClient,form=document.getElementById('supporter-workbook-form');
+  if(!client || !form)return;
+  const status=document.getElementById('supporter-workbook-status'),fields=document.getElementById('supporter-answer-fields'),progress=document.getElementById('supporter-workbook-progress');
+  const complete=document.getElementById('supporter-workbook-complete'),save=document.getElementById('supporter-workbook-save'),reload=document.getElementById('supporter-workbook-reload'),clear=document.getElementById('supporter-workbook-clear');
+  let user=null,epoch=0,day=1,entries=[],canWrite=false,until=null,dirty=false,busy=false,loading=false;
+  function message(text){status.textContent=text;}
+  function render(){
+    const entry=entries.find(e=>e.reflection_number===day);
+    fields.replaceChildren();
+    SUPPORTER_WORKBOOK[day-1].prompts.forEach((prompt,index)=>{
+      const label=document.createElement('label');label.htmlFor='supporter-answer-'+index;label.textContent=prompt;label.style.display='block';label.style.marginTop='16px';
+      const input=document.createElement('textarea');input.id=label.htmlFor;input.maxLength=2000;input.rows=4;input.style.width='100%';input.value=entry?.answers?.[index] || '';input.readOnly=!canWrite;
+      const hint=document.createElement('p');hint.className='supporter-preview-note';hint.id=input.id+'-hint';hint.textContent='Up to 2,000 characters.';input.setAttribute('aria-describedby',hint.id);
+      input.addEventListener('input',()=>{dirty=true;message('Unsaved changes. Press Save reflection when ready.');});fields.append(label,input,hint);
+    });
+    complete.checked=entry?.completed || false;complete.disabled=!canWrite || busy;save.disabled=!canWrite || busy;clear.disabled=!entry || busy;reload.disabled=busy;
+    form.hidden=!user || (!canWrite && entries.length===0);
+    progress.textContent=user?entries.filter(e=>e.completed).length+' of 7 reflections complete. Work at your own pace.':'';
+  }
+  function accessMessage(){return canWrite?(until?'Workbook access is available through '+new Date(until).toLocaleDateString()+'. Your answers are private.':'Administrator workbook access. Your answers are private.'):'Workbook access is not active. Any saved answers remain available to you; the free Journal and preview are still available.';}
+  async function load(identityChange=false){
+    if((busy || loading) && !identityChange)return;
+    loading=true;renderBusy(true);
+    const seq=++epoch;
+    if(identityChange){user=null;entries=[];canWrite=false;until=null;dirty=false;form.hidden=true;fields.replaceChildren();progress.textContent='';}
+    message('Checking private workbook access…');
+    try{
+      const session=await client.auth.getSession();if(seq!==epoch)return;
+      const id=session.data?.session?.user?.id;
+      identity=id || null;
+      if(!id){user=null;entries=[];canWrite=false;dirty=false;render();message('Sign in to check workbook access. The free preview does not save answers.');return;}
+      if(user!==id){user=id;entries=[];dirty=false;form.hidden=true;fields.replaceChildren();}
+      const result=await client.rpc('get_my_supporter_workbook');if(seq!==epoch)return;
+      if(result.error || !result.data || !Array.isArray(result.data.entries))throw Error('unavailable');
+      entries=result.data.entries;canWrite=result.data.can_write===true;until=result.data.access_until;dirty=false;render();message(accessMessage());
+    }catch(_){if(seq===epoch){canWrite=false;form.hidden=true;fields.replaceChildren();message('Private workbook saving is not connected yet. The free preview and Journal are still available.');}}
+    finally{if(seq===epoch){loading=false;renderBusy(busy);}}
+  }
+  complete.addEventListener('change',()=>{dirty=true;message('Unsaved changes. Press Save reflection when ready.');});
+  document.addEventListener('fpr:workbookselect',e=>{
+    if(busy || loading){e.preventDefault();return;}
+    if(dirty && !window.confirm('Leave this reflection without saving your changes?')){e.preventDefault();return;}
+    day=e.detail.index+1;dirty=false;render();message(user?accessMessage():'Sign in to check workbook access.');
+  });
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();if(busy || loading || !user || !canWrite)return;
+    const answers=Array.from(fields.querySelectorAll('textarea')).map(t=>t.value);
+    if(complete.checked && answers.some(a=>!a.trim())){message('Answer all three prompts before marking this reflection complete, or save it as a draft.');return;}
+    const seq=epoch,reflection=day,entry=entries.find(v=>v.reflection_number===day);busy=true;renderBusy(true);message('Saving your reflection…');
+    try{
+      const result=await client.rpc('save_my_supporter_reflection',{p_reflection:reflection,p_answers:answers,p_completed:complete.checked,p_version:entry?.version || 0});
+      if(seq!==epoch)return;if(result.error){message(result.error.code==='40001'?'This reflection changed in another tab. Your draft is still here. Use Reload saved reflection to load the latest version.':result.error.code==='42501'?'Workbook access is no longer active. Your draft is still here; your saved answers remain yours.':'Could not save. Your draft is still here. Try again when connected.');return;}
+      entries=entries.filter(v=>v.reflection_number!==reflection);entries.push({reflection_number:reflection,answers,completed:complete.checked,version:result.data});dirty=false;render();message('Reflection saved privately.');
+    }catch(_){if(seq===epoch)message('Could not save. Your draft is still here. Try again when connected.');}
+    finally{busy=false;renderBusy(false);}
+  });
+  function renderBusy(value){value=value || loading;save.disabled=value || !canWrite;clear.disabled=value || !entries.some(v=>v.reflection_number===day);reload.disabled=value;complete.disabled=value || !canWrite;fields.querySelectorAll('textarea').forEach(t=>t.readOnly=value || !canWrite);}
+  reload.addEventListener('click',()=>{if(!busy && (!dirty || window.confirm('Discard unsaved changes and reload your saved reflection?')))load();});
+  clear.addEventListener('click',async()=>{
+    const entry=entries.find(v=>v.reflection_number===day);if(busy || loading || !user || !entry)return;
+    if(!window.confirm('Clear your saved answers for this reflection? This cannot be undone.'))return;
+    const seq=epoch;busy=true;renderBusy(true);
+    try{const result=await client.rpc('clear_my_supporter_reflection',{p_reflection:day,p_version:entry.version});if(seq!==epoch)return;if(result.error){message('Could not clear. Reload the saved reflection and try again.');return;}entries=entries.filter(v=>v.reflection_number!==day);dirty=false;render();message('Saved reflection cleared.');}
+    catch(_){if(seq===epoch)message('Could not clear the saved reflection.');}finally{busy=false;renderBusy(false);}
+  });
+  window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+  let identity=null;
+  client.auth.onAuthStateChange((_event,session)=>{
+    const next=session?.user?.id || null;
+    if(next!==identity){identity=next;++epoch;user=null;entries=[];canWrite=false;dirty=false;fields.replaceChildren();form.hidden=true;progress.textContent='';message('Checking private workbook access…');if(document.getElementById('page-supporter')?.classList.contains('active'))setTimeout(()=>load(true),0);}
+  });
+  document.addEventListener('fpr:pagechange',e=>{if(e.detail?.page==='supporter' && !dirty)load();});
+  if(document.getElementById('page-supporter')?.classList.contains('active'))load(true);
 })();
 </script>
 
