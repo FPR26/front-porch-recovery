@@ -2,11 +2,11 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {makeMembershipHandlers} from '../supabase/functions/_shared/membership-handlers.mjs';
 const config={enabled:true,product:'prod_test',prices:{monthly:'price_month',yearly:'price_year'}};
-function fixture(){
+function fixture(options={}){
   const rows=new Map(),locks=new Set(),sessions=[],subs=[];let calls=0,serial=0,validSignature=true;
   const store={async claim(id,token){if(locks.has(id))return false;locks.add(id);if(!rows.has(id))rows.set(id,{user_id:id,customer_id:null});return true},async renew(id){if(!locks.has(id))throw Error("Expired lock")},async release(id){locks.delete(id)},async get(id){return rows.get(id)},async setCustomer(id,token,customer){rows.get(id).customer_id=customer},async byCustomer(c){return [...rows.values()].find(r=>r.customer_id===c)},async snapshot(id,token,data){Object.assign(rows.get(id),data)}};
   const stripe={prices:{async retrieve(id){return {id,active:true,livemode:false,currency:'usd',unit_amount:id==='price_month'?300:2500,recurring:{interval:id==='price_month'?'month':'year',interval_count:1},product:'prod_test'}}},customers:{async create(data){calls++;return {id:'cus_'+data.metadata.fpr_user_id}}},subscriptions:{async list(){return {data:subs,has_more:false}}},checkout:{sessions:{async list({customer}){return {data:sessions.filter(s=>s.customer===customer&&s.status==='open'),has_more:false}},async expire(id){sessions.find(s=>s.id===id).status='expired'},async create(data){const row={...data,id:'cs_'+(++serial),status:'open',url:'https://checkout.stripe.com/test'};sessions.push(row);return row}}},billingPortal:{sessions:{async create(data){return {url:'https://billing.stripe.com/test',...data}}}}};
-  const handlers=makeMembershipHandlers({stripe,store,config:{...config},uuid:()=>String(++serial),now:()=>1000000,verifyUser:async h=>h==='Bearer admin-A'?{id:'A'}:h==='Bearer admin-B'?{id:'B'}:null,verifyEvent:async (body,sig)=>{if(sig!=='valid')throw Error('Bad signature');return JSON.parse(body)}});
+  const handlers=makeMembershipHandlers({stripe,store,config:{...config},report:()=>{},...options,uuid:()=>String(++serial),now:()=>1000000,verifyUser:async h=>h==='Bearer admin-A'?{id:'A'}:h==='Bearer admin-B'?{id:'B'}:null,verifyEvent:async (body,sig)=>{if(sig!=='valid')throw Error('Bad signature');return JSON.parse(body)}});
   const req=(body,token='admin-A',origin='https://fpr26.github.io')=>new Request('https://example.test',{method:'POST',headers:{authorization:'Bearer '+token,origin,'content-type':'application/json'},body:JSON.stringify(body)});
   const event=(object,type='customer.subscription.updated',extra={})=>new Request('https://example.test',{method:'POST',headers:{'stripe-signature':'valid'},body:JSON.stringify({type,livemode:false,data:{object},...extra})});
   return {...handlers,rows,locks,sessions,subs,stripe,req,event,store};
@@ -38,4 +38,43 @@ test('custom cancellation caps access; a past cancellation cannot retain access'
 });
 test('normal renewals and invalid cancellation dates do not show cancellation',async()=>{
  for(const date of [null,undefined,0,'2000',NaN]){const f=fixture();await f.api(f.req({action:'checkout',plan:'monthly'}));const s=paid();s.cancel_at_period_end=false;s.cancel_at=date;f.subs.push(s);await f.api(f.req({action:'sync'}));assert.equal(f.rows.get('A').cancel_at_period_end,false);assert.equal(f.rows.get('A').status,'active');}
+});
+
+
+test('webhook retries brief lock contention before canonical synchronization',async()=>{
+ const delays=[],f=fixture({sleep:async ms=>{delays.push(ms);f.locks.delete('A')}});
+ await f.api(f.req({action:'checkout',plan:'monthly'}));f.subs.push(paid());f.locks.add('A');
+ assert.equal((await f.webhook(f.event({customer:'cus_A'}))).status,200);
+ assert.deepEqual(delays,[150]);assert.equal(f.rows.get('A').status,'active');
+});
+test('persistent contention stays retryable without acknowledging unapplied state',async()=>{
+ const delays=[],logs=[],f=fixture({sleep:async ms=>delays.push(ms),report:e=>logs.push(e)});
+ await f.api(f.req({action:'checkout',plan:'monthly'}));f.locks.add('A');
+ assert.equal((await f.webhook(f.event({customer:'cus_A'}))).status,503);
+ assert.deepEqual(delays,[150,350,750]);assert.deepEqual(logs,[{component:'membership',stage:'lock_claim',category:'busy'}]);
+});
+test('diagnostics identify failing stage without raw errors or identities',async()=>{
+ for(const operation of ['customer_lookup','stripe_subscriptions','snapshot_save','lock_release']){
+  const logs=[],f=fixture({report:e=>logs.push(e)});await f.api(f.req({action:'checkout',plan:'monthly'}));
+  const fail=async()=>{throw {type:'StripePermissionError',statusCode:403,message:'SECRET cus_A user A',raw:{key:'private-key'}}};
+  if(operation==='customer_lookup')f.store.byCustomer=fail;
+  if(operation==='stripe_subscriptions')f.stripe.subscriptions.list=fail;
+  if(operation==='snapshot_save')f.store.snapshot=fail;
+  if(operation==='lock_release')f.store.release=fail;
+  const response=await f.webhook(f.event({customer:'cus_A'}));assert.equal(response.status,503);
+  assert.deepEqual(logs,[{component:'membership',stage:operation,category:'StripePermissionError',http_status:403}]);
+  assert.doesNotMatch(JSON.stringify(logs)+await response.text(),/SECRET|cus_A|private-key|raw/);
+ }
+});
+test('cleanup and logger failures preserve primary error and retry response',async()=>{
+ const logs=[],f=fixture({report:e=>{logs.push(e);throw Error('logger failed')}});await f.api(f.req({action:'checkout',plan:'monthly'}));
+ f.stripe.subscriptions.list=async()=>{throw Error('private Stripe error')};f.store.release=async()=>{throw Error('private database error')};
+ assert.equal((await f.webhook(f.event({customer:'cus_A'}))).status,503);
+ assert.deepEqual(logs.map(e=>e.stage),['lock_release','stripe_subscriptions']);
+});
+test('database claim errors are not retried and API contention remains immediate',async()=>{
+ const delays=[],logs=[],f=fixture({sleep:async ms=>delays.push(ms),report:e=>logs.push(e)});await f.api(f.req({action:'checkout',plan:'monthly'}));
+ f.locks.add('A');assert.equal((await f.api(f.req({action:'sync'}))).status,409);assert.deepEqual(delays,[]);
+ f.store.claim=async()=>{throw Error('database failure')};assert.equal((await f.webhook(f.event({customer:'cus_A'}))).status,503);
+ assert.deepEqual(delays,[]);assert.equal(logs.at(-1).stage,'lock_claim');
 });

@@ -29,4 +29,4 @@ node tests/supporter-workbook-db.cjs
 deno test --allow-read --lock=tests/workbook-deno.lock tests/supporter-workbook-ui.test.mjs tests/supporter-access-admin.test.mjs
 ```
 
-Hosted/mobile visual and real-account acceptance remain pending until migration and deployment. No real member data or Stripe credentials were used in local tests. Historical 503 webhook retry remains an open billing issue; this release does not claim it fixed or enable real subscriptions.
+Hosted acceptance completed October 23, 2026 after migration and Pages deployment fc89edc: admin granted MAXOM no-charge access; MAXOM saved and reloaded answers on phone; revocation preserved reading and blocked editing; owner cleared test answers; admin history listed grant and revocation. Test grant is revoked and answers cleared. The later empty admin workbook check was not a cross-account isolation test because the test answers had already been cleared; isolation is covered by the database tests. No real member data or Stripe credentials were used in local tests. Historical 503 webhook retry remains an open billing issue; this release does not claim it fixed or enable real subscriptions.

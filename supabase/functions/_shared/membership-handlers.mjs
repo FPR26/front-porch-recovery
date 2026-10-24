@@ -1,15 +1,39 @@
 // Dependency-injected handlers: no keys, payment details, or recovery data.
-export function makeMembershipHandlers({stripe,store,verifyUser,verifyEvent,config,uuid=()=>crypto.randomUUID(),now=()=>Date.now()}) {
+export function makeMembershipHandlers({stripe,store,verifyUser,verifyEvent,config,uuid=()=>crypto.randomUUID(),now=()=>Date.now(),sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms)),report=entry=>console.error(JSON.stringify(entry))}) {
   const origin='https://fpr26.github.io';
   const home='https://fpr26.github.io/front-porch-recovery/';
   function json(data,status=200,cors=false){return new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store',...(cors?{'Access-Control-Allow-Origin':origin,'Vary':'Origin'}:{})}})}
-  async function locked(userId,action){
+  // Log fixed labels only; never raw errors, IDs, payloads or credentials.
+  async function stage(name,action){
+    try{return await action()}catch(cause){throw {membershipStage:name,cause}}
+  }
+  function diagnostic(error){
+    const cause=error?.cause || error;
+    const category=cause?.membershipBusy?'busy':
+      ['StripeConnectionError','StripeAPIError','StripeAuthenticationError','StripePermissionError','StripeRateLimitError','StripeInvalidRequestError'].includes(cause?.type)?cause.type:'operation_failed';
+    const entry={component:'membership',stage:error?.membershipStage || 'request',category};
+    if(Number.isInteger(cause?.statusCode) && cause.statusCode>=400 && cause.statusCode<=599)entry.http_status=cause.statusCode;
+    try{report(entry)}catch{/* Logging must not change billing behavior. */}
+  }
+  async function locked(userId,action,retry=false){
     const token=uuid();
-    if(!await store.claim(userId,token)) throw {status:409,message:'A membership update is in progress. Please try again shortly.'};
-    try{return await action(token)}finally{await store.release(userId,token)}
+    let claimed=await stage('lock_claim',()=>store.claim(userId,token));
+    // Briefly retry denied claims for signed webhook bursts, not operation errors.
+    if(retry)for(const delay of [150,350,750]){
+      if(claimed)break;
+      await sleep(delay);
+      claimed=await stage('lock_claim',()=>store.claim(userId,token));
+    }
+    if(!claimed)throw {membershipStage:'lock_claim',cause:{membershipBusy:true},status:409,message:'A membership update is in progress. Please try again shortly.'};
+    let failed=false;
+    try{return await action(token)}catch(error){failed=true;throw error}
+    finally{
+      try{await stage('lock_release',()=>store.release(userId,token))}
+      catch(error){if(failed)diagnostic(error);else throw error}
+    }
   }
   async function subscriptions(customer){
-    const page=await stripe.subscriptions.list({customer,status:'all',limit:100,expand:['data.latest_invoice']});
+    const page=await stage('stripe_subscriptions',()=>stripe.subscriptions.list({customer,status:'all',limit:100,expand:['data.latest_invoice']}));
     if(page.has_more) throw Error('Subscription review required');
     return page.data;
   }
@@ -29,13 +53,13 @@ export function makeMembershipHandlers({stripe,store,verifyUser,verifyEvent,conf
     const all=await subscriptions(row.customer_id);
     const paid=all.filter(eligible).sort((a,b)=>b.items.data[0].current_period_end-a.items.data[0].current_period_end)[0];
     const latest=paid || all.slice().sort((a,b)=>b.created-a.created)[0];
-    await store.snapshot(row.user_id,token,{
+    await stage('snapshot_save',()=>store.snapshot(row.user_id,token,{
       subscription_id:latest?.id || null,status:paid?'active':(latest?.status==='active'?'payment_pending':latest?.status || 'none'),
       access_until:paid?new Date(accessEnd(paid)*1000).toISOString():null,
       // Normalize classic's boolean and flexible billing's cancel_at date
       // into the existing scheduled-cancellation field used by the UI.
       cancel_at_period_end:!!paid && (paid.cancel_at_period_end===true || cancellationTime(paid)!==null)
-    });
+    }));
     return all;
   }
   async function api(req){
@@ -85,7 +109,7 @@ export function makeMembershipHandlers({stripe,store,verifyUser,verifyEvent,conf
           allow_promotion_codes:false,payment_method_collection:'always'},{idempotencyKey:'fpr-sandbox-checkout-'+token});
         return json({sandbox:true,url:session.url},200,cors);
       });
-    }catch(err){return json({error:err?.status===409?err.message:'Membership service is temporarily unavailable.'},err?.status===409?409:503,cors)}
+    }catch(err){diagnostic(err);return json({error:err?.status===409?err.message:'Membership service is temporarily unavailable.'},err?.status===409?409:503,cors)}
   }
   async function webhook(req){
     if(req.method!=='POST')return json({error:'Use POST.'},405);
@@ -97,13 +121,13 @@ export function makeMembershipHandlers({stripe,store,verifyUser,verifyEvent,conf
     const customer=event.data?.object?.customer;
     if(typeof customer!=='string')return json({received:true});
     try{
-      const row=await store.byCustomer(customer);
+      const row=await stage('customer_lookup',()=>store.byCustomer(customer));
       if(!row)return json({received:true});
-      await locked(row.user_id,token=>synchronize(row,token));
+      await locked(row.user_id,token=>synchronize(row,token),true);
       // Always re-read Stripe under the same lock used by checkout. Replayed
       // or out-of-order events cannot overwrite state using stale payloads.
       return json({received:true});
-    }catch{return json({error:'Retry this billing update.'},503)}
+    }catch(error){diagnostic(error);return json({error:'Retry this billing update.'},503)}
   }
   return {api,webhook};
 }
