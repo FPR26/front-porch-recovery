@@ -433,3 +433,7 @@ Admin-only Stripe test checkout, portal and signature-verified subscription upda
 ## Private supporter workbook and no-charge access
 
 Seven private saved reflection sessions and admin grant/extend/revoke controls are prepared. Workbook access is independent of Stripe sandbox billing; paid production access remains disabled. Existing previews and Journal remain free. Apply phase12c_supporter_workbook.sql before publishing. Deployment, privacy and verification details: supabase/SUPPORTER_WORKBOOK.md.
+
+## Workbook sandbox subscription access
+
+Prepared: apply `supabase/migrations/phase12d_workbook_sandbox_access.sql` after phases 12b/12c, then publish. Active unexpired server-verified sandbox snapshots can supply explicitly labeled test workbook access. Independent no-charge grants and existing admin access remain available. Scheduled cancellation preserves access through its end; ended access preserves owner reading/deletion. Real paid membership remains disabled. See `supabase/WORKBOOK_SANDBOX_ACCESS.md`.

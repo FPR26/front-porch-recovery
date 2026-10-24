@@ -1,0 +1,13 @@
+# Workbook sandbox subscription access
+
+Prepared October 24, 2026. Real billing remains disabled; no live entitlement is implemented.
+
+Apply phase12d_workbook_sandbox_access.sql once, after phases 12b and 12c. It replaces workbook read/save functions and adds an internal entitlement helper with no public execution grant. Then publish the frontend commit. No Edge Function deployment, secret changes or subscription creation is required for this change.
+
+Access priority: active no-charge grant, active unexpired server-verified sandbox subscription snapshot with a subscription ID, existing admin privilege, otherwise read-only. The billing table is the existing sandbox-only table; ordinary clients cannot write it. The helper never exposes user IDs, customer IDs or payment data. Sandbox checkout remains admin-only; this migration does not offer test checkout to members. Testing nonadmin entitlement is covered by database fixtures, not by broadening checkout permissions.
+
+Scheduled cancellation keeps test access until the server-normalized access end; canceled, unpaid, payment-pending, expired and missing-subscription state grants nothing. A separate no-charge grant survives subscription cancellation, and revoking that grant does not cancel an independently active subscription. Saved answers remain owner-readable/deletable after either kind of access ends. Admins retain their existing personal workbook privilege even after canceling a test subscription; that is not evidence of a failed billing revocation.
+
+Save locks the existing grant and billing rows before checking access; every save revalidates server state. Reading does not refresh Stripe itself: webhook or admin Refresh status updates the billing snapshot, and Reload saved reflection reloads workbook access. No browser-supplied entitlement is trusted. This phase changes the entitlement rule only; public prompts, free Journal and sample cards remain unchanged.
+
+Validation: actual PostgreSQL-compatible migration tests exercise active and scheduled test access, cancellation/expiry/unpaid denial, missing subscription ID, independent grant/revocation, owner-only read/clear, direct-table/helper denial, and existing workbook conflict handling. DOM tests exercise explicit sandbox labeling and read-only saved answers after loss of access. Hosted application of this migration remains pending.

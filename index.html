@@ -18988,13 +18988,13 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   identity().catch(()=>{});
 })();
 
-/* Private workbook: no browser persistence, no sandbox billing entitlement. */
+/* Private workbook: no browser persistence; server-verified sandbox access is labeled as test access. */
 (function initPrivateSupporterWorkbook(){
   const client=window.__fprSupabaseClient,form=document.getElementById('supporter-workbook-form');
   if(!client || !form)return;
   const status=document.getElementById('supporter-workbook-status'),fields=document.getElementById('supporter-answer-fields'),progress=document.getElementById('supporter-workbook-progress');
   const complete=document.getElementById('supporter-workbook-complete'),save=document.getElementById('supporter-workbook-save'),reload=document.getElementById('supporter-workbook-reload'),clear=document.getElementById('supporter-workbook-clear');
-  let user=null,epoch=0,day=1,entries=[],canWrite=false,until=null,dirty=false,busy=false,loading=false;
+  let user=null,epoch=0,day=1,entries=[],canWrite=false,until=null,accessSource=null,cancellationScheduled=false,dirty=false,busy=false,loading=false;
   function message(text){status.textContent=text;}
   function render(){
     const entry=entries.find(e=>e.reflection_number===day);
@@ -19009,7 +19009,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     form.hidden=!user || (!canWrite && entries.length===0);
     progress.textContent=user?entries.filter(e=>e.completed).length+' of 7 reflections complete. Work at your own pace.':'';
   }
-  function accessMessage(){return canWrite?(until?'Workbook access is available through '+new Date(until).toLocaleDateString()+'. Your answers are private.':'Administrator workbook access. Your answers are private.'):'Workbook access is not active. Any saved answers remain available to you; the free Journal and preview are still available.';}
+  function accessMessage(){if(canWrite && accessSource==='sandbox')return 'Sandbox workbook test access through '+new Date(until).toLocaleDateString()+'. '+(cancellationScheduled?'Cancellation is scheduled. ':'')+'No real paid membership is active. Your answers are private.';return canWrite?(until?'Workbook access is available through '+new Date(until).toLocaleDateString()+'. Your answers are private.':'Administrator workbook access. Your answers are private.'):'Workbook access is not active. Any saved answers remain available to you; the free Journal and preview are still available.';}
   async function load(identityChange=false){
     if((busy || loading) && !identityChange)return;
     loading=true;renderBusy(true);
@@ -19024,7 +19024,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
       if(user!==id){user=id;entries=[];dirty=false;form.hidden=true;fields.replaceChildren();}
       const result=await client.rpc('get_my_supporter_workbook');if(seq!==epoch)return;
       if(result.error || !result.data || !Array.isArray(result.data.entries))throw Error('unavailable');
-      entries=result.data.entries;canWrite=result.data.can_write===true;until=result.data.access_until;dirty=false;render();message(accessMessage());
+      entries=result.data.entries;canWrite=result.data.can_write===true;until=result.data.access_until;accessSource=result.data.access_source || null;cancellationScheduled=result.data.cancellation_scheduled===true;dirty=false;render();message(accessMessage());
     }catch(_){if(seq===epoch){canWrite=false;form.hidden=true;fields.replaceChildren();message('Private workbook saving is not connected yet. The free preview and Journal are still available.');}}
     finally{if(seq===epoch){loading=false;renderBusy(busy);}}
   }

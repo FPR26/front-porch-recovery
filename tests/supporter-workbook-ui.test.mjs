@@ -36,3 +36,13 @@ Deno.test('late responses from the previous identity cannot restore old answers'
  const f=fixture();await tick();let resolve;f.setGetter(()=>new Promise(r=>resolve=r));f.document.getElementById('supporter-workbook-reload').click();await tick();await f.changeUser(null);resolve({data:{can_write:true,entries:[{reflection_number:1,answers:['OLD SECRET','',''],version:1}]}});await tick();assert.equal(f.document.getElementById('supporter-workbook-form').hidden,true);assert(!f.document.getElementById('supporter-answer-fields').textContent.includes('OLD SECRET'));
 });
 Deno.test('signed-out workbook never requests private records',async()=>{const f=fixture({user:null});await tick();assert.equal(f.calls.length,0);assert.equal(f.document.getElementById('supporter-workbook-form').hidden,true)});
+
+Deno.test('verified sandbox entitlement is labeled test access and scheduled cancellation is explicit',async()=>{
+ const f=fixture();await tick();f.setGetter(async()=>({data:{can_write:true,access_source:'sandbox',sandbox:true,access_until:'2027-01-01T00:00:00Z',cancellation_scheduled:true,entries:[]}}));
+ f.document.getElementById('supporter-workbook-reload').click();await tick();
+ const text=f.document.getElementById('supporter-workbook-status').textContent;
+ assert.match(text,/Sandbox workbook test access/);assert.match(text,/Cancellation is scheduled/);assert.match(text,/No real paid membership is active/);assert.equal(f.document.getElementById('supporter-workbook-save').disabled,false);
+ f.setGetter(async()=>({data:{can_write:false,access_source:'none',entries:[{reflection_number:1,answers:['saved test','',''],version:4}]}}));
+ f.document.getElementById('supporter-workbook-reload').click();await tick();
+ assert.equal(f.document.querySelector('#supporter-answer-fields textarea').value,'saved test');assert.equal(f.document.getElementById('supporter-workbook-save').disabled,true);assert.doesNotMatch(f.document.getElementById('supporter-workbook-status').textContent,/Sandbox workbook test access/);
+});
