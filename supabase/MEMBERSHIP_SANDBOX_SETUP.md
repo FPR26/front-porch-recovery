@@ -1,6 +1,6 @@
 # Membership sandbox server: deployment and acceptance
 
-This release is admin-only and TEST-only. It does not charge real money, restrict free tools, or activate production paid access. The default feature flag is disabled. Sponsored access and production content entitlements remain future work.
+This release is admin-only and TEST-only. It does not charge real money, restrict free tools, or activate production paid access. The default feature flag is disabled. No-charge workbook grants are implemented separately; real paid production entitlements remain future work.
 
 ## Implemented
 
@@ -42,11 +42,13 @@ Use snapshot events and these types: checkout.session.completed, checkout.sessio
 Never paste secret values in chat, source files, git or terminal arguments. Supabase supplies SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY automatically.
 
 6. Enable LAST: set FPR_MEMBERSHIP_SANDBOX_ENABLED=true in the same Secrets page. Without it the functions fail closed and do not call Stripe. Live secret keys are rejected.
-7. Publish the website commit; sign in as JUSTIN/admin and open Shop -> Support FPR -> membership preview -> Admin: Membership sandbox.
+7. Publish the website commit. The admin dashboard has Open membership test controls, which opens the main FPR site at the admin-only Membership sandbox panel in the same browser.
 
-## Hosted checks still required
+## Hosted acceptance record (updated October 24, 2026)
 
-Verify both sandbox prices, successful test payment, failed payment, duplicate checkout, member rejection, customer portal cancellation, scheduled expiration, Stripe webhook deliveries/retries, signout during redirect, and phone layout. Use Stripe's documented test payment details, never a real card. Return from checkout alone must not grant access; use Refresh test status to verify Stripe state. Real paid memberships remain disabled. To stop tests set the enable flag false.
+Completed operator checks: monthly $3 and yearly $25 successful sandbox checkout; declined test payment without access; scheduled cancellation; immediate cancellation; nonadmin phone preview without billing controls; signature rejection and unauthenticated API rejection. Earlier failed checkout delivery recovered automatically October 21 at 21:10:14 (as displayed by Stripe), before October 24 diagnostics changes. Do not represent that historical recovery as verification of the new retry code.
+
+October 24: phase12d applied, Pages deployed; monthly checkout produced explicitly labeled sandbox workbook access through November 24, 2026. Scheduled cancellation appeared in Stripe and then in the workbook after the combined-refresh fix aeb2bdc. User confirmed that message. These operator checks are complete; do not request repetition without a relevant regression or a new failure. Undo cancellation was an unnecessary additional check and is not a launch gate. Real payments remain disabled. Other cases covered only by automated tests must not be described as hosted acceptance.
 
 ## Local verification
 
@@ -56,4 +58,4 @@ Deno: deno check --node-modules-dir=none --lock=supabase/functions/deno.lock sup
 
 Deno signature test: deno test --node-modules-dir=none --lock=supabase/functions/deno.lock tests/membership-signature.test.ts
 
-Actual migration separately ran in PostgreSQL-compatible PGlite: permissions, identity isolation, lock exclusion, stale writer refusal, and expired access denial passed. No live Stripe call was made and no user-provided secret was used. Hosted end-to-end success is not yet verified.
+Actual migration separately ran in PostgreSQL-compatible PGlite: permissions, identity isolation, lock exclusion, stale writer refusal, and expired access denial passed. No live Stripe call was made and no user-provided secret was used. The hosted acceptance above is verified separately; remaining automated-only cases are not hosted evidence.

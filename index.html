@@ -2667,8 +2667,8 @@
         <h2 id="supporter-paid-title">Something extra. Something shared.</h2>
         <p><strong>Planned membership: $3/month or $25/year.</strong> The yearly option works out to about $2.08 per month, billed annually.</p>
         <ul class="supporter-list"><li>Guided reflection workbooks</li><li>Additional celebration-card designs</li><li>Personalization options planned for a later release</li></ul>
-        <p>Sponsored access is planned for people who cannot afford membership. The same extras, without a payment requirement.</p>
-        <p class="supporter-preview-note">Membership is still being built. No payment is collected here, and these samples do not activate a subscription.</p>
+        <p>An admin can grant private workbook access at no charge. That access does not require a subscription.</p>
+        <p class="supporter-preview-note">Public payment signup is not open. Private workbook saving is available with approved access; the prompts and sample cards remain free to explore.</p>
       </section>
     </div>
     <section class="supporter-panel" style="margin-top:28px;" aria-labelledby="supporter-workbook-title">
@@ -2680,7 +2680,7 @@
       <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="journal">Write in your free Journal</button></div>
       <p class="supporter-preview-note">The prompts above are free to explore. Your free Journal remains available to everyone.</p>
       <section id="supporter-workbook-private" style="margin-top:24px;border-top:1px solid var(--line);padding-top:24px;" aria-labelledby="supporter-answers-title">
-        <h3 id="supporter-answers-title">Your private workbook</h3>
+        <h3 id="supporter-answers-title" tabindex="-1">Your private workbook</h3>
         <p id="supporter-workbook-status" role="status" aria-live="polite">Sign in to check workbook access. The free preview does not save answers.</p>
         <p id="supporter-workbook-progress" class="supporter-preview-note"></p>
         <form id="supporter-workbook-form" hidden>
@@ -3781,6 +3781,12 @@
       <h2 class="ms-modal-title">You're signed in</h2>
       <p class="ms-modal-text">Signed in as <span id="account-email-display"></span>.</p>
       <p class="ms-modal-text">Your Recovery Counter and Daily Check-In still stay on this device only. The profile below is saved to your account.</p>
+
+      <section class="account-profile" aria-labelledby="account-workbook-title">
+        <h3 class="account-profile-title" id="account-workbook-title">Your private workbook</h3>
+        <p class="ms-modal-text">Open your reflections, check workbook access, or read and clear answers you saved earlier. Your free Journal remains separate.</p>
+        <button type="button" class="btn btn-outline btn-block" id="account-workbook-open">Open my workbook</button>
+      </section>
 
       <!-- Phase 7B: the signed-in member's own profile. Loaded and saved
            only through get_my_profile / update_my_profile / set_my_avatar /
@@ -11168,6 +11174,12 @@ const FPRBadge = (function(){
     modal.hidden = true;
     document.documentElement.classList.remove('ms-modal-open');
   }
+
+  const workbookOpen = document.getElementById('account-workbook-open');
+  if(workbookOpen)workbookOpen.addEventListener('click', function(){
+    closeModal();
+    goTo('supporter', {scrollTarget:'supporter-answers-title'});
+  });
 
   [headerBtn, mobileBtn].forEach(btn => {
     if (!btn) return;
