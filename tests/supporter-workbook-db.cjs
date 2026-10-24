@@ -7,6 +7,7 @@ for(const [id,publicId,name]of [[a,pa,'Admin'],[b,pb,'Member One'],[c,pc,'Member
 await db.exec(fs.readFileSync(root+'supabase/migrations/phase12b_supporter_sandbox.sql','utf8'));
 await db.exec(fs.readFileSync(root+'supabase/migrations/phase12c_supporter_workbook.sql','utf8'));
 await db.exec(fs.readFileSync(root+'supabase/migrations/phase12d_workbook_sandbox_access.sql','utf8'));
+await db.exec(fs.readFileSync(root+'supabase/migrations/phase14a_supporter_benefits.sql','utf8'));
 const as=async id=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role authenticated')};
 const own=async()=> (await db.query('select public.get_my_supporter_workbook() value')).rows[0].value;
 const save=async(day,answers,done,version)=>(await db.query('select public.save_my_supporter_reflection($1,$2,$3,$4) version',[day,answers,done,version])).rows[0].version;
@@ -36,5 +37,10 @@ await as(a);await db.query('select public.admin_set_supporter_access($1,0)',[pb]
 await db.exec('reset role');await db.query('update public.membership_billing set subscription_id=null where user_id=$1',[b]);await as(b);assert.equal((await own()).can_write,false);
 await as(a);assert.equal((await own()).access_source,'admin');
 console.log('PASS: sandbox grants only active unexpired verified snapshots; scheduled cancellation retains access; canceled/unpaid/expired/missing subscription denies writes; owner reads/clear persist; no-charge grant independent; cross-owner and direct-table access denied.');
+await as(b);let benefits=(await db.query('select public.get_my_supporter_benefits() value')).rows[0].value;assert.equal(benefits.can_write,false);assert.equal(benefits.entries,undefined);assert.equal(benefits.user_id,undefined);
+await as(a);await db.query('select public.admin_set_supporter_access($1,30)',[pb]);await as(b);benefits=(await db.query('select public.get_my_supporter_benefits() value')).rows[0].value;assert.equal(benefits.can_write,true);assert.equal(benefits.access_source,'no_charge');assert.equal(benefits.entries,undefined);
+await as(c);assert.equal((await db.query('select public.get_my_supporter_benefits() value')).rows[0].value.can_write,false);
+await db.exec('reset role;set role anon');await assert.rejects(db.query('select public.get_my_supporter_benefits()'),/permission denied/);
+console.log('PASS: benefits RPC returns only own access metadata, no private answers, and denies anonymous execution.');
 await db.close();console.log('PASS: HTML script syntax; actual SQL migration; owner-only read/write; admin cannot read other answers; grants/extensions/revocation/history; expiry retains reads; clear after revocation; input validation; stale writes and delete/recreate ABA protection; anonymous/direct-table access denied.');
 })().catch(e=>{console.error(e);process.exitCode=1});

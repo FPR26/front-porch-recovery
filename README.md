@@ -441,3 +441,7 @@ Prepared: apply `supabase/migrations/phase12d_workbook_sandbox_access.sql` after
 ## Phase 13 supporter content
 
 The seven workbook reflections retain their original prompts, with clear draft/optional-answer guidance. Six celebration designs use the official brand logo; public PNG downloads remain labeled samples. Clean collection assets are prepared separately for later member delivery. Content catalog and release boundaries: `content/PORCH_SUPPORTER_COLLECTION.md`. No payment activation or migration is part of this phase.
+
+## Phase 14 member collection
+
+Prepared authenticated clean-card delivery, current collection-access status and Account shortcuts. Apply phase14a_supporter_benefits.sql, deploy supporter-cards, then publish. Existing labeled samples remain free. Deployment and verification: `supabase/SUPPORTER_COLLECTION.md`. Real payments remain disabled.

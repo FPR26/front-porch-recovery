@@ -5,3 +5,7 @@ verify_jwt = false
 [functions.stripe-webhook]
 # Stripe signature verification replaces Supabase JWT authentication here.
 verify_jwt = false
+
+[functions.supporter-cards]
+# Handler verifies Auth and current workbook/collection entitlement on every request.
+verify_jwt = false

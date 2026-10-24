@@ -2698,6 +2698,21 @@
       <div class="supporter-actions"><button type="button" class="btn btn-outline" data-member-action="checkout" data-member-plan="monthly">Test $3 monthly checkout</button><button type="button" class="btn btn-outline" data-member-action="checkout" data-member-plan="yearly">Test $25 yearly checkout</button><button type="button" class="btn btn-outline" data-member-action="portal">Manage test membership</button><button type="button" class="btn btn-outline" data-member-action="sync">Refresh test status</button></div>
       <p id="supporter-sandbox-status" class="supporter-preview-note" role="status" aria-live="polite"></p>
     </section>
+    <section id="supporter-benefits" class="supporter-panel" style="margin-top:28px;" aria-labelledby="supporter-benefits-title">
+      <h2 id="supporter-benefits-title" tabindex="-1">Your supporter collection</h2>
+      <p>Six celebration designs with the official FPR logo. These downloads have no sample label and include no account information, dates, or private answers.</p>
+      <p id="supporter-benefits-status" role="status" aria-live="polite">Sign in to check collection access. The labeled samples below remain free.</p>
+      <div id="supporter-benefits-controls" hidden>
+        <label for="supporter-collection-design">Choose a card</label>
+        <select id="supporter-collection-design" style="display:block;width:100%;max-width:420px;margin:10px 0 16px;">
+          <option value="light">Porch Light</option><option value="morning">New Morning</option><option value="steps">Steady Steps</option><option value="begin">Room to Begin</option><option value="together">Shared Strength</option><option value="quiet">Quiet Progress</option>
+        </select>
+        <button type="button" class="btn btn-primary" id="supporter-collection-download">Download collection PNG</button>
+        <canvas id="supporter-collection-preview" class="supporter-card-image" width="1200" height="1200" role="img" aria-label="Your selected supporter card" style="max-width:440px;" hidden></canvas>
+      </div>
+      <div class="supporter-actions"><button type="button" class="btn btn-outline" id="supporter-benefits-refresh">Refresh collection access</button><button type="button" class="btn btn-outline" data-nav="supporter" data-scroll-target="supporter-answers-title">Go to my workbook</button></div>
+      <p class="supporter-preview-note">No-charge access includes the collection. Sandbox access is for testing; real payments remain closed. Downloaded cards can be kept after access ends. The free samples below are available without collection access.</p>
+    </section>
     <h2 style="margin-top:36px;">A little more room to celebrate</h2>
     <p style="margin-top:12px;">Six designs for the supporter collection, available here as labeled samples. Existing celebration cards remain free.</p>
     <div class="supporter-grid" id="supporter-card-samples">
@@ -3790,6 +3805,7 @@
         <h3 class="account-profile-title" id="account-workbook-title">Your private workbook</h3>
         <p class="ms-modal-text">Open your reflections, check workbook access, or read and clear answers you saved earlier. Your free Journal remains separate.</p>
         <button type="button" class="btn btn-outline btn-block" id="account-workbook-open">Open my workbook</button>
+        <button type="button" class="btn btn-outline btn-block" id="account-collection-open" style="margin-top:10px;">Open my card collection</button>
       </section>
 
       <!-- Phase 7B: the signed-in member's own profile. Loaded and saved
@@ -11292,6 +11308,12 @@ const FPRBadge = (function(){
   if(workbookOpen)workbookOpen.addEventListener('click', function(){
     closeModal();
     goTo('supporter', {scrollTarget:'supporter-answers-title'});
+  });
+
+  const collectionOpen = document.getElementById('account-collection-open');
+  if(collectionOpen)collectionOpen.addEventListener('click', function(){
+    closeModal();
+    goTo('supporter', {scrollTarget:'supporter-benefits-title'});
   });
 
   [headerBtn, mobileBtn].forEach(btn => {
@@ -19121,6 +19143,59 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   client.auth.onAuthStateChange(()=>{++revision;admin=false;panel.hidden=true;status.textContent='';setTimeout(()=>identity().catch(()=>{}),0);});
   document.addEventListener('fpr:pagechange',e=>{if(e.detail?.page==='supporter')identity().catch(()=>{});});
   identity().catch(()=>{});
+})();
+
+(function initSupporterCollection(){
+ const client=window.__fprSupabaseClient,panel=document.getElementById('supporter-benefits');
+ if(!client || !panel)return;
+ const status=document.getElementById('supporter-benefits-status'),controls=document.getElementById('supporter-benefits-controls');
+ const choose=document.getElementById('supporter-collection-design'),download=document.getElementById('supporter-collection-download'),refresh=document.getElementById('supporter-benefits-refresh'),preview=document.getElementById('supporter-collection-preview');
+ let revision=0,identity=null,allowed=false,loading=false,downloading=false;
+ function reset(){allowed=false;controls.hidden=true;preview.hidden=true;preview.getContext('2d').clearRect(0,0,1200,1200);}
+ function enabled(){download.disabled=loading || downloading || !allowed;choose.disabled=loading || downloading;refresh.disabled=loading || downloading;}
+ async function load(){
+  const seq=++revision;loading=true;reset();enabled();status.textContent='Checking collection access…';
+  try{
+   const result=await client.auth.getSession();if(seq!==revision)return;
+   identity=result.data?.session?.user?.id || null;
+   if(!identity){status.textContent='Sign in to check collection access. The labeled samples below remain free.';return;}
+   const response=await client.rpc('get_my_supporter_benefits');if(seq!==revision)return;
+   if(response.error || typeof response.data?.can_write!=='boolean')throw Error('unavailable');
+   allowed=response.data.can_write;controls.hidden=!allowed;
+   const end=response.data.access_until?' through '+new Date(response.data.access_until).toLocaleDateString():'';
+   if(!allowed)status.textContent='Collection access is not active. Free sample downloads are still available below.';
+   else if(response.data.access_source==='sandbox')status.textContent='Sandbox collection test access'+end+'. '+(response.data.cancellation_scheduled?'Cancellation is scheduled. ':'')+'No real paid membership is active.';
+   else if(response.data.access_source==='admin')status.textContent='Admin collection access. Choose any of the six designs.';
+   else status.textContent='No-charge collection access'+end+'. No subscription is required.';
+  }catch(_){if(seq===revision){reset();status.textContent='Collection access could not be checked. Your workbook and free samples remain available. Try Refresh collection access.';}}
+  finally{if(seq===revision){loading=false;enabled();}}
+ }
+ download.addEventListener('click',async()=>{
+  if(!allowed || loading || downloading)return;
+  const seq=revision,design=choose.value;downloading=true;enabled();status.textContent='Preparing your card…';
+  let imageUrl=null;
+  try{
+   const result=await client.functions.invoke('supporter-cards',{body:{design}});if(seq!==revision)return;
+   if(result.error || !result.data || typeof result.data.svg!=='string' || typeof result.data.logo!=='string' || !result.data.logo.startsWith('data:image/png;base64,') || result.data.filename!=='fpr-'+design+'-collection.png')throw Error('download unavailable');
+   imageUrl=URL.createObjectURL(new Blob([result.data.svg],{type:'image/svg+xml'}));
+   const img=new Image(),logo=new Image();await Promise.all([new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=imageUrl;}),new Promise((resolve,reject)=>{logo.onload=resolve;logo.onerror=reject;logo.src=result.data.logo;})]);if(seq!==revision)return;
+   const ctx=preview.getContext('2d');ctx.clearRect(0,0,1200,1200);ctx.drawImage(img,0,0,1200,1200);ctx.drawImage(logo,450,95,300,300*logo.height/logo.width);
+   const blob=await new Promise(resolve=>preview.toBlob(resolve,'image/png'));if(seq!==revision)return;if(!blob)throw Error('export failed');
+   preview.hidden=false;preview.setAttribute('aria-label',choose.options[choose.selectedIndex].text+' supporter collection card');
+   const pngUrl=URL.createObjectURL(blob),link=document.createElement('a');link.href=pngUrl;link.download=result.data.filename;document.body.appendChild(link);link.click();link.remove();
+   setTimeout(()=>URL.revokeObjectURL(pngUrl),60000);
+   status.textContent='Download requested. On a phone, open the browser download or sharing menu to save your PNG. No private information was added.';
+  }catch(_){if(seq===revision){reset();status.textContent='The card could not be downloaded. Refresh collection access and try again. The free samples remain available.';}}
+  finally{if(imageUrl)URL.revokeObjectURL(imageUrl);downloading=false;enabled();}
+ });
+ refresh.addEventListener('click',()=>{if(!downloading)load();});
+ client.auth.onAuthStateChange((_event,session)=>{
+  const next=session?.user?.id || null;
+  if(next!==identity){identity=next;++revision;loading=false;reset();enabled();status.textContent='Sign in to check collection access. The labeled samples below remain free.';if(document.getElementById('page-supporter')?.classList.contains('active'))setTimeout(load,0);}
+ });
+ document.addEventListener('fpr:membershipchange',load);
+ document.addEventListener('fpr:pagechange',event=>{if(event.detail?.page==='supporter')load();});
+ if(document.getElementById('page-supporter')?.classList.contains('active'))load();
 })();
 
 /* Private workbook: no browser persistence; server-verified sandbox access is labeled as test access. */
