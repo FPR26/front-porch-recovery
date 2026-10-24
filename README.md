@@ -437,3 +437,7 @@ Seven private saved reflection sessions and admin grant/extend/revoke controls a
 ## Workbook sandbox subscription access
 
 Prepared: apply `supabase/migrations/phase12d_workbook_sandbox_access.sql` after phases 12b/12c, then publish. Active unexpired server-verified sandbox snapshots can supply explicitly labeled test workbook access. Independent no-charge grants and existing admin access remain available. Scheduled cancellation preserves access through its end; ended access preserves owner reading/deletion. Real paid membership remains disabled. See `supabase/WORKBOOK_SANDBOX_ACCESS.md`.
+
+## Phase 13 supporter content
+
+The seven workbook reflections retain their original prompts, with clear draft/optional-answer guidance. Six celebration designs use the official brand logo; public PNG downloads remain labeled samples. Clean collection assets are prepared separately for later member delivery. Content catalog and release boundaries: `content/PORCH_SUPPORTER_COLLECTION.md`. No payment activation or migration is part of this phase.

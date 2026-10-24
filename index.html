@@ -2674,7 +2674,7 @@
     <section class="supporter-panel" style="margin-top:28px;" aria-labelledby="supporter-workbook-title">
       <p class="hero-eyebrow" style="color:var(--sage-text);">Try the workbook</p>
       <h2 id="supporter-workbook-title" style="margin-top:10px;">Pull Up a Chair</h2>
-      <p>Seven small reflections for finding your footing. Take them in any order, at your own pace. There is no streak to protect and no deadline to meet.</p>
+      <p>Seven small reflections for finding your footing. Take them in any order, at your own pace. Skip any prompt you do not want to answer; you can save an unfinished reflection. There is no streak to protect and no deadline to meet.</p>
       <div class="supporter-days" id="supporter-workbook-days" role="group" aria-label="Choose a workbook reflection"></div>
       <div id="supporter-workbook-reflection" aria-live="polite" aria-atomic="true"></div>
       <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="journal">Write in your free Journal</button></div>
@@ -2699,10 +2699,14 @@
       <p id="supporter-sandbox-status" class="supporter-preview-note" role="status" aria-live="polite"></p>
     </section>
     <h2 style="margin-top:36px;">A little more room to celebrate</h2>
-    <p style="margin-top:12px;">Two sample designs for the planned supporter collection. Existing celebration cards remain free.</p>
+    <p style="margin-top:12px;">Six designs for the supporter collection, available here as labeled samples. Existing celebration cards remain free.</p>
     <div class="supporter-grid" id="supporter-card-samples">
-      <section class="supporter-panel"><h3>Porch Light</h3><p>A warm reminder that showing up matters.</p><canvas class="supporter-card-image" width="1200" height="1200" data-supporter-card="light" role="img" aria-label="Porch Light sample celebration card: I kept showing up. Design preview."></canvas><button type="button" class="btn btn-outline" data-supporter-download="light" disabled>Download sample PNG</button></section>
-      <section class="supporter-panel"><h3>New Morning</h3><p>A fresh start, one honest day at a time.</p><canvas class="supporter-card-image" width="1200" height="1200" data-supporter-card="morning" role="img" aria-label="New Morning sample celebration card: One honest day. Design preview."></canvas><button type="button" class="btn btn-outline" data-supporter-download="morning" disabled>Download sample PNG</button></section>
+      <section class="supporter-panel"><h3>Porch Light</h3><p>A warm reminder that showing up matters.</p><canvas class="supporter-card-image" width="1200" height="1200" data-supporter-card="light" role="img" aria-label="Porch Light sample celebration card: I kept showing up. Design preview."></canvas><button type="button" class="btn btn-outline" data-supporter-download="light" aria-label="Download Porch Light sample PNG" disabled>Download sample PNG</button></section>
+      <section class="supporter-panel"><h3>New Morning</h3><p>A fresh start, one honest day at a time.</p><canvas class="supporter-card-image" width="1200" height="1200" data-supporter-card="morning" role="img" aria-label="New Morning sample celebration card: One honest day. Design preview."></canvas><button type="button" class="btn btn-outline" data-supporter-download="morning" aria-label="Download New Morning sample PNG" disabled>Download sample PNG</button></section>
+      <section class="supporter-panel"><h3>Steady Steps</h3><p>For the small steps that deserve a little credit.</p><canvas class="supporter-card-image" width="1200" height="1200" data-supporter-card="steps" role="img" aria-label="Steady Steps sample celebration card: Small steps. Still moving. Design preview."></canvas><button type="button" class="btn btn-outline" data-supporter-download="steps" aria-label="Download Steady Steps sample PNG" disabled>Download sample PNG</button></section>
+      <section class="supporter-panel"><h3>Room to Begin</h3><p>A little room for the next useful step.</p><canvas class="supporter-card-image" width="1200" height="1200" data-supporter-card="begin" role="img" aria-label="Room to Begin sample celebration card: There is room to begin again. Design preview."></canvas><button type="button" class="btn btn-outline" data-supporter-download="begin" aria-label="Download Room to Begin sample PNG" disabled>Download sample PNG</button></section>
+      <section class="supporter-panel"><h3>Shared Strength</h3><p>A reminder that support belongs in the picture.</p><canvas class="supporter-card-image" width="1200" height="1200" data-supporter-card="together" role="img" aria-label="Shared Strength sample celebration card: I made room for support. Design preview."></canvas><button type="button" class="btn btn-outline" data-supporter-download="together" aria-label="Download Shared Strength sample PNG" disabled>Download sample PNG</button></section>
+      <section class="supporter-panel"><h3>Quiet Progress</h3><p>For progress that does not need an audience.</p><canvas class="supporter-card-image" width="1200" height="1200" data-supporter-card="quiet" role="img" aria-label="Quiet Progress sample celebration card: Quiet progress still counts. Design preview."></canvas><button type="button" class="btn btn-outline" data-supporter-download="quiet" aria-label="Download Quiet Progress sample PNG" disabled>Download sample PNG</button></section>
     </div>
     <p id="supporter-card-status" class="supporter-preview-note" role="status"></p>
     <button type="button" class="btn btn-outline" id="supporter-card-retry" hidden>Load card samples again</button>
@@ -8323,20 +8327,129 @@ const SUPPORTER_WORKBOOK = [
   { title: 'Carry something forward', intro: 'Progress can be quiet. You are allowed to notice it.', prompts: ['What have you learned about what helps you?', 'Which small change would you like to keep?', 'What deserves a little credit today?'], action: 'Choose one thing to carry into the coming week.' }
 ];
 
-function drawSupporterSample(ctx, logo, style){
-  const dark = style === 'light';
-  ctx.fillStyle = dark ? '#263F38' : '#F6F5F2'; ctx.fillRect(0,0,1200,1200);
-  ctx.fillStyle = dark ? '#D9A65B' : '#A7B8A8';
-  ctx.beginPath();ctx.arc(600,540,320,Math.PI,0);ctx.fill();
-  ctx.fillStyle = dark ? '#263F38' : '#F6F5F2'; ctx.fillRect(0,510,1200,690);
-  ctx.strokeStyle = dark ? '#D9A65B' : '#4F5A50';ctx.lineWidth=3;ctx.strokeRect(40,40,1120,1120);
-  ctx.drawImage(logo,440,110,320,Math.min(210,320*logo.height/logo.width));
-  ctx.textAlign='center';ctx.fillStyle=dark?'#FFFFFF':'#1A1A1A';ctx.font='bold 76px Arial';
-  ctx.fillText(dark?'I kept':'One honest',600,585);ctx.fillText(dark?'showing up.':'day.',600,685);
-  ctx.font='32px Arial';ctx.fillText('There is a place for you on the porch.',600,800);
-  ctx.font='bold 30px Arial';ctx.fillText('FRONT PORCH RECOVERY',600,940);
-  ctx.font='25px Arial';ctx.fillText('DESIGN PREVIEW · SAMPLE',600,1070);
+const SUPPORTER_CARD_DESIGNS = [
+  {
+    "id": "light",
+    "name": "Porch Light",
+    "description": "A warm reminder that showing up matters.",
+    "lines": [
+      "I kept",
+      "showing up."
+    ],
+    "caption": "There is a place for you on the porch.",
+    "background": "#263F38",
+    "ink": "#FFFFFF",
+    "accent": "#D9A65B",
+    "motif": "arch"
+  },
+  {
+    "id": "morning",
+    "name": "New Morning",
+    "description": "A fresh start, one honest day at a time.",
+    "lines": [
+      "One honest",
+      "day."
+    ],
+    "caption": "This day is enough to begin with.",
+    "background": "#F6F5F2",
+    "ink": "#253A32",
+    "accent": "#A7B8A8",
+    "motif": "sunrise"
+  },
+  {
+    "id": "steps",
+    "name": "Steady Steps",
+    "description": "For the small steps that deserve a little credit.",
+    "lines": [
+      "Small steps.",
+      "Still moving."
+    ],
+    "caption": "Your pace can be your own.",
+    "background": "#DDE6DE",
+    "ink": "#253A32",
+    "accent": "#587563",
+    "motif": "steps"
+  },
+  {
+    "id": "begin",
+    "name": "Room to Begin",
+    "description": "A little room for the next useful step.",
+    "lines": [
+      "There is room",
+      "to begin again."
+    ],
+    "caption": "You can start with one useful step.",
+    "background": "#F3E2D4",
+    "ink": "#583E32",
+    "accent": "#B16F4C",
+    "motif": "doorway"
+  },
+  {
+    "id": "together",
+    "name": "Shared Strength",
+    "description": "A reminder that support belongs in the picture.",
+    "lines": [
+      "I made room",
+      "for support."
+    ],
+    "caption": "You deserve to be heard.",
+    "background": "#243D50",
+    "ink": "#FFFFFF",
+    "accent": "#B8D2CB",
+    "motif": "circles"
+  },
+  {
+    "id": "quiet",
+    "name": "Quiet Progress",
+    "description": "For progress that does not need an audience.",
+    "lines": [
+      "Quiet progress",
+      "still counts."
+    ],
+    "caption": "You are allowed to notice what helped.",
+    "background": "#F8F2E7",
+    "ink": "#3E4B3F",
+    "accent": "#788A69",
+    "motif": "leaves"
+  }
+];
+
+function drawSupporterCard(ctx, logo, style, isPreview=true){
+  const design=SUPPORTER_CARD_DESIGNS.find(d=>d.id===style);
+  if(!design)throw Error('Unknown supporter card design');
+  ctx.save();
+  try{
+    ctx.fillStyle=design.background;ctx.fillRect(0,0,1200,1200);
+    ctx.strokeStyle=design.accent;ctx.fillStyle=design.accent;ctx.lineWidth=4;
+    ctx.strokeRect(40,40,1120,1120);
+    if(design.motif==='arch' || design.motif==='sunrise'){
+      ctx.beginPath();ctx.arc(600,500,190,Math.PI,0);ctx.fill();
+      ctx.fillStyle=design.background;ctx.fillRect(380,475,440,50);
+      ctx.beginPath();ctx.moveTo(360,500);ctx.lineTo(840,500);ctx.stroke();
+    }else if(design.motif==='steps'){
+      ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(350,490);ctx.lineTo(460,490);ctx.lineTo(460,440);ctx.lineTo(570,440);ctx.lineTo(570,390);ctx.lineTo(680,390);ctx.lineTo(680,340);ctx.lineTo(830,340);ctx.stroke();
+    }else if(design.motif==='doorway'){
+      ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(475,495);ctx.lineTo(475,415);ctx.arc(600,415,125,Math.PI,0);ctx.lineTo(725,495);ctx.stroke();
+      ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(430,500);ctx.lineTo(770,500);ctx.stroke();
+    }else if(design.motif==='circles'){
+      ctx.lineWidth=5;for(const x of [500,600,700]){ctx.beginPath();ctx.arc(x,415,82,0,Math.PI*2);ctx.stroke();}
+    }else{
+      ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(600,500);ctx.bezierCurveTo(585,435,605,380,655,325);ctx.stroke();
+      for(const [x,y,angle] of [[590,455,-0.6],[620,420,0.65],[615,380,-0.6],[655,350,0.65]]){
+        ctx.beginPath();ctx.ellipse(x,y,40,15,angle,0,Math.PI*2);ctx.stroke();
+      }
+    }
+    const logoWidth=300,logoHeight=logoWidth*logo.height/logo.width;
+    ctx.drawImage(logo,450,95,logoWidth,logoHeight);
+    ctx.textAlign='center';ctx.fillStyle=design.ink;ctx.font='bold 76px Arial';
+    ctx.fillText(design.lines[0],600,620);ctx.fillText(design.lines[1],600,715);
+    ctx.font='31px Arial';ctx.fillText(design.caption,600,825);
+    ctx.font='bold 28px Arial';ctx.fillText('FRONT PORCH RECOVERY',600,963);
+    ctx.font='24px Arial';ctx.fillText('fpr26.github.io/front-porch-recovery',600,1005);
+    if(isPreview){ctx.font='bold 25px Arial';ctx.fillText('DESIGN PREVIEW · SAMPLE',600,1090);}
+  }finally{ctx.restore();}
 }
+function drawSupporterSample(ctx, logo, style){drawSupporterCard(ctx,logo,style,true);}
 (function initSupporterPreview(){
   const days=document.getElementById('supporter-workbook-days');
   const reflection=document.getElementById('supporter-workbook-reflection');
