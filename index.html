@@ -2693,6 +2693,7 @@
     </section>
     <section id="supporter-sandbox" class="supporter-panel" style="margin-top:28px;" hidden aria-labelledby="supporter-sandbox-title">
       <h2 id="supporter-sandbox-title">Admin · Membership sandbox</h2>
+      <p><a href="admin.html">Return to admin dashboard</a></p>
       <p>Test payments only. This does not activate a real paid membership or change access to any free tools.</p>
       <div class="supporter-actions"><button type="button" class="btn btn-outline" data-member-action="checkout" data-member-plan="monthly">Test $3 monthly checkout</button><button type="button" class="btn btn-outline" data-member-action="checkout" data-member-plan="yearly">Test $25 yearly checkout</button><button type="button" class="btn btn-outline" data-member-action="portal">Manage test membership</button><button type="button" class="btn btn-outline" data-member-action="sync">Refresh test status</button></div>
       <p id="supporter-sandbox-status" class="supporter-preview-note" role="status" aria-live="polite"></p>
@@ -18960,6 +18961,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     const result=await client.rpc('is_admin');
     if(seq!==revision || result.error || result.data!==true)return;
     admin=true;panel.hidden=false;
+    if(window.location.search==='?membership-tools=1')panel.scrollIntoView({block:'start'});
     status.textContent='Sandbox connection is ready to test after the server setup is deployed.';
   }
   async function showStatus(seq){
