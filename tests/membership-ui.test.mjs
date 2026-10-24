@@ -4,7 +4,7 @@ const tick=()=>new Promise(r=>setTimeout(r,5));
 function fixture(isAdmin=true,membership={sandbox:true,has_access:false,status:'none'}){
  const buttons=['checkout','portal','sync'].map(action=>({dataset:{memberAction:action,memberPlan:'monthly'},events:{},addEventListener(n,f){this.events[n]=f}}));const panel={hidden:false,querySelectorAll:()=>buttons},status={textContent:''};let signedIn=true,onAuth,invoke=async()=>({data:{sandbox:true,url:'https://checkout.stripe.com/test'}});const redirects=[];
  const client={auth:{getSession:async()=>({data:{session:signedIn?{}:null}}),onAuthStateChange:f=>onAuth=f},rpc:async name=>name==='is_admin'?{data:isAdmin}:{data:[membership]},functions:{invoke:(...args)=>invoke(...args)}};
- vm.runInNewContext(code,{document:{getElementById:id=>id==='supporter-sandbox'?panel:status,addEventListener(){}},window:{__fprSupabaseClient:client,location:{assign:url=>redirects.push(url)}},setTimeout,URL});
+ vm.runInNewContext(code,{document:{getElementById:id=>id==='supporter-sandbox'?panel:status,addEventListener(){},dispatchEvent(){}},CustomEvent:class {constructor(type){this.type=type}},window:{__fprSupabaseClient:client,location:{assign:url=>redirects.push(url)}},setTimeout,URL});
  return {buttons,panel,status,redirects,setInvoke:f=>invoke=f,signout(){signedIn=false;onAuth()}};
 }
 test('nonadmins never see sandbox controls',async()=>{const f=fixture(false);await tick();assert.equal(f.panel.hidden,true)});

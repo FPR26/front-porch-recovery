@@ -18962,7 +18962,8 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     if(seq!==revision || result.error || result.data!==true)return;
     admin=true;panel.hidden=false;
     if(window.location.search==='?membership-tools=1')panel.scrollIntoView({block:'start'});
-    status.textContent='Sandbox connection is ready to test after the server setup is deployed.';
+    status.textContent='Checking your current sandbox subscription…';
+    if(!busy){busy=true;disable(true);try{await refreshStatus(seq)}catch(_){if(seq===revision)status.textContent='Could not refresh the sandbox subscription. Use Refresh test status to try again.';}finally{busy=false;disable(false);}}
   }
   async function showStatus(seq){
     const result=await client.rpc('get_my_supporter_membership');
@@ -18972,17 +18973,24 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     if(!row || row.sandbox!==true)throw Error('Invalid membership state');
     status.textContent=row.has_access?'Sandbox subscription verified. Test access ends '+new Date(row.access_until).toLocaleDateString()+ (row.cancel_at_period_end?'; cancellation is scheduled.':'.'):'Sandbox membership status: '+String(row.status)+'. No real paid membership is active.';
   }
+  async function refreshStatus(seq){
+    const result=await client.functions.invoke('membership-api',{body:{action:'sync'}});
+    if(seq!==revision)return;
+    if(result.error || result.data?.error || result.data?.sandbox!==true)throw Error('Status refresh failed');
+    await showStatus(seq);
+    if(seq===revision)document.dispatchEvent(new CustomEvent('fpr:membershipchange'));
+  }
   buttons.forEach(button=>button.addEventListener('click',async()=>{
     if(!admin || busy)return;const seq=revision;busy=true;disable(true);status.textContent='Contacting the membership sandbox…';
     try{
+      if(button.dataset.memberAction==='sync'){await refreshStatus(seq);return;}
       const result=await client.functions.invoke('membership-api',{body:{action:button.dataset.memberAction,plan:button.dataset.memberPlan}});
       if(seq!==revision)return;
       if(result.error || result.data?.error)throw Error('Sandbox request failed');
-      if(button.dataset.memberAction==='sync'){await showStatus(seq);return;}
       const target=new URL(result.data.url);
       if(result.data.sandbox!==true || target.protocol!=='https:' || !['checkout.stripe.com','billing.stripe.com'].includes(target.hostname))throw Error('Invalid checkout destination');
       if(seq===revision && admin)window.location.assign(target.href);
-    }catch(_){if(seq===revision)status.textContent='The sandbox connection is not available yet. No membership access was changed. If a test subscription already exists, use Manage test membership.';}
+    }catch(_){if(seq===revision)status.textContent='Could not complete the sandbox request. Use Refresh test status to check the current subscription. If a test subscription already exists, use Manage test membership.';}
     finally{busy=false;disable(false);}
   }));
   client.auth.onAuthStateChange(()=>{++revision;admin=false;panel.hidden=true;status.textContent='';setTimeout(()=>identity().catch(()=>{}),0);});
@@ -18996,7 +19004,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   if(!client || !form)return;
   const status=document.getElementById('supporter-workbook-status'),fields=document.getElementById('supporter-answer-fields'),progress=document.getElementById('supporter-workbook-progress');
   const complete=document.getElementById('supporter-workbook-complete'),save=document.getElementById('supporter-workbook-save'),reload=document.getElementById('supporter-workbook-reload'),clear=document.getElementById('supporter-workbook-clear');
-  let user=null,epoch=0,day=1,entries=[],canWrite=false,until=null,accessSource=null,cancellationScheduled=false,dirty=false,busy=false,loading=false;
+  let user=null,epoch=0,day=1,entries=[],canWrite=false,until=null,accessSource=null,cancellationScheduled=false,dirty=false,busy=false,loading=false,pendingAccessRefresh=false;
   function message(text){status.textContent=text;}
   function render(){
     const entry=entries.find(e=>e.reflection_number===day);
@@ -19012,7 +19020,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     progress.textContent=user?entries.filter(e=>e.completed).length+' of 7 reflections complete. Work at your own pace.':'';
   }
   function accessMessage(){if(canWrite && accessSource==='sandbox')return 'Sandbox workbook test access through '+new Date(until).toLocaleDateString()+'. '+(cancellationScheduled?'Cancellation is scheduled. ':'')+'No real paid membership is active. Your answers are private.';return canWrite?(until?'Workbook access is available through '+new Date(until).toLocaleDateString()+'. Your answers are private.':'Administrator workbook access. Your answers are private.'):'Workbook access is not active. Any saved answers remain available to you; the free Journal and preview are still available.';}
-  async function load(identityChange=false){
+  async function load(identityChange=false,preserveDraft=false){
     if((busy || loading) && !identityChange)return;
     loading=true;renderBusy(true);
     const seq=++epoch;
@@ -19026,10 +19034,13 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
       if(user!==id){user=id;entries=[];dirty=false;form.hidden=true;fields.replaceChildren();}
       const result=await client.rpc('get_my_supporter_workbook');if(seq!==epoch)return;
       if(result.error || !result.data || !Array.isArray(result.data.entries))throw Error('unavailable');
-      entries=result.data.entries;canWrite=result.data.can_write===true;until=result.data.access_until;accessSource=result.data.access_source || null;cancellationScheduled=result.data.cancellation_scheduled===true;dirty=false;render();message(accessMessage());
-    }catch(_){if(seq===epoch){canWrite=false;form.hidden=true;fields.replaceChildren();message('Private workbook saving is not connected yet. The free preview and Journal are still available.');}}
-    finally{if(seq===epoch){loading=false;renderBusy(busy);}}
+      canWrite=result.data.can_write===true;until=result.data.access_until;accessSource=result.data.access_source || null;cancellationScheduled=result.data.cancellation_scheduled===true;
+      if(preserveDraft && dirty){renderBusy(busy);message(accessMessage()+' Your unsaved answers are still here.');}
+      else{entries=result.data.entries;dirty=false;render();message(accessMessage());}
+    }catch(_){if(seq===epoch){canWrite=false;if(!(preserveDraft && dirty)){form.hidden=true;fields.replaceChildren();}message('Could not refresh workbook access. '+(dirty?'Your unsaved answers are still here. ':'')+'Try Reload saved reflection when connected.');}}
+    finally{if(seq===epoch){loading=false;renderBusy(busy);if(pendingAccessRefresh && !busy){pendingAccessRefresh=false;load(false,true);}}}
   }
+  document.addEventListener('fpr:membershipchange',()=>{if(busy || loading)pendingAccessRefresh=true;else load(false,true);});
   complete.addEventListener('change',()=>{dirty=true;message('Unsaved changes. Press Save reflection when ready.');});
   document.addEventListener('fpr:workbookselect',e=>{
     if(busy || loading){e.preventDefault();return;}
@@ -19046,7 +19057,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
       if(seq!==epoch)return;if(result.error){message(result.error.code==='40001'?'This reflection changed in another tab. Your draft is still here. Use Reload saved reflection to load the latest version.':result.error.code==='42501'?'Workbook access is no longer active. Your draft is still here; your saved answers remain yours.':'Could not save. Your draft is still here. Try again when connected.');return;}
       entries=entries.filter(v=>v.reflection_number!==reflection);entries.push({reflection_number:reflection,answers,completed:complete.checked,version:result.data});dirty=false;render();message('Reflection saved privately.');
     }catch(_){if(seq===epoch)message('Could not save. Your draft is still here. Try again when connected.');}
-    finally{busy=false;renderBusy(false);}
+    finally{busy=false;renderBusy(false);if(pendingAccessRefresh){pendingAccessRefresh=false;load(false,true);}}
   });
   function renderBusy(value){value=value || loading;save.disabled=value || !canWrite;clear.disabled=value || !entries.some(v=>v.reflection_number===day);reload.disabled=value;complete.disabled=value || !canWrite;fields.querySelectorAll('textarea').forEach(t=>t.readOnly=value || !canWrite);}
   reload.addEventListener('click',()=>{if(!busy && (!dirty || window.confirm('Discard unsaved changes and reload your saved reflection?')))load();});
@@ -19055,7 +19066,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     if(!window.confirm('Clear your saved answers for this reflection? This cannot be undone.'))return;
     const seq=epoch;busy=true;renderBusy(true);
     try{const result=await client.rpc('clear_my_supporter_reflection',{p_reflection:day,p_version:entry.version});if(seq!==epoch)return;if(result.error){message('Could not clear. Reload the saved reflection and try again.');return;}entries=entries.filter(v=>v.reflection_number!==day);dirty=false;render();message('Saved reflection cleared.');}
-    catch(_){if(seq===epoch)message('Could not clear the saved reflection.');}finally{busy=false;renderBusy(false);}
+    catch(_){if(seq===epoch)message('Could not clear the saved reflection.');}finally{busy=false;renderBusy(false);if(pendingAccessRefresh){pendingAccessRefresh=false;load(false,true);}}
   });
   window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
   let identity=null;

@@ -46,3 +46,31 @@ Deno.test('verified sandbox entitlement is labeled test access and scheduled can
  f.document.getElementById('supporter-workbook-reload').click();await tick();
  assert.equal(f.document.querySelector('#supporter-answer-fields textarea').value,'saved test');assert.equal(f.document.getElementById('supporter-workbook-save').disabled,true);assert.doesNotMatch(f.document.getElementById('supporter-workbook-status').textContent,/Sandbox workbook test access/);
 });
+
+Deno.test('billing sync automatically updates workbook cancellation without losing unsaved answers',async()=>{
+ const {window}=parseHTML(html),{document}=window;
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-supporter').classList.add('active');
+ let scheduled=false,syncs=0;const calls=[];
+ const client={auth:{getSession:async()=>({data:{session:{user:{id:'ADMIN'}}}}),onAuthStateChange(){}},functions:{invoke:async()=>{syncs++;return {data:{sandbox:true,updated:true}}}},rpc:async name=>{
+ calls.push(name);
+ if(name==='is_admin')return {data:true};
+ if(name==='get_my_supporter_membership')return {data:[{sandbox:true,has_access:true,access_until:'2027-01-01T00:00:00Z',cancel_at_period_end:scheduled}]};
+ if(name==='get_my_supporter_workbook')return {data:{can_write:true,access_source:'sandbox',access_until:'2027-01-01T00:00:00Z',cancellation_scheduled:scheduled,entries:[]}};
+ throw Error('Unexpected RPC '+name);
+ }};
+ window.location={search:''};window.__fprSupabaseClient=client;window.confirm=()=>true;
+ const memberStart=html.indexOf('(function initMembershipSandbox(){'),memberCode=html.slice(memberStart,html.indexOf('})();',memberStart)+5);
+ new Function('window','document','CustomEvent','setTimeout','URL',data+memberCode+code)(window,document,window.CustomEvent,setTimeout,URL);
+ await tick();await tick();assert.equal(syncs,1);assert.match(document.getElementById('supporter-sandbox-status').textContent,/Sandbox subscription verified/);
+ const input=document.querySelector('#supporter-answer-fields textarea');input.value='KEEP MY UNSAVED DRAFT';input.dispatchEvent(new window.Event('input'));
+ scheduled=true;document.querySelector('[data-member-action="sync"]').click();await tick();await tick();
+ assert.equal(syncs,2);assert.match(document.getElementById('supporter-sandbox-status').textContent,/cancellation is scheduled/);
+ assert.match(document.getElementById('supporter-workbook-status').textContent,/Cancellation is scheduled/);
+ assert.equal(document.querySelector('#supporter-answer-fields textarea').value,'KEEP MY UNSAVED DRAFT');
+ assert.match(document.getElementById('supporter-workbook-status').textContent,/unsaved answers are still here/);
+});
+Deno.test('access refresh failure preserves an unsaved workbook draft',async()=>{
+ const f=fixture();await tick();const input=f.document.querySelector('#supporter-answer-fields textarea');input.value='KEEP ON NETWORK FAILURE';input.dispatchEvent(new f.window.Event('input'));
+ f.setGetter(async()=>({error:{message:'offline'}}));f.document.dispatchEvent(new f.window.CustomEvent('fpr:membershipchange'));await tick();
+ assert.equal(f.document.querySelector('#supporter-answer-fields textarea').value,'KEEP ON NETWORK FAILURE');assert.equal(f.document.getElementById('supporter-workbook-form').hidden,false);assert.equal(f.document.getElementById('supporter-workbook-save').disabled,true);
+});
