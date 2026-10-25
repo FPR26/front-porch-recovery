@@ -53,3 +53,7 @@ Not claimed: hosted authenticated production checkout, live payment processing, 
 - Installed pinned SDK type definitions confirm subscription-item current_period_end, invoice parent subscription details and subscription-item line references.
 
 Final local verification: 64 server/DOM tests passed (38 Node, 26 Deno), the actual combined SQL migration fixture passed, all inline HTML scripts parsed, and all five relevant Edge Function entrypoints passed Deno typechecking. These are local/synthetic results, not a live-payment acceptance claim.
+
+## Phase 16 review prepared
+
+See `PHASE16_LAUNCH_REVIEW.md` for current accepted evidence, the owner-approved planned refund/cancellation policy, remaining launch gates, minimum key permissions and operational handling. The review does not authorize activation. `node tools/verify-membership-deployment.mjs` checks the disabled hosted deployment without repeating purchases.

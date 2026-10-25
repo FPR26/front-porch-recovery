@@ -449,3 +449,7 @@ Prepared authenticated clean-card delivery, current collection-access status and
 ## Phase 15 production billing foundation — disabled
 
 Prepared separate production billing tables, API/webhook routes, server-verified paid benefits, member management and explicit closed launch gates. No live credentials or payment activation are part of this deployment. Apply phase15a_production_membership.sql, deploy membership-live-api and stripe-live-webhook, then publish. Both migration flags must remain false. Read `supabase/PRODUCTION_MEMBERSHIP.md` before deployment or future launch work.
+
+## Phase 16 launch review — payments remain closed
+
+Current Terms/Privacy clarify private workbook access, device downloads, personal card sharing and the owner-approved planned cancellation/refund policy. The launch review records accepted evidence, remaining live-account/tax/receipt/monitoring decisions, minimum app-key permissions, refund/dispute handling and safe account deletion. See `supabase/PHASE16_LAUNCH_REVIEW.md`. Run `node tools/verify-membership-deployment.mjs` for read-only verification of the disabled hosted deployment; it does not test payments or read private settings. Phase 16 does not authorize opening real payments.

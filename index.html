@@ -3483,8 +3483,8 @@
       <h2>Private supporter workbook</h2>
       <p>If you have workbook access and choose to save a reflection, its answers and completion state are stored privately with your account in Supabase. They are not posted to the Community or sent to Stripe. Administrators can grant, extend, or revoke no-charge access, but the app does not let them read your answers. Access changes are recorded for administration. You can still read or clear your saved reflections after workbook access ends.</p>
 
-      <h2>Membership testing</h2>
-      <p>FPR is testing optional membership checkout with Stripe, available only to administrators in a sandbox. Stripe handles the test checkout and billing portal. FPR stores a billing account identifier, subscription status, and access dates separately from recovery records. Journal entries, reflections, and recovery history are not sent to Stripe. Real paid memberships are not enabled.</p>
+      <h2>Membership testing and collection downloads</h2>
+      <p>FPR is testing optional membership checkout with Stripe, available only to administrators in a sandbox. Stripe handles the test checkout and billing portal. FPR stores a billing account identifier, subscription status, and access dates separately from recovery records. Journal entries, reflections, and recovery history are not sent to Stripe. Real paid memberships are not enabled. Stripe receives an internal account reference so test billing can be linked to the correct FPR account; recovery answers are not included. Collection downloads check your account access, but do not add your name, recovery date, or workbook answers to the card. Downloaded PNG files are saved on your device and remain there until you remove them. See <a class="legal-link" href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe’s privacy policy ↗</a>.</p>
 
       <h2>Porch Visits</h2>
       <p>FPR maintains an aggregate Porch Visits counter. It does not identify individual visitors or store personal information for that counter. A temporary flag in your browser tab counts a visit once per session; it is independent of your account.</p>
@@ -3594,10 +3594,17 @@
       <p>Front Porch Recovery books, downloadable resources, merchandise, and music are sold or hosted through outside platforms such as Amazon, Etsy, and YouTube. Purchases, downloads, payments, shipping, and refunds on those platforms are governed by that platform's own terms. Buying or downloading something gives you a personal-use copy, not ownership of the work or permission to share, resell, or republish it.</p>
       <p>You can also choose to support Front Porch Recovery with an optional contribution through Cash App. Those payments are handled by Cash App under its own terms. Contributions are voluntary, are not purchases, and are not tax-deductible. Front Porch Recovery is not a registered nonprofit or charity.</p>
 
+      <h2>Porch Supporter previews and no-charge access</h2>
+      <p>Real paid memberships are not open. The displayed $3/month and $25/year prices are a preview, and the admin sandbox uses test payments only. A sample download, a no-charge access grant, or an admin test checkout does not create a real paid subscription. No-charge workbook and collection access is separate from billing and may have an end date or be revoked.</p>
+      <p>Workbook access lets you save private reflections. After access ends, you can still read or clear your saved reflections while signed in. The free prompts, public card samples, Journal, Community, and existing recovery tools remain available under their usual account requirements.</p>
+      <p>You may download the celebration cards offered by the site for your personal use, including sharing your own card as an image. This permission does not allow selling the designs, distributing a collection of FPR assets, or presenting the branding as your own. A card contains general encouragement, not proof of membership or a recovery outcome. Downloaded cards do not expire when collection access ends.</p>
+
+      <p><strong>Planned cancellation and refunds when paid membership opens:</strong> you will be able to cancel future renewals in the membership billing portal, with access continuing through the end of the paid period. Refund requests will be reviewed individually; billing mistakes will be refunded. To request help, email <a class="legal-link" href="mailto:frontporchrecovery@gmail.com">frontporchrecovery@gmail.com</a>. These planned terms do not open payments or create a subscription.</p>
+
       <h2>7. Ownership of our creative work</h2>
       <p>Unless otherwise stated, the original books, writing, Daily Porch reflections, Toolbox and Porch content, music, the Front Porch Recovery name, logo, and branding, graphics, images, website content, and other creative material on this site belong to Justin Whetstone / Front Porch Recovery and are protected intellectual property. The Front Porch Recovery name and logo may not be used in a way that suggests we endorse or are connected to someone else.</p>
       <p><strong>You're welcome to:</strong> read and use the content for your own personal recovery; share a link to any page; and quote a short excerpt with credit to “Front Porch Recovery” and a link back to the site.</p>
-      <p><strong>You may not, without written permission:</strong> copy, reproduce, or republish full reflections, pages, stories, songs, or images; scrape or bulk-download content from the site, including by automated means; sell our content or include it in paid products, courses, or programs; change our content and present it as your own; use the logo or branding; or otherwise commercially exploit original Front Porch Recovery material.</p>
+      <p><strong>You may not, without written permission:</strong> copy, reproduce, or republish full reflections, pages, stories, songs, or images beyond the celebration-card permission above; scrape or bulk-download content from the site, including by automated means; sell our content or include it in paid products, courses, or programs; change our content and present it as your own; use the logo or branding outside the permitted celebration cards; or otherwise commercially exploit original Front Porch Recovery material.</p>
       <p>Stories shared by community members belong to the people who shared them and are published with their permission. Please don't copy them anywhere else.</p>
       <p>To ask for permission, email us at the address below.</p>
 
@@ -4084,7 +4091,7 @@ const CONFIG = {
      (otherwise the pages point visitors to the Contact form). Change
      lastUpdated whenever any of those pages' wording changes. */
   legal: {
-    lastUpdated: 'October 19, 2026',
+    lastUpdated: 'October 24, 2026',
     ownerName: 'Justin Whetstone',
     contactEmail: 'frontporchrecovery@gmail.com',
     siteUrl: 'https://fpr26.github.io/front-porch-recovery/'
