@@ -32,3 +32,7 @@ Deno.test('revocation, server denial and unavailable access cannot leave downloa
  f.setInvoke(async()=>({error:{message:'forbidden'}}));f.document.getElementById('supporter-collection-download').click();await tick();assert.equal(f.downloads.length,0);assert.equal(f.document.getElementById('supporter-benefits-controls').hidden,true);
  f.setAccess(null);f.refresh();await tick();assert.match(f.document.getElementById('supporter-benefits-status').textContent,/could not be checked/);
 });
+
+Deno.test('production collection access is labeled paid and never mistaken for no-charge or sandbox',async()=>{
+ const f=fixture({access:{can_write:true,access_source:'paid',access_until:'2027-01-01T00:00:00Z',cancellation_scheduled:true}});await tick();const message=f.document.getElementById('supporter-benefits-status').textContent;assert.match(message,/Paid collection access/);assert.match(message,/Cancellation is scheduled/);assert.doesNotMatch(message,/No-charge|Sandbox/);
+});

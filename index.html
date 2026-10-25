@@ -2655,7 +2655,7 @@
     <p style="color:var(--gray);max-width:58ch;margin-top:14px;">Help keep the porch light on, with a few thoughtful extras for your own honest days.</p>
   </div></section>
   <section class="block bg-cream"><div class="wrap">
-    <p class="tag">Membership preview · payments are not open</p>
+    <p class="tag" id="supporter-payment-state">Membership preview · payments are not open</p>
     <div class="supporter-grid">
       <section class="supporter-panel" aria-labelledby="supporter-free-title">
         <h2 id="supporter-free-title">Your seat is always free</h2>
@@ -2665,12 +2665,27 @@
       </section>
       <section class="supporter-panel" aria-labelledby="supporter-paid-title">
         <h2 id="supporter-paid-title">Something extra. Something shared.</h2>
-        <p><strong>Planned membership: $3/month or $25/year.</strong> The yearly option works out to about $2.08 per month, billed annually.</p>
-        <ul class="supporter-list"><li>Guided reflection workbooks</li><li>Additional celebration-card designs</li><li>Personalization options planned for a later release</li></ul>
+        <p><strong id="supporter-price-label">Planned membership: $3/month or $25/year.</strong> The yearly option works out to about $2.08 per month, billed annually.</p>
+        <ul class="supporter-list"><li>A seven-part guided reflection workbook</li><li>Additional celebration-card designs</li><li>Personalization options planned for a later release</li></ul>
         <p>An admin can grant private workbook access at no charge. That access does not require a subscription.</p>
-        <p class="supporter-preview-note">Public payment signup is not open. Private workbook saving is available with approved access; the prompts and sample cards remain free to explore.</p>
+        <p class="supporter-preview-note" id="supporter-payments-note">Public payment signup is not open. Private workbook saving is available with approved access; the prompts and sample cards remain free to explore.</p>
       </section>
     </div>
+    <section id="supporter-live-membership" class="supporter-panel" style="margin-top:28px;" aria-labelledby="supporter-live-title" hidden>
+      <h2 id="supporter-live-title" tabindex="-1">Your Porch Supporter membership</h2>
+      <p>Includes the seven-reflection Pull Up a Chair workbook and six clean celebration-card designs.</p>
+      <p>Optional recurring membership: $3 per month or $25 per year, billed in USD. Cancel future renewals in Stripe’s customer portal. Scheduled cancellation keeps paid access through its end date.</p>
+      <p>Your existing recovery tools and Community stay free. No-charge workbook and collection access remains available through an admin.</p>
+      <p id="supporter-live-status" role="status" aria-live="polite"></p>
+      <div class="supporter-actions">
+        <button type="button" class="btn btn-primary" data-live-action="checkout" data-live-plan="monthly" hidden>Subscribe — $3/month</button>
+        <button type="button" class="btn btn-primary" data-live-action="checkout" data-live-plan="yearly" hidden>Subscribe — $25/year</button>
+        <button type="button" class="btn btn-outline" data-live-action="portal" hidden>Manage paid membership in Stripe</button>
+        <button type="button" class="btn btn-outline" data-live-action="sync" hidden>Refresh paid membership status</button>
+        <button type="button" class="btn btn-outline" id="supporter-live-signin" hidden>Sign in to continue</button>
+      </div>
+      <p class="supporter-preview-note">Stripe handles payment details. Review <a href="#terms" data-nav="terms">Terms</a> and <a href="#privacy" data-nav="privacy">Privacy</a> before subscribing. A checkout return alone does not activate benefits.</p>
+    </section>
     <section class="supporter-panel" style="margin-top:28px;" aria-labelledby="supporter-workbook-title">
       <p class="hero-eyebrow" style="color:var(--sage-text);">Try the workbook</p>
       <h2 id="supporter-workbook-title" style="margin-top:10px;">Pull Up a Chair</h2>
@@ -3806,6 +3821,7 @@
         <p class="ms-modal-text">Open your reflections, check workbook access, or read and clear answers you saved earlier. Your free Journal remains separate.</p>
         <button type="button" class="btn btn-outline btn-block" id="account-workbook-open">Open my workbook</button>
         <button type="button" class="btn btn-outline btn-block" id="account-collection-open" style="margin-top:10px;">Open my card collection</button>
+        <button type="button" class="btn btn-outline btn-block" id="account-paid-membership-open" style="margin-top:10px;" hidden>Manage my paid membership</button>
       </section>
 
       <!-- Phase 7B: the signed-in member's own profile. Loaded and saved
@@ -11308,6 +11324,12 @@ const FPRBadge = (function(){
   if(workbookOpen)workbookOpen.addEventListener('click', function(){
     closeModal();
     goTo('supporter', {scrollTarget:'supporter-answers-title'});
+  });
+
+  const paidMembershipOpen = document.getElementById('account-paid-membership-open');
+  if(paidMembershipOpen)paidMembershipOpen.addEventListener('click', function(){
+    closeModal();
+    goTo('supporter', {scrollTarget:'supporter-live-title'});
   });
 
   const collectionOpen = document.getElementById('account-collection-open');
@@ -19092,6 +19114,75 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   });
 })();
 
+(function initProductionMembership(){
+ const client=window.__fprSupabaseClient,panel=document.getElementById('supporter-live-membership');
+ if(!client || !panel)return;
+ const status=document.getElementById('supporter-live-status'),signin=document.getElementById('supporter-live-signin'),account=document.getElementById('account-paid-membership-open');
+ const buttons=[...panel.querySelectorAll('[data-live-action]')];
+ let revision=0,identity=null,busy=false;
+ function disable(value){buttons.forEach(button=>button.disabled=value);}
+ function closed(keepPanel=false){
+  panel.hidden=!keepPanel;account.hidden=true;buttons.forEach(button=>button.hidden=true);signin.hidden=true;
+  document.getElementById('supporter-payment-state').textContent='Membership preview · payments are not open';
+  document.getElementById('supporter-price-label').textContent='Planned membership: $3/month or $25/year.';
+  document.getElementById('supporter-payments-note').textContent='Public payment signup is not open. Private workbook saving is available with approved access; the prompts and sample cards remain free to explore.';
+ }
+ async function load(){
+  const seq=++revision,wasVisible=!panel.hidden;busy=true;disable(true);closed(wasVisible);if(wasVisible)status.textContent='Checking paid membership status…';
+  try{
+   const available=await client.functions.invoke('membership-live-api',{method:'GET'});if(seq!==revision)return;
+   if(available.error || available.data?.sandbox!==false || available.data.service_ready!==true){closed();return;}
+   const open=available.data.checkout_open===true;
+   const session=await client.auth.getSession();if(seq!==revision)return;
+   identity=session.data?.session?.user?.id || null;
+   let member=null;
+   if(identity){
+    let result=await client.rpc('get_my_paid_membership');if(seq!==revision)return;if(result.error || result.data?.sandbox!==false)throw Error('Status unavailable');member=result.data;
+    if(member.has_customer && document.getElementById('page-supporter')?.classList.contains('active')){
+     const sync=await client.functions.invoke('membership-live-api',{body:{action:'sync'}});if(seq!==revision)return;if(sync.error || sync.data?.sandbox!==false)throw Error('Status unavailable');
+     result=await client.rpc('get_my_paid_membership');if(seq!==revision)return;if(result.error || result.data?.sandbox!==false)throw Error('Status unavailable');member=result.data;
+     document.dispatchEvent(new CustomEvent('fpr:membershipchange'));
+    }
+   }
+   if(!open && !member?.has_customer){closed();return;}
+   panel.hidden=false;signin.hidden=!!identity;
+   if(open){
+    document.getElementById('supporter-payment-state').textContent='Optional Porch Supporter membership';
+    document.getElementById('supporter-price-label').textContent='Membership: $3/month or $25/year.';
+    document.getElementById('supporter-payments-note').textContent='Membership is optional. Existing recovery tools stay free; approved no-charge access remains available.';
+   }
+   const existing=member && !['none','canceled','incomplete_expired'].includes(member.status);
+   buttons.forEach(button=>{button.hidden=button.dataset.liveAction==='checkout'?(!open || !!existing):!member?.has_customer;});
+   account.hidden=!member?.has_customer;
+   if(!identity)status.textContent='Sign in with your FPR account to choose a membership. No payment is collected by this page.';
+   else if(member.has_access)status.textContent='Paid subscription verified. Access ends '+new Date(member.access_until).toLocaleDateString()+'. '+(member.cancel_at_period_end?'Cancellation is scheduled.':'');
+   else if(existing)status.textContent='Billing status: '+String(member.status)+'. Paid benefits are not currently verified. Manage your membership in Stripe or refresh status.';
+   else status.textContent=open?'Choose monthly or yearly. Stripe will show the recurring price before you confirm.':'New memberships are closed. You can still manage your existing billing account in Stripe.';
+  }catch(_){if(seq===revision){panel.hidden=false;buttons.forEach(button=>button.hidden=true);status.textContent='Paid membership status could not be checked. Please try again later. Your free tools remain available.';}}
+  finally{if(seq===revision){busy=false;disable(!identity);}}
+ }
+ buttons.forEach(button=>button.addEventListener('click',async()=>{
+  if(busy || !identity)return;
+  if(button.dataset.liveAction==='sync'){await load();return;}
+  const seq=revision;busy=true;disable(true);status.textContent='Opening Stripe…';
+  try{
+   const result=await client.functions.invoke('membership-live-api',{body:{action:button.dataset.liveAction,plan:button.dataset.livePlan}});if(seq!==revision)return;
+   if(result.error || result.data?.sandbox!==false)throw Error('Request failed');
+   const url=new URL(result.data.url);
+   if(url.protocol!=='https:' || !['checkout.stripe.com','billing.stripe.com'].includes(url.hostname))throw Error('Invalid destination');
+   if(seq===revision)window.location.assign(url.href);
+  }catch(_){if(seq===revision){status.textContent='Could not open paid membership billing. Reopen this page to check the current status. Your free tools remain available.';}}
+  finally{if(seq===revision){busy=false;disable(false);}}
+ }));
+ signin.addEventListener('click',()=>document.getElementById('header-account-btn').click());
+ client.auth.onAuthStateChange((_event,session)=>{
+  const next=session?.user?.id || null;
+  if(next!==identity){identity=next;++revision;busy=false;closed();setTimeout(load,0);}
+ });
+ document.addEventListener('fpr:pagechange',event=>{if(event.detail?.page==='supporter')load();});
+ load();
+})();
+
 /* Sandbox checkout tools: visible to admins only; server independently verifies admin. */
 (function initMembershipSandbox(){
   const panel=document.getElementById('supporter-sandbox');
@@ -19165,6 +19256,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
    const end=response.data.access_until?' through '+new Date(response.data.access_until).toLocaleDateString():'';
    if(!allowed)status.textContent='Collection access is not active. Free sample downloads are still available below.';
    else if(response.data.access_source==='sandbox')status.textContent='Sandbox collection test access'+end+'. '+(response.data.cancellation_scheduled?'Cancellation is scheduled. ':'')+'No real paid membership is active.';
+   else if(response.data.access_source==='paid')status.textContent='Paid collection access'+end+'. '+(response.data.cancellation_scheduled?'Cancellation is scheduled. ':'')+'Your downloads contain no private information.';
    else if(response.data.access_source==='admin')status.textContent='Admin collection access. Choose any of the six designs.';
    else status.textContent='No-charge collection access'+end+'. No subscription is required.';
   }catch(_){if(seq===revision){reset();status.textContent='Collection access could not be checked. Your workbook and free samples remain available. Try Refresh collection access.';}}
@@ -19219,7 +19311,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     form.hidden=!user || (!canWrite && entries.length===0);
     progress.textContent=user?entries.filter(e=>e.completed).length+' of 7 reflections complete. Work at your own pace.':'';
   }
-  function accessMessage(){if(canWrite && accessSource==='sandbox')return 'Sandbox workbook test access through '+new Date(until).toLocaleDateString()+'. '+(cancellationScheduled?'Cancellation is scheduled. ':'')+'No real paid membership is active. Your answers are private.';return canWrite?(until?'Workbook access is available through '+new Date(until).toLocaleDateString()+'. Your answers are private.':'Administrator workbook access. Your answers are private.'):'Workbook access is not active. Any saved answers remain available to you; the free Journal and preview are still available.';}
+  function accessMessage(){if(canWrite && accessSource==='paid')return 'Paid workbook access through '+new Date(until).toLocaleDateString()+'. '+(cancellationScheduled?'Cancellation is scheduled. ':'')+'Your answers are private.';if(canWrite && accessSource==='sandbox')return 'Sandbox workbook test access through '+new Date(until).toLocaleDateString()+'. '+(cancellationScheduled?'Cancellation is scheduled. ':'')+'No real paid membership is active. Your answers are private.';return canWrite?(until?'Workbook access is available through '+new Date(until).toLocaleDateString()+'. Your answers are private.':'Administrator workbook access. Your answers are private.'):'Workbook access is not active. Any saved answers remain available to you; the free Journal and preview are still available.';}
   async function load(identityChange=false,preserveDraft=false){
     if((busy || loading) && !identityChange)return;
     loading=true;renderBusy(true);

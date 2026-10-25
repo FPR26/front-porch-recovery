@@ -8,6 +8,7 @@ await db.exec(fs.readFileSync(root+'supabase/migrations/phase12b_supporter_sandb
 await db.exec(fs.readFileSync(root+'supabase/migrations/phase12c_supporter_workbook.sql','utf8'));
 await db.exec(fs.readFileSync(root+'supabase/migrations/phase12d_workbook_sandbox_access.sql','utf8'));
 await db.exec(fs.readFileSync(root+'supabase/migrations/phase14a_supporter_benefits.sql','utf8'));
+await db.exec(fs.readFileSync(root+'supabase/migrations/phase15a_production_membership.sql','utf8'));
 const as=async id=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role authenticated')};
 const own=async()=> (await db.query('select public.get_my_supporter_workbook() value')).rows[0].value;
 const save=async(day,answers,done,version)=>(await db.query('select public.save_my_supporter_reflection($1,$2,$3,$4) version',[day,answers,done,version])).rows[0].version;
@@ -42,5 +43,20 @@ await as(a);await db.query('select public.admin_set_supporter_access($1,30)',[pb
 await as(c);assert.equal((await db.query('select public.get_my_supporter_benefits() value')).rows[0].value.can_write,false);
 await db.exec('reset role;set role anon');await assert.rejects(db.query('select public.get_my_supporter_benefits()'),/permission denied/);
 console.log('PASS: benefits RPC returns only own access metadata, no private answers, and denies anonymous execution.');
+await db.exec('reset role');const launch=(await db.query('select * from public.membership_live_settings')).rows[0];assert.equal(launch.checkout_enabled,false);assert.equal(launch.benefits_enabled,false);
+await db.query("insert into public.membership_live_billing(user_id,customer_id,subscription_id,status,access_until) values($1,'live-customer','live-subscription','active',now()+interval '30 days')",[c]);
+await as(c);assert.equal((await own()).can_write,false);const closedStatus=(await db.query('select public.get_my_paid_membership() value')).rows[0].value;assert.equal(closedStatus.has_access,false);assert.equal(closedStatus.sandbox,false);assert.equal(closedStatus.customer_id,undefined);
+await assert.rejects(db.query('select * from public.membership_live_billing'),/permission denied/);await assert.rejects(db.query('update public.membership_live_settings set checkout_enabled=true'),/permission denied/);await assert.rejects(db.query('select public.get_membership_live_launch_state()'),/permission denied/);
+await db.exec('reset role');await db.query('update public.membership_live_settings set checkout_enabled=true,benefits_enabled=true');await as(c);assert.equal((await own()).access_source,'paid');const liveVersion=await save(3,['paid a','paid b','paid c'],true,0);
+await as(b);assert.equal((await own()).access_source,'no_charge');assert.equal((await own()).entries.some(e=>e.reflection_number===3),false);
+await db.exec('reset role');await db.query('update public.membership_live_settings set checkout_enabled=false');await as(c);assert.equal((await own()).access_source,'paid');
+await db.exec('reset role');await db.query("update public.membership_live_billing set status='canceled' where user_id=$1",[c]);await as(c);assert.equal((await own()).can_write,false);assert.equal((await own()).entries[0].answers[0],'paid a');await assert.rejects(save(3,['a','b','c'],false,liveVersion),/not active/);await db.query('select public.clear_my_supporter_reflection(3,$1)',[liveVersion]);
+await as(a);await db.query('select public.admin_set_supporter_access($1,30)',[pc]);await as(c);assert.equal((await own()).access_source,'no_charge');
+await as(a);await db.query('select public.admin_set_supporter_access($1,0)',[pc]);await db.exec('reset role');await db.query("update public.membership_live_billing set status='active',access_until=now()-interval '1 second' where user_id=$1",[c]);await as(c);assert.equal((await own()).can_write,false);
+const liveToken='20000000-0000-0000-0000-000000000001';await db.exec('reset role;set role service_role');assert.equal((await db.query('select public.claim_membership_live_billing($1,$2) claimed',[c,liveToken])).rows[0].claimed,true);await assert.rejects(db.query("select public.save_membership_live_snapshot($1,$2,'live-subscription','active',now()+interval '1 day',false)",[c,'20000000-0000-0000-0000-000000000002']),/expired/);
+await db.query("select public.save_membership_live_snapshot($1,$2,'live-subscription','active',now()+interval '1 day',true)",[c,liveToken]);await as(c);assert.equal((await own()).cancellation_scheduled,true);assert.equal((await own()).access_source,'paid');
+await db.exec('reset role');await db.query('update public.membership_live_settings set benefits_enabled=false');await as(c);assert.equal((await own()).can_write,false);
+await db.exec('reset role;set role anon');await assert.rejects(db.query('select public.get_my_paid_membership()'),/permission denied/);
+console.log('PASS: production launch gates default closed; live snapshots separate from sandbox; only enabled paid benefits grant access; stopping sales preserves existing paid access; canceled/expired paid state denies writes and retains reads/clear; no-charge grants independent; settings/snapshots service-only; stale live lock rejected.');
 await db.close();console.log('PASS: HTML script syntax; actual SQL migration; owner-only read/write; admin cannot read other answers; grants/extensions/revocation/history; expiry retains reads; clear after revocation; input validation; stale writes and delete/recreate ABA protection; anonymous/direct-table access denied.');
 })().catch(e=>{console.error(e);process.exitCode=1});

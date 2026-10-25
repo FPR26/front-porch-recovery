@@ -1,6 +1,6 @@
 # Phase 14 — member collection delivery
 
-Prepared October 24, 2026. Implementation and local verification complete; hosted deployment pending. Real payments remain closed.
+Prepared October 24, 2026. Deployed as a31c782. Operator reached the collection via Account and showed the clean Porch Light preview with official logo and no sample label after requesting a download. OS file-save completion was not separately inspected; no repeated payment test is required. Real payments remain closed.
 
 ## Member experience
 

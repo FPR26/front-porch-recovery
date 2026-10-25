@@ -445,3 +445,7 @@ The seven workbook reflections retain their original prompts, with clear draft/o
 ## Phase 14 member collection
 
 Prepared authenticated clean-card delivery, current collection-access status and Account shortcuts. Apply phase14a_supporter_benefits.sql, deploy supporter-cards, then publish. Existing labeled samples remain free. Deployment and verification: `supabase/SUPPORTER_COLLECTION.md`. Real payments remain disabled.
+
+## Phase 15 production billing foundation — disabled
+
+Prepared separate production billing tables, API/webhook routes, server-verified paid benefits, member management and explicit closed launch gates. No live credentials or payment activation are part of this deployment. Apply phase15a_production_membership.sql, deploy membership-live-api and stripe-live-webhook, then publish. Both migration flags must remain false. Read `supabase/PRODUCTION_MEMBERSHIP.md` before deployment or future launch work.

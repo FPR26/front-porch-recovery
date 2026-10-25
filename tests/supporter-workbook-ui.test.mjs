@@ -74,3 +74,7 @@ Deno.test('access refresh failure preserves an unsaved workbook draft',async()=>
  f.setGetter(async()=>({error:{message:'offline'}}));f.document.dispatchEvent(new f.window.CustomEvent('fpr:membershipchange'));await tick();
  assert.equal(f.document.querySelector('#supporter-answer-fields textarea').value,'KEEP ON NETWORK FAILURE');assert.equal(f.document.getElementById('supporter-workbook-form').hidden,false);assert.equal(f.document.getElementById('supporter-workbook-save').disabled,true);
 });
+
+Deno.test('production workbook access is labeled paid without sandbox wording',async()=>{
+ const f=fixture();await tick();f.setGetter(async()=>({data:{can_write:true,access_source:'paid',access_until:'2027-01-01T00:00:00Z',cancellation_scheduled:true,entries:[]}}));f.document.getElementById('supporter-workbook-reload').click();await tick();const message=f.document.getElementById('supporter-workbook-status').textContent;assert.match(message,/Paid workbook access/);assert.match(message,/Cancellation is scheduled/);assert.doesNotMatch(message,/Sandbox|No real paid/);
+});

@@ -9,3 +9,11 @@ verify_jwt = false
 [functions.supporter-cards]
 # Handler verifies Auth and current workbook/collection entitlement on every request.
 verify_jwt = false
+
+[functions.membership-live-api]
+# Production handler verifies Auth; new checkout also requires both launch gates.
+verify_jwt = false
+
+[functions.stripe-live-webhook]
+# Production handler verifies Stripe signature and strictly requires live events.
+verify_jwt = false
