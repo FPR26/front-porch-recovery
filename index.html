@@ -804,6 +804,7 @@
   .header-account-btn{background:none; border:none; font-size:.92rem; font-weight:600; color:var(--charcoal); padding:8px 6px; white-space:nowrap;}
   .header-account-btn:hover{text-decoration:underline;}
   .header-account-btn{max-width:clamp(110px,24vw,290px);overflow:hidden;text-overflow:ellipsis;vertical-align:middle;}
+  #supporter-workbook-signin[hidden],#supporter-trial-offer[hidden],#jr-workbook[hidden],#supporter-prompt-list[hidden]{display:none !important;}
   .recovery-shortcuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:22px;}
   .recovery-shortcut{display:flex;flex-direction:column;gap:8px;padding:20px;border:1px solid var(--sage);border-radius:14px;background:var(--white,#fff);color:var(--charcoal);text-decoration:none;}
   .recovery-shortcut:hover{border-color:var(--charcoal);}
@@ -1263,6 +1264,21 @@
   .supporter-days{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0;}
   .supporter-days button{min-width:44px; min-height:44px; border:1px solid var(--sage-deep);border-radius:8px;padding:8px 12px;background:white;color:var(--charcoal);cursor:pointer;font:inherit;}
   .supporter-days button[aria-pressed="true"]{background:var(--sage-deep);color:white;}
+  #supporter-answer-fields textarea{box-sizing:border-box;min-width:0;min-height:128px;resize:vertical;padding:12px;font:inherit;font-size:16px;line-height:1.6;}
+  #supporter-save-state{margin-top:12px;font-weight:600;line-height:1.5;}
+  #supporter-save-state[data-state="unsaved"]{color:#704500;}
+  #supporter-save-state[data-state="saved"]{color:var(--sage-deep);}
+  #supporter-workbook-private .btn,#jr-workbook .btn{white-space:normal;text-align:center;max-width:100%;}
+  #jr-workbook details{padding:14px 0;border-top:1px solid var(--line);overflow-wrap:anywhere;}
+  #jr-workbook summary{cursor:pointer;min-height:44px;line-height:1.5;font-weight:600;}
+  #jr-workbook details .btn{margin-top:16px;}
+  #supporter-answers-title,#jr-workbook-title{scroll-margin-top:110px;}
+  @media(max-width:480px){
+    .supporter-days{display:grid;grid-template-columns:repeat(4,minmax(44px,1fr));}
+    .supporter-days button{width:100%;}
+    #supporter-workbook-private .supporter-actions,#jr-workbook .supporter-actions{flex-direction:column;align-items:stretch;}
+    #supporter-workbook-private .btn,#jr-workbook .btn{width:100%;box-sizing:border-box;min-height:48px;}
+  }
   .supporter-preview-note{font-size:.92rem;color:var(--charcoal-soft);margin-top:12px;}
   .supporter-card-image{display:block;width:100%;height:auto;border-radius:12px;margin:14px 0;}
   @media(max-width:640px){.supporter-grid{grid-template-columns:1fr;}.supporter-panel{padding:20px;}}
@@ -1791,7 +1807,7 @@
       </div>
 
       <section class="form-card mr-card" id="jr-workbook" hidden aria-labelledby="jr-workbook-title">
-        <h2 id="jr-workbook-title">Workbook reflections</h2>
+        <h2 id="jr-workbook-title" tabindex="-1">Workbook reflections</h2>
         <p>Your saved Pull Up a Chair reflections, with their questions. These are the same records as the workbook, so saving there updates this view. Freeform Journal entries below are separate and remain free.</p>
         <p id="jr-workbook-status" role="status"></p>
         <div id="jr-workbook-entries"></div>
@@ -2730,6 +2746,8 @@
           <div id="supporter-answer-fields"></div>
           <label style="display:flex;gap:10px;align-items:center;margin-top:16px;"><input type="checkbox" id="supporter-workbook-complete"> Mark this reflection complete</label>
           <div class="supporter-actions"><button type="submit" class="btn btn-primary" id="supporter-workbook-save">Save reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-reload">Reload saved reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-clear">Clear saved reflection</button></div>
+          <p id="supporter-save-state" role="status" aria-live="polite" data-state="empty">No saved answers for this reflection.</p>
+          <div class="supporter-actions"><a class="btn btn-outline" id="workbook-journal-link" href="#journal" data-nav="journal" data-scroll-target="jr-workbook-title">View saved workbook reflections in Journal</a></div>
           <p class="supporter-preview-note">Saved to your account only when you press Save reflection. The same saved reflection appears in Journal under Workbook reflections. Admins manage access but cannot read these answers through the app. You can read or clear your saved reflections after access ends.</p>
         </form>
       </section>
@@ -19376,7 +19394,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   const complete=document.getElementById('supporter-workbook-complete'),save=document.getElementById('supporter-workbook-save'),reload=document.getElementById('supporter-workbook-reload'),clear=document.getElementById('supporter-workbook-clear');
   const trialOffer=document.getElementById('supporter-trial-offer'),trialStart=document.getElementById('supporter-trial-start'),signin=document.getElementById('supporter-workbook-signin');
   const journal=document.getElementById('jr-workbook'),journalEntries=document.getElementById('jr-workbook-entries'),journalStatus=document.getElementById('jr-workbook-status');
-  let trialAvailable=false,trialEnds=null,trialExpired=false,expiryTimer=null,pendingDay=null;
+  let trialAvailable=false,trialEnds=null,trialExpired=false,expiryTimer=null,pendingDay=null,saving=false;
   let user=null,epoch=0,day=1,entries=[],canWrite=false,until=null,accessSource=null,cancellationScheduled=false,dirty=false,busy=false,loading=false,pendingAccessRefresh=false;
   function renderJournal(){
     journalEntries.replaceChildren();journal.hidden=!user;
@@ -19386,7 +19404,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
       const detail=document.createElement('details');detail.style.marginTop='16px';
       const summary=document.createElement('summary');summary.textContent=entry.reflection_number+'. '+section.title+(entry.completed?' · Complete':' · Draft');detail.append(summary);
       section.prompts.forEach((prompt,index)=>{const question=document.createElement('h3');question.textContent=prompt;question.style.marginTop='14px';const answer=document.createElement('p');answer.style.whiteSpace='pre-wrap';answer.textContent=entry.answers[index] || 'No answer saved.';detail.append(question,answer);});
-      const open=document.createElement('button');open.type='button';open.className='btn btn-outline';open.textContent=canWrite?'Edit this reflection in workbook':'Read this reflection in workbook';open.addEventListener('click',()=>window.FPRWorkbookOpen(entry.reflection_number-1));detail.append(open);journalEntries.append(detail);
+      const open=document.createElement('button');open.type='button';open.className='btn btn-outline';open.textContent='Return to reflection '+entry.reflection_number+(canWrite?' to edit':' to read');open.addEventListener('click',()=>window.FPRWorkbookOpen(entry.reflection_number-1));detail.append(open);journalEntries.append(detail);
     });
   }
   function scheduleExpiry(serverNow){
@@ -19401,7 +19419,13 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   window.FPRWorkbookOpen=function(index){if(!Number.isInteger(index)||index<0||index>6)return;if(dirty && !window.confirm('Leave this reflection without saving your changes?'))return;dirty=false;pendingDay=index;if(typeof window.goTo==='function')window.goTo('supporter',{scrollTarget:'supporter-answers-title'});openPending();};
   document.getElementById('jr-workbook-reload').addEventListener('click',()=>load(false,true));
   signin.addEventListener('click',()=>document.getElementById('header-account-btn').click());
-  function message(text){status.textContent=text;}
+  function paintSaveState(){
+    const state=document.getElementById('supporter-save-state');
+    const entry=entries.find(item=>item.reflection_number===day);
+    state.dataset.state=saving?'saving':dirty?'unsaved':entry?'saved':'empty';
+    state.textContent=saving?'Saving reflection…':dirty?(canWrite?'Unsaved changes — press Save reflection. These changes are not in Journal yet.':'Unsaved draft — workbook access is required to save. Saved answers remain in Journal.'):entry?'Saved to your account. Available in Journal under Workbook reflections.':'No saved answers for this reflection.';
+  }
+  function message(text){status.textContent=text;paintSaveState();}
   function render(){
     const entry=entries.find(e=>e.reflection_number===day);
     fields.replaceChildren();
@@ -19457,15 +19481,15 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     e.preventDefault();if(busy || loading || !user || !canWrite)return;
     const answers=Array.from(fields.querySelectorAll('textarea')).map(t=>t.value);
     if(complete.checked && answers.some(a=>!a.trim())){message('Answer all three prompts before marking this reflection complete, or save it as a draft.');return;}
-    const seq=epoch,reflection=day,entry=entries.find(v=>v.reflection_number===day);busy=true;renderBusy(true);message('Saving your reflection…');
+    const seq=epoch,reflection=day,entry=entries.find(v=>v.reflection_number===day);busy=true;saving=true;renderBusy(true);message('Saving your reflection…');
     try{
       const result=await client.rpc('save_my_supporter_reflection',{p_reflection:reflection,p_answers:answers,p_completed:complete.checked,p_version:entry?.version || 0});
       if(seq!==epoch)return;if(result.error){if(result.error.code==='42501'){canWrite=false;renderBusy(false);}message(result.error.code==='40001'?'This reflection changed in another tab. Your draft is still here. Use Reload saved reflection to load the latest version.':result.error.code==='42501'?'Workbook access is no longer active. Your draft is still here; your saved answers remain yours.':'Could not save. Your draft is still here. Try again when connected.');return;}
       entries=entries.filter(v=>v.reflection_number!==reflection);entries.push({reflection_number:reflection,answers,completed:complete.checked,version:result.data});dirty=false;render();message('Reflection saved privately. It is also available in Journal under Workbook reflections.');try{document.dispatchEvent(new CustomEvent('fpr:workbookchange'));}catch(_){}
     }catch(_){if(seq===epoch)message('Could not save. Your draft is still here. Try again when connected.');}
-    finally{if(seq!==epoch)return;busy=false;renderBusy(false);if(pendingAccessRefresh){pendingAccessRefresh=false;load(false,true);}}
+    finally{if(seq!==epoch)return;busy=false;saving=false;renderBusy(false);if(pendingAccessRefresh){pendingAccessRefresh=false;load(false,true);}}
   });
-  function renderBusy(value){value=value || loading;trialStart.disabled=value || !trialAvailable;save.disabled=value || !canWrite;clear.disabled=value || !entries.some(v=>v.reflection_number===day);reload.disabled=value;complete.disabled=value || !canWrite;fields.querySelectorAll('textarea').forEach(t=>t.readOnly=value || !canWrite);}
+  function renderBusy(value){value=value || loading;trialStart.disabled=value || !trialAvailable;save.disabled=value || !canWrite;clear.disabled=value || !entries.some(v=>v.reflection_number===day);reload.disabled=value;complete.disabled=value || !canWrite;fields.querySelectorAll('textarea').forEach(t=>t.readOnly=value || !canWrite);paintSaveState();}
   reload.addEventListener('click',()=>{if(!busy && (!dirty || window.confirm('Discard unsaved changes and reload your saved reflection?')))load();});
   clear.addEventListener('click',async()=>{
     const entry=entries.find(v=>v.reflection_number===day);if(busy || loading || !user || !entry)return;
@@ -19478,7 +19502,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   let identity=null;
   client.auth.onAuthStateChange((_event,session)=>{
     const next=session?.user?.id || null;
-    if(next!==identity){identity=next;++epoch;user=null;entries=[];canWrite=false;dirty=false;busy=false;loading=false;trialAvailable=false;trialEnds=null;trialExpired=false;pendingDay=null;clearTimeout(expiryTimer);trialOffer.hidden=true;fields.replaceChildren();form.hidden=true;progress.textContent='';renderJournal();message('Checking private workbook access…');if(document.getElementById('page-supporter')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active'))setTimeout(()=>load(true),0);}
+    if(next!==identity){identity=next;++epoch;user=null;entries=[];canWrite=false;dirty=false;busy=false;saving=false;loading=false;trialAvailable=false;trialEnds=null;trialExpired=false;pendingDay=null;clearTimeout(expiryTimer);trialOffer.hidden=true;fields.replaceChildren();form.hidden=true;progress.textContent='';renderJournal();message('Checking private workbook access…');if(document.getElementById('page-supporter')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active'))setTimeout(()=>load(true),0);}
   });
   document.addEventListener('fpr:pagechange',e=>{if(e.detail?.page==='supporter' || e.detail?.page==='journal')load(false,true);});
   if(document.getElementById('page-supporter')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active'))load(true);
