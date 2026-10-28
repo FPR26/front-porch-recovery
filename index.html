@@ -1790,6 +1790,13 @@
         </div>
       </div>
 
+      <section class="form-card mr-card" id="jr-workbook" hidden aria-labelledby="jr-workbook-title">
+        <h2 id="jr-workbook-title">Workbook reflections</h2>
+        <p>Your saved Pull Up a Chair reflections, with their questions. These are the same records as the workbook, so saving there updates this view. Freeform Journal entries below are separate and remain free.</p>
+        <p id="jr-workbook-status" role="status"></p>
+        <div id="jr-workbook-entries"></div>
+        <div class="supporter-actions"><a class="btn btn-outline" href="#supporter" data-nav="supporter" data-scroll-target="supporter-workbook-title">Open Pull Up a Chair</a><button class="btn btn-outline" type="button" id="jr-workbook-reload">Refresh workbook reflections</button></div>
+      </section>
       <div id="jr-signedin" hidden>
         <div class="status-msg status-error" id="jr-load-error" role="alert"><span id="jr-load-error-text"></span> <button type="button" class="mr-link" id="jr-retry">Try again</button></div>
 
@@ -2685,7 +2692,7 @@
         <p><strong id="supporter-price-label">Planned membership: $3/month or $25/year.</strong> The yearly option works out to about $2.08 per month, billed annually.</p>
         <ul class="supporter-list"><li>A seven-part guided reflection workbook</li><li>Additional celebration-card designs</li><li>Personalization options planned for a later release</li></ul>
         <p>An admin can grant private workbook access at no charge. That access does not require a subscription.</p>
-        <p class="supporter-preview-note" id="supporter-payments-note">Public payment signup is not open. Private workbook saving is available with approved access; the prompts and sample cards remain free to explore.</p>
+        <p class="supporter-preview-note" id="supporter-payments-note">Public payment signup is not open. Try seven days of private workbook saving with an explicit free trial, or use approved access. Prompts and sample cards remain free to explore.</p>
       </section>
     </div>
     <section id="supporter-live-membership" class="supporter-panel" style="margin-top:28px;" aria-labelledby="supporter-live-title" hidden>
@@ -2706,24 +2713,31 @@
     <section class="supporter-panel" style="margin-top:28px;" aria-labelledby="supporter-workbook-title">
       <p class="hero-eyebrow" style="color:var(--sage-text);">Try the workbook</p>
       <h2 id="supporter-workbook-title" tabindex="-1" style="margin-top:10px;scroll-margin-top:100px;">Pull Up a Chair</h2>
-      <p>Seven small reflections for finding your footing. Take them in any order, at your own pace. Skip any prompt you do not want to answer; you can save an unfinished reflection. There is no streak to protect and no deadline to meet.</p>
+      <p>Seven small reflections for finding your footing. Take them in any order, at your own pace. Skip any prompt you do not want to answer; you can save an unfinished reflection. There is no streak to protect. The prompts stay free to explore; a saving trial lasts seven days.</p>
       <div class="supporter-days" id="supporter-workbook-days" role="group" aria-label="Choose a workbook reflection"></div>
       <div id="supporter-workbook-reflection" aria-live="polite" aria-atomic="true"></div>
-      <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="journal">Write in your free Journal</button></div>
-      <p class="supporter-preview-note">Explore all seven reflections for free. No paid membership is needed to read the prompts or write in your free Journal. Saving answers inside this workbook requires approved access.</p>
-      <div class="supporter-actions"><a class="btn btn-outline" id="workbook-membership-link" href="#supporter" data-nav="supporter" data-scroll-target="supporter-membership-title">Learn about Porch Supporter membership</a></div>
-      <p class="supporter-preview-note">Like the workbook? See what Porch Supporter includes. Paid signup is not open yet.</p>
       <section id="supporter-workbook-private" style="margin-top:24px;border-top:1px solid var(--line);padding-top:24px;" aria-labelledby="supporter-answers-title">
         <h3 id="supporter-answers-title" tabindex="-1">Your private workbook</h3>
         <p id="supporter-workbook-status" role="status" aria-live="polite">Sign in to check workbook access. The free preview does not save answers.</p>
         <p id="supporter-workbook-progress" class="supporter-preview-note"></p>
+        <div id="supporter-trial-offer" hidden>
+          <p>Try saving and editing all seven reflections for seven days. One trial per account, starting when you press the button below. No card and no automatic subscription. Your saved answers stay readable in the workbook and Journal afterward; workbook editing then requires supporter access or a no-charge grant.</p>
+          <p><strong>Paid signup is not open yet.</strong> The free Journal stays available after the trial.</p>
+          <button type="button" class="btn btn-primary" id="supporter-trial-start">Start my seven-day free trial</button>
+        </div>
+        <button type="button" class="btn btn-outline" id="supporter-workbook-signin" hidden>Sign in to try saving answers</button>
         <form id="supporter-workbook-form" hidden>
           <div id="supporter-answer-fields"></div>
           <label style="display:flex;gap:10px;align-items:center;margin-top:16px;"><input type="checkbox" id="supporter-workbook-complete"> Mark this reflection complete</label>
           <div class="supporter-actions"><button type="submit" class="btn btn-primary" id="supporter-workbook-save">Save reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-reload">Reload saved reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-clear">Clear saved reflection</button></div>
-          <p class="supporter-preview-note">Saved to your account only when you press Save. Admins manage access but cannot read these answers through the app. You can read or clear your saved reflections after access ends.</p>
+          <p class="supporter-preview-note">Saved to your account only when you press Save reflection. The same saved reflection appears in Journal under Workbook reflections. Admins manage access but cannot read these answers through the app. You can read or clear your saved reflections after access ends.</p>
         </form>
       </section>
+      <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="journal">Write in your free Journal</button></div>
+      <p class="supporter-preview-note">Explore all seven reflections for free. No paid membership is needed to read the prompts or write in your free Journal. Start a seven-day free trial to save answers here, or use existing workbook access.</p>
+      <div class="supporter-actions"><a class="btn btn-outline" id="workbook-membership-link" href="#supporter" data-nav="supporter" data-scroll-target="supporter-membership-title">Learn about Porch Supporter membership</a></div>
+      <p class="supporter-preview-note">Like the workbook? See what Porch Supporter includes. Paid signup is not open yet. Your trial will not become a paid subscription.</p>
+
     </section>
     <section id="supporter-sandbox" class="supporter-panel" style="margin-top:28px;" hidden aria-labelledby="supporter-sandbox-title">
       <h2 id="supporter-sandbox-title">Admin · Membership sandbox</h2>
@@ -3500,7 +3514,7 @@
       <p>The Recovery Counter and Daily Check-In are not part of your account. They stay in your browser as described above, even when you're signed in. You can change or remove your bio, photo, and recovery date at any time from your profile.</p>
 
       <h2>Private supporter workbook</h2>
-      <p>If you have workbook access and choose to save a reflection, its answers and completion state are stored privately with your account in Supabase. They are not posted to the Community or sent to Stripe. Administrators can grant, extend, or revoke no-charge access, but the app does not let them read your answers. Access changes are recorded for administration. You can still read or clear your saved reflections after workbook access ends.</p>
+      <p>If you have workbook access and choose to save a reflection, its answers and completion state are stored privately with your account in Supabase. They are not posted to the Community or sent to Stripe. Administrators can grant, extend, or revoke no-charge access, but the app does not let them read your answers. Access changes are recorded for administration. You can start one seven-day workbook trial per account; it starts only when you choose to activate it. Trial start and end dates are stored privately with your account. No payment card or automatic subscription is involved. Journal displays the same saved workbook reflections, without making duplicate copies. You can still read or clear your saved reflections after workbook access ends.</p>
 
       <h2>Membership testing and collection downloads</h2>
       <p>FPR is testing optional membership checkout with Stripe, available only to administrators in a sandbox. Stripe handles the test checkout and billing portal. FPR stores a billing account identifier, subscription status, and access dates separately from recovery records. Journal entries, reflections, and recovery history are not sent to Stripe. Real paid memberships are not enabled. Stripe receives an internal account reference so test billing can be linked to the correct FPR account; recovery answers are not included. Collection downloads check your account access, but do not add your name, recovery date, or workbook answers to the card. Downloaded PNG files are saved on your device and remain there until you remove them. See <a class="legal-link" href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe’s privacy policy ↗</a>.</p>
@@ -8524,11 +8538,12 @@ function drawSupporterSample(ctx, logo, style){drawSupporterCard(ctx,logo,style,
     reflection.replaceChildren();
     const title=document.createElement('h3');title.textContent=(index+1)+'. '+day.title;reflection.appendChild(title);
     const intro=document.createElement('p');intro.textContent=day.intro;reflection.appendChild(intro);
-    const list=document.createElement('ol');list.className='supporter-list';
+    const list=document.createElement('ol');list.className='supporter-list';list.id='supporter-prompt-list';list.hidden=!document.getElementById('supporter-workbook-form').hidden;
     day.prompts.forEach(prompt=>{const li=document.createElement('li');li.textContent=prompt;list.appendChild(li);});reflection.appendChild(list);
     const action=document.createElement('p');action.textContent='One small step: '+day.action;reflection.appendChild(action);
   }
   SUPPORTER_WORKBOOK.forEach((day,i)=>{const button=document.createElement('button');button.type='button';button.textContent=String(i+1);button.setAttribute('aria-label','Reflection '+(i+1)+': '+day.title);button.addEventListener('click',()=>select(i));days.appendChild(button);});
+  window.FPRWorkbookSelect=select;
   select(0);
   const status=document.getElementById('supporter-card-status');
   const retry=document.getElementById('supporter-card-retry');
@@ -19188,7 +19203,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   panel.hidden=!keepPanel;account.hidden=true;buttons.forEach(button=>button.hidden=true);signin.hidden=true;
   document.getElementById('supporter-payment-state').textContent='Membership preview · payments are not open';
   document.getElementById('supporter-price-label').textContent='Planned membership: $3/month or $25/year.';
-  document.getElementById('supporter-payments-note').textContent='Public payment signup is not open. Private workbook saving is available with approved access; the prompts and sample cards remain free to explore.';
+  document.getElementById('supporter-payments-note').textContent='Public payment signup is not open. Start an optional seven-day workbook trial, or use approved access. The prompts and sample cards remain free to explore.';
  }
  async function load(){
   const seq=++revision,wasVisible=!panel.hidden;busy=true;disable(true);closed(wasVisible);if(wasVisible)status.textContent='Checking paid membership status…';
@@ -19359,7 +19374,33 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   if(!client || !form)return;
   const status=document.getElementById('supporter-workbook-status'),fields=document.getElementById('supporter-answer-fields'),progress=document.getElementById('supporter-workbook-progress');
   const complete=document.getElementById('supporter-workbook-complete'),save=document.getElementById('supporter-workbook-save'),reload=document.getElementById('supporter-workbook-reload'),clear=document.getElementById('supporter-workbook-clear');
+  const trialOffer=document.getElementById('supporter-trial-offer'),trialStart=document.getElementById('supporter-trial-start'),signin=document.getElementById('supporter-workbook-signin');
+  const journal=document.getElementById('jr-workbook'),journalEntries=document.getElementById('jr-workbook-entries'),journalStatus=document.getElementById('jr-workbook-status');
+  let trialAvailable=false,trialEnds=null,trialExpired=false,expiryTimer=null,pendingDay=null;
   let user=null,epoch=0,day=1,entries=[],canWrite=false,until=null,accessSource=null,cancellationScheduled=false,dirty=false,busy=false,loading=false,pendingAccessRefresh=false;
+  function renderJournal(){
+    journalEntries.replaceChildren();journal.hidden=!user;
+    journalStatus.textContent=entries.length ? (canWrite?'Open a reflection to read it or return to the workbook to edit.':'Workbook editing is not active. Your saved answers remain readable; your free Journal is still available.') : 'No workbook reflections saved yet. Your freeform Journal is available below.';
+    entries.forEach(entry=>{
+      const section=SUPPORTER_WORKBOOK[entry.reflection_number-1];if(!section)return;
+      const detail=document.createElement('details');detail.style.marginTop='16px';
+      const summary=document.createElement('summary');summary.textContent=entry.reflection_number+'. '+section.title+(entry.completed?' · Complete':' · Draft');detail.append(summary);
+      section.prompts.forEach((prompt,index)=>{const question=document.createElement('h3');question.textContent=prompt;question.style.marginTop='14px';const answer=document.createElement('p');answer.style.whiteSpace='pre-wrap';answer.textContent=entry.answers[index] || 'No answer saved.';detail.append(question,answer);});
+      const open=document.createElement('button');open.type='button';open.className='btn btn-outline';open.textContent=canWrite?'Edit this reflection in workbook':'Read this reflection in workbook';open.addEventListener('click',()=>window.FPRWorkbookOpen(entry.reflection_number-1));detail.append(open);journalEntries.append(detail);
+    });
+  }
+  function scheduleExpiry(serverNow){
+    clearTimeout(expiryTimer);expiryTimer=null;
+    if(accessSource!=='trial' || !canWrite || !trialEnds)return;
+    const remaining=Date.parse(trialEnds)-Date.parse(serverNow);
+    if(!Number.isFinite(remaining))return;
+    expiryTimer=setTimeout(()=>{canWrite=false;trialAvailable=false;trialExpired=true;renderBusy(false);renderJournal();message('Your seven-day trial has ended. Saved answers remain readable in the workbook and Journal. '+(dirty?'Your unsaved draft is still here, but cannot be saved without workbook access. ':'')+'Your free Journal remains available.');},Math.min(Math.max(remaining,0)+100,2147483647));
+  }
+  function acceptAccess(data){canWrite=data.can_write===true;until=data.access_until;accessSource=data.access_source || null;cancellationScheduled=data.cancellation_scheduled===true;trialAvailable=data.trial_available===true;trialEnds=data.trial_ends_at || null;trialExpired=!canWrite && !!trialEnds;scheduleExpiry(data.server_now);}
+  function openPending(){if(pendingDay===null || busy || loading)return;const index=pendingDay;pendingDay=null;if(window.FPRWorkbookSelect)window.FPRWorkbookSelect(index);else{day=index+1;render();}}
+  window.FPRWorkbookOpen=function(index){if(!Number.isInteger(index)||index<0||index>6)return;if(dirty && !window.confirm('Leave this reflection without saving your changes?'))return;dirty=false;pendingDay=index;if(typeof window.goTo==='function')window.goTo('supporter',{scrollTarget:'supporter-answers-title'});openPending();};
+  document.getElementById('jr-workbook-reload').addEventListener('click',()=>load(false,true));
+  signin.addEventListener('click',()=>document.getElementById('header-account-btn').click());
   function message(text){status.textContent=text;}
   function render(){
     const entry=entries.find(e=>e.reflection_number===day);
@@ -19372,29 +19413,39 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     });
     complete.checked=entry?.completed || false;complete.disabled=!canWrite || busy;save.disabled=!canWrite || busy;clear.disabled=!entry || busy;reload.disabled=busy;
     form.hidden=!user || (!canWrite && entries.length===0);
+    const prompts=document.getElementById('supporter-prompt-list');if(prompts)prompts.hidden=!form.hidden;
+    trialOffer.hidden=!user || !trialAvailable;signin.hidden=!!user;renderJournal();
     progress.textContent=user?entries.filter(e=>e.completed).length+' of 7 reflections complete. Work at your own pace.':'';
   }
-  function accessMessage(){if(canWrite && accessSource==='paid')return 'Paid workbook access through '+new Date(until).toLocaleDateString()+'. '+(cancellationScheduled?'Cancellation is scheduled. ':'')+'Your answers are private.';if(canWrite && accessSource==='sandbox')return 'Sandbox workbook test access through '+new Date(until).toLocaleDateString()+'. '+(cancellationScheduled?'Cancellation is scheduled. ':'')+'No real paid membership is active. Your answers are private.';return canWrite?(until?'Workbook access is available through '+new Date(until).toLocaleDateString()+'. Your answers are private.':'Administrator workbook access. Your answers are private.'):'Workbook access is not active. Any saved answers remain available to you; the free Journal and preview are still available.';}
+  function accessMessage(){if(canWrite && accessSource==='trial')return 'Your seven-day free trial ends '+new Date(until).toLocaleString()+'. Save reflection keeps your answers private and available in Journal. No payment or automatic subscription.';if(trialAvailable)return 'Start your seven-day free trial when you are ready to save answers here. No payment card or automatic subscription.';if(trialExpired)return 'Your seven-day trial has ended. Saved answers remain readable in the workbook and Journal. Editing requires workbook access; your free Journal stays available. Paid signup is not open yet.';if(canWrite && accessSource==='paid')return 'Paid workbook access through '+new Date(until).toLocaleDateString()+'. '+(cancellationScheduled?'Cancellation is scheduled. ':'')+'Your answers are private.';if(canWrite && accessSource==='sandbox')return 'Sandbox workbook test access through '+new Date(until).toLocaleDateString()+'. '+(cancellationScheduled?'Cancellation is scheduled. ':'')+'No real paid membership is active. Your answers are private.';return canWrite?(until?'Workbook access is available through '+new Date(until).toLocaleDateString()+'. Your answers are private.':'Administrator workbook access. Your answers are private.'):'Workbook access is not active. Any saved answers remain available to you; the free Journal and preview are still available.';}
   async function load(identityChange=false,preserveDraft=false){
     if((busy || loading) && !identityChange)return;
     loading=true;renderBusy(true);
     const seq=++epoch;
-    if(identityChange){user=null;entries=[];canWrite=false;until=null;dirty=false;form.hidden=true;fields.replaceChildren();progress.textContent='';}
+    if(identityChange){user=null;entries=[];canWrite=false;until=null;dirty=false;trialAvailable=false;trialEnds=null;trialExpired=false;clearTimeout(expiryTimer);form.hidden=true;fields.replaceChildren();progress.textContent='';trialOffer.hidden=true;renderJournal();}
     message('Checking private workbook access…');
     try{
       const session=await client.auth.getSession();if(seq!==epoch)return;
       const id=session.data?.session?.user?.id;
       identity=id || null;
       if(!id){user=null;entries=[];canWrite=false;dirty=false;render();message('Sign in to check workbook access. The free preview does not save answers.');return;}
-      if(user!==id){user=id;entries=[];dirty=false;form.hidden=true;fields.replaceChildren();}
+      if(user!==id){user=id;entries=[];dirty=false;form.hidden=true;fields.replaceChildren();}journal.hidden=false;
       const result=await client.rpc('get_my_supporter_workbook');if(seq!==epoch)return;
       if(result.error || !result.data || !Array.isArray(result.data.entries))throw Error('unavailable');
-      canWrite=result.data.can_write===true;until=result.data.access_until;accessSource=result.data.access_source || null;cancellationScheduled=result.data.cancellation_scheduled===true;
-      if(preserveDraft && dirty){renderBusy(busy);message(accessMessage()+' Your unsaved answers are still here.');}
+      acceptAccess(result.data);
+      if(preserveDraft && dirty){renderBusy(busy);renderJournal();message(accessMessage()+' Your unsaved answers are still here.');}
       else{entries=result.data.entries;dirty=false;render();message(accessMessage());}
-    }catch(_){if(seq===epoch){canWrite=false;if(!(preserveDraft && dirty)){form.hidden=true;fields.replaceChildren();}message('Could not refresh workbook access. '+(dirty?'Your unsaved answers are still here. ':'')+'Try Reload saved reflection when connected.');}}
-    finally{if(seq===epoch){loading=false;renderBusy(busy);if(pendingAccessRefresh && !busy){pendingAccessRefresh=false;load(false,true);}}}
+    }catch(_){if(seq===epoch){canWrite=false;if(!(preserveDraft && dirty)){form.hidden=true;fields.replaceChildren();}trialAvailable=false;trialOffer.hidden=true;journalEntries.replaceChildren();journalStatus.textContent='Could not load workbook reflections. Try Refresh workbook reflections when connected.';message('Could not refresh workbook access. '+(dirty?'Your unsaved answers are still here. ':'')+'Try Reload saved reflection when connected.');}}
+    finally{if(seq===epoch){loading=false;renderBusy(busy);openPending();if(pendingAccessRefresh && !busy){pendingAccessRefresh=false;load(false,true);}}}
   }
+  trialStart.addEventListener('click',async()=>{
+    if(busy || loading || !user || !trialAvailable)return;
+    const seq=epoch;busy=true;renderBusy(true);message('Starting your seven-day workbook trial…');
+    try{const result=await client.rpc('start_my_supporter_workbook_trial');if(seq!==epoch)return;if(result.error || !Array.isArray(result.data?.entries))throw result.error || Error('unavailable');acceptAccess(result.data);entries=result.data.entries;dirty=false;render();message(accessMessage());}
+    catch(error){if(seq===epoch)message(error?.code==='55000'?'The workbook is under maintenance. Your trial has not started.':'Could not confirm your trial status. Reload to check it before trying again.');}
+    finally{if(seq===epoch){busy=false;renderBusy(false);}}
+  });
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden && user && (document.getElementById('page-supporter')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active')))load(false,true);});
   document.addEventListener('fpr:membershipchange',()=>{if(busy || loading)pendingAccessRefresh=true;else load(false,true);});
   complete.addEventListener('change',()=>{dirty=true;message('Unsaved changes. Press Save reflection when ready.');});
   document.addEventListener('fpr:workbookselect',e=>{
@@ -19409,28 +19460,28 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     const seq=epoch,reflection=day,entry=entries.find(v=>v.reflection_number===day);busy=true;renderBusy(true);message('Saving your reflection…');
     try{
       const result=await client.rpc('save_my_supporter_reflection',{p_reflection:reflection,p_answers:answers,p_completed:complete.checked,p_version:entry?.version || 0});
-      if(seq!==epoch)return;if(result.error){message(result.error.code==='40001'?'This reflection changed in another tab. Your draft is still here. Use Reload saved reflection to load the latest version.':result.error.code==='42501'?'Workbook access is no longer active. Your draft is still here; your saved answers remain yours.':'Could not save. Your draft is still here. Try again when connected.');return;}
-      entries=entries.filter(v=>v.reflection_number!==reflection);entries.push({reflection_number:reflection,answers,completed:complete.checked,version:result.data});dirty=false;render();message('Reflection saved privately.');
+      if(seq!==epoch)return;if(result.error){if(result.error.code==='42501'){canWrite=false;renderBusy(false);}message(result.error.code==='40001'?'This reflection changed in another tab. Your draft is still here. Use Reload saved reflection to load the latest version.':result.error.code==='42501'?'Workbook access is no longer active. Your draft is still here; your saved answers remain yours.':'Could not save. Your draft is still here. Try again when connected.');return;}
+      entries=entries.filter(v=>v.reflection_number!==reflection);entries.push({reflection_number:reflection,answers,completed:complete.checked,version:result.data});dirty=false;render();message('Reflection saved privately. It is also available in Journal under Workbook reflections.');try{document.dispatchEvent(new CustomEvent('fpr:workbookchange'));}catch(_){}
     }catch(_){if(seq===epoch)message('Could not save. Your draft is still here. Try again when connected.');}
-    finally{busy=false;renderBusy(false);if(pendingAccessRefresh){pendingAccessRefresh=false;load(false,true);}}
+    finally{if(seq!==epoch)return;busy=false;renderBusy(false);if(pendingAccessRefresh){pendingAccessRefresh=false;load(false,true);}}
   });
-  function renderBusy(value){value=value || loading;save.disabled=value || !canWrite;clear.disabled=value || !entries.some(v=>v.reflection_number===day);reload.disabled=value;complete.disabled=value || !canWrite;fields.querySelectorAll('textarea').forEach(t=>t.readOnly=value || !canWrite);}
+  function renderBusy(value){value=value || loading;trialStart.disabled=value || !trialAvailable;save.disabled=value || !canWrite;clear.disabled=value || !entries.some(v=>v.reflection_number===day);reload.disabled=value;complete.disabled=value || !canWrite;fields.querySelectorAll('textarea').forEach(t=>t.readOnly=value || !canWrite);}
   reload.addEventListener('click',()=>{if(!busy && (!dirty || window.confirm('Discard unsaved changes and reload your saved reflection?')))load();});
   clear.addEventListener('click',async()=>{
     const entry=entries.find(v=>v.reflection_number===day);if(busy || loading || !user || !entry)return;
     if(!window.confirm('Clear your saved answers for this reflection? This cannot be undone.'))return;
     const seq=epoch;busy=true;renderBusy(true);
     try{const result=await client.rpc('clear_my_supporter_reflection',{p_reflection:day,p_version:entry.version});if(seq!==epoch)return;if(result.error){message('Could not clear. Reload the saved reflection and try again.');return;}entries=entries.filter(v=>v.reflection_number!==day);dirty=false;render();message('Saved reflection cleared.');}
-    catch(_){if(seq===epoch)message('Could not clear the saved reflection.');}finally{busy=false;renderBusy(false);if(pendingAccessRefresh){pendingAccessRefresh=false;load(false,true);}}
+    catch(_){if(seq===epoch)message('Could not clear the saved reflection.');}finally{if(seq!==epoch)return;busy=false;renderBusy(false);if(pendingAccessRefresh){pendingAccessRefresh=false;load(false,true);}}
   });
   window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
   let identity=null;
   client.auth.onAuthStateChange((_event,session)=>{
     const next=session?.user?.id || null;
-    if(next!==identity){identity=next;++epoch;user=null;entries=[];canWrite=false;dirty=false;fields.replaceChildren();form.hidden=true;progress.textContent='';message('Checking private workbook access…');if(document.getElementById('page-supporter')?.classList.contains('active'))setTimeout(()=>load(true),0);}
+    if(next!==identity){identity=next;++epoch;user=null;entries=[];canWrite=false;dirty=false;busy=false;loading=false;trialAvailable=false;trialEnds=null;trialExpired=false;pendingDay=null;clearTimeout(expiryTimer);trialOffer.hidden=true;fields.replaceChildren();form.hidden=true;progress.textContent='';renderJournal();message('Checking private workbook access…');if(document.getElementById('page-supporter')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active'))setTimeout(()=>load(true),0);}
   });
-  document.addEventListener('fpr:pagechange',e=>{if(e.detail?.page==='supporter' && !dirty)load();});
-  if(document.getElementById('page-supporter')?.classList.contains('active'))load(true);
+  document.addEventListener('fpr:pagechange',e=>{if(e.detail?.page==='supporter' || e.detail?.page==='journal')load(false,true);});
+  if(document.getElementById('page-supporter')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active'))load(true);
 })();
 </script>
 
