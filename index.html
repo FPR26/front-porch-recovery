@@ -97,6 +97,15 @@
   /* ONBOARD-1: Home "Start here" card */
   .onboard-card{background:var(--white); border:1px solid var(--line); border-left:4px solid var(--sage); border-radius:var(--radius-l); padding:clamp(18px,4vw,28px); scroll-margin-top:110px;}
   .onboard-card:focus{outline:none;}
+  #fpr-onboard-wrap[hidden],.onboard-privacy[hidden]{display:none !important;}
+  .onboard-intro{margin-top:12px;line-height:1.6;}
+  .onboard-path{list-style:none;}
+  .onboard-saved{margin-top:18px;padding-top:12px;border-top:1px solid var(--line);}
+  .onboard-saved summary{min-height:44px;cursor:pointer;line-height:1.5;font-weight:600;}
+  .onboard-trial{margin-top:18px;padding:14px;background:var(--cream);border-radius:var(--radius-m);}
+  .onboard-trial button{margin-top:8px;}
+  .onboard-path button,.onboard-saved button,.onboard-trial button{min-height:44px;}
+  @media(max-width:480px){.onboard-actions{align-items:stretch;flex-direction:column;}.onboard-actions .btn{width:100%;white-space:normal;}}
   .onboard-card h2{font-size:clamp(1.25rem,3.5vw,1.5rem); line-height:1.25;}
   .onboard-list{list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:10px;}
   .onboard-item{display:flex; gap:10px; align-items:flex-start; line-height:1.5;}
@@ -1398,6 +1407,14 @@
     </div>
   </div>
 
+  <!-- ONBOARD-1: lightweight "Start here" card. Built by the onboarding
+       script (textContent only); hidden when dismissed. No modal, no tour. -->
+  <section class="block bg-cream tight" id="fpr-onboard-wrap" hidden>
+    <div class="wrap">
+      <div class="onboard-card" id="fpr-onboard" tabindex="-1" aria-labelledby="fpr-onboard-title"></div>
+    </div>
+  </section>
+
   <section class="block bg-cream tight" aria-labelledby="home-recovery-title">
     <div class="wrap">
       <h2 id="home-recovery-title">My Recovery</h2>
@@ -1413,14 +1430,6 @@
       </nav>
       <p style="margin-top:20px;"><strong>Where your information lives:</strong> When signed in, My Recovery logs, Journal entries, and saved wins stay in your account. Progress and <a href="#history" data-nav="history">Recovery History</a> help you find your saved activity.</p>
       <p>Daily Check-In selections and your Recovery Counter stay in this browser on this device. Check-In reflection text is not saved. To keep a reflection, write and save it in your Journal.</p>
-    </div>
-  </section>
-
-  <!-- ONBOARD-1: lightweight "Start here" card. Built by the onboarding
-       script (textContent only); hidden when dismissed. No modal, no tour. -->
-  <section class="block bg-cream tight" id="fpr-onboard-wrap" hidden>
-    <div class="wrap">
-      <div class="onboard-card" id="fpr-onboard" tabindex="-1" aria-labelledby="fpr-onboard-title"></div>
     </div>
   </section>
 
@@ -3849,7 +3858,7 @@
 
     <div data-account-view="signed-out">
       <h2 id="account-modal-title" class="ms-modal-title">Sign in to Front Porch Recovery</h2>
-      <p class="ms-modal-text">A free account is completely optional. It's only used to recognize you across visits — it does not sync your Recovery Counter or Daily Check-In, and you can keep using every feature on this site without ever signing in.</p>
+      <p class="ms-modal-text">Browse public content and use Check In and the Recovery Counter without an account. A free account lets you save private recovery logs, Journal entries, plans, and wins across devices, and join in Community. No paid membership is required for those tools. Your Recovery Counter and Daily Check-In stay on this device; signing in does not sync them.</p>
       <p class="ms-modal-text">No password: enter your email and we'll send a one-time sign-in link. The display name below (optional — leave it blank to use "New member") is only saved the first time you sign in; after that you can change it in your profile.</p>
 
       <form id="account-signin-form" novalidate>
@@ -3866,17 +3875,17 @@
         <button type="submit" class="btn btn-primary btn-block" id="account-signin-submit">Send sign-in link</button>
       </form>
       <p class="status-msg" id="account-status" role="status" aria-live="polite"></p>
-      <p class="account-inactive-notice" id="account-inactive-notice" hidden>Account sign-in isn't connected yet. You can still use every other feature on this site without one.</p>
+      <p class="account-inactive-notice" id="account-inactive-notice" hidden>Account sign-in is not connected right now. Public resources, Check In, and the Recovery Counter are still available without an account.</p>
     </div>
 
     <div data-account-view="signed-in" hidden>
       <h2 class="ms-modal-title">You're signed in</h2>
       <p class="ms-modal-text">Signed in as <span id="account-email-display"></span>.</p>
-      <p class="ms-modal-text">Your Recovery Counter and Daily Check-In still stay on this device only. The profile below is saved to your account.</p>
+      <p class="ms-modal-text">Your free recovery logs, Journal entries, plans, and wins save to your account when you press their Save buttons. Your Recovery Counter and Daily Check-In stay on this device only. The profile below is also saved to your account.</p>
 
       <section class="account-profile" aria-labelledby="account-workbook-title">
         <h3 class="account-profile-title" id="account-workbook-title">Your private workbook</h3>
-        <p class="ms-modal-text">Open your reflections, check workbook access, or read and clear answers you saved earlier. Your free Journal remains separate.</p>
+        <p class="ms-modal-text">Open your reflections, check workbook access, or read and clear answers you saved earlier. Saved workbook reflections also appear in Journal; freeform Journal entries remain free.</p>
         <button type="button" class="btn btn-outline btn-block" id="account-workbook-open">Open my workbook</button>
         <button type="button" class="btn btn-outline btn-block" id="account-collection-open" style="margin-top:10px;">Open my card collection</button>
         <button type="button" class="btn btn-outline btn-block" id="account-paid-membership-open" style="margin-top:10px;" hidden>Manage my paid membership</button>
@@ -14840,11 +14849,11 @@ const FPRBadge = (function(){
   });
 })();
 /* ---------- ONBOARD-1: Home "Start here" card ----------
-   One inline card below the Home hero. Signed out: four short pointers
-   plus a privacy explainer. Signed in: a four-item checklist whose
-   "done" states are derived live (today's check-in from the existing
-   check-in keys, display name / handle from the member's own profile,
-   Community visit from a per-account flag). State is browser-only and
+   Phase 18C: free recovery path, save-location guide and optional workbook preview.
+   One inline card below the Home hero. Signed out: free-account entry
+   plus a privacy explainer. Signed in: the same free-tool path plus an
+   optional checklist derived from the member's own display name/handle
+   and a per-account Community visit flag. Dismissal state is browser-only and
    per account, keyed by public_id (never the auth id); storage errors
    just mean the card may reappear. No DB writes, no analytics, no
    financial asks; built with createElement/textContent only. */
@@ -14896,7 +14905,8 @@ const FPRBadge = (function(){
     box.hidden = !privacyOpen;
     const ul = el('ul');
     [
-      'Check-ins, reflections, and your Recovery Counter stay on this device. They are not sent to Front Porch Recovery.',
+      'Daily Check-In selections and the Recovery Counter stay on this device. Check-In reflection text is not saved.',
+      'Saved My Recovery logs, Journal entries, plans, and workbook answers are private to your account. They do not appear in Community.',
       'Community posts and comments are public, and your display name, @handle, and photo can appear with them.',
       'Your recovery date is private unless you choose to show it to members or everyone.',
       'Your Following, Blocked, and Muted lists and your reports are private.',
@@ -14934,30 +14944,41 @@ const FPRBadge = (function(){
     }
   }
 
+  function appendRecoveryGuide(){
+    card.appendChild(el('p', 'onboard-intro', 'Start with one small step. These recovery tools are free; you do not need a supporter membership.'));
+    const path=el('ol', 'onboard-list onboard-path');path.setAttribute('aria-label','A simple place to begin');
+    [
+      ['Check In', 'checkin', 'Pause and notice how today feels. No account needed. Selections stay on this device; reflection text is not saved.'],
+      ['My Recovery', 'myrecovery', 'With a free account, save a daily recovery log and set one small goal. Use Save to keep it in your account.'],
+      ['Journal', 'journal', 'With a free account, write privately and press Save to keep your entry. Come back whenever you are ready.'],
+    ].forEach(function(row,index){const li=el('li','onboard-item');const mark=el('span','onboard-mark',String(index+1));mark.setAttribute('aria-hidden','true');const body=el('span','onboard-item-body');body.append(navButton(row[0],row[1]),el('span','onboard-item-text',row[2]));li.append(mark,body);path.append(li);});
+    card.append(path);
+    const saved=el('details','onboard-saved');const summary=el('summary',null,'Where is my saved information?');saved.append(summary);
+    const list=el('ul','onboard-list');
+    [
+      ['My Recovery','myrecovery','Your saved daily recovery logs and goal.'],
+      ['Journal','journal','Your saved writing and linked Workbook reflections.'],
+      ['Progress','progress','An overview of your saved recovery activity.'],
+      ['Recovery History','history','Look back through your saved activity by date.'],
+      ['Milestones & Wins','milestones','Your saved wins and account-based milestones.'],
+    ].forEach(function(row){const li=el('li','onboard-item');const body=el('span','onboard-item-body');body.append(navButton(row[0],row[1]),el('span','onboard-item-text',row[2]));li.append(body);list.append(li);});
+    saved.append(list,el('p','onboard-item-text','The Recovery Counter is separate: its date stays in this browser on this device. Saving in My Recovery does not save Daily Check-In reflection text.'));
+    card.append(saved);
+    const optional=el('div','onboard-trial');optional.append(el('strong',null,'Optional: explore the workbook'));
+    const trial=navButton('Preview Pull Up a Chair','supporter','supporter-workbook-title');optional.append(el('p','onboard-item-text','Seven guided reflections. Reading the prompts is free. A separate seven-day saving trial starts only if you choose to activate it. No card and no automatic subscription.'),trial);card.append(optional);
+  }
+
   function renderGuest(){
     if (sGet(GUEST_KEY)) { wrap.hidden = true; card.replaceChildren(); return; }
     card.replaceChildren();
-    const h = el('h2', null, 'New here? Start here'); h.id = 'fpr-onboard-title';
+    const h = el('h2', null, 'New here? Start with one small step'); h.id = 'fpr-onboard-title';
     card.appendChild(h);
-    const ul = el('ul', 'onboard-list');
-    [
-      [navButton('Check in today.', 'checkin'), 'No account is needed, and your check-in stays on this device.'],
-      [navButton('Your recovery counter is private.', 'home', 'home-counter'), 'It stays on this device too.'],
-      [navButton('Rough day?', 'roughday'), 'Help is one tap away any time using the Rough day button.'],
-      [navButton('Read the Community.', 'community'), 'Anyone can read it. Signing in is free and optional, and is only needed to post or interact.'],
-    ].forEach(function(row){
-      const li = el('li', 'onboard-item');
-      li.appendChild(el('span', 'onboard-mark', '•')).setAttribute('aria-hidden', 'true');
-      const body = el('span', 'onboard-item-body');
-      body.appendChild(row[0]);
-      body.appendChild(el('span', 'onboard-item-text', row[1]));
-      li.appendChild(body);
-      ul.appendChild(li);
-    });
-    card.appendChild(ul);
+    appendRecoveryGuide();
     const actions = el('div', 'onboard-actions');
     const got = el('button', 'btn btn-primary', 'Got it'); got.type = 'button';
     got.addEventListener('click', function(){ sSet(GUEST_KEY, '1'); hideAndRefocus(); });
+    const account=el('button','btn btn-outline','Create a free account / Sign in');account.type='button';account.addEventListener('click',openAccount);
+    actions.appendChild(account);
     actions.appendChild(got);
     actions.appendChild(privacyToggle('What’s private?'));
     card.appendChild(actions);
@@ -14972,14 +14993,16 @@ const FPRBadge = (function(){
     card.replaceChildren();
     const h = el('h2', null, 'Welcome to the porch'); h.id = 'fpr-onboard-title';
     card.appendChild(h);
+    appendRecoveryGuide();
+    const personalize=el('details','onboard-saved');personalize.append(el('summary',null,'Optional: make yourself at home'));
+
     const items = [
-      { done: checkedInToday(), title: 'Check in today.', action: function(b){ b.setAttribute('data-nav', 'checkin'); } },
       { done: !!profile.display_name && profile.display_name !== 'New member', title: 'Choose a display name.', action: function(b){ b.addEventListener('click', openAccount); } },
       { done: !!profile.handle, title: 'Optional: pick a @handle.', text: 'It helps other members mention you.', optional: true, action: function(b){ b.addEventListener('click', openAccount); } },
       { done: sGet(communityKey(pid)) === '1', title: 'Visit the Community.', action: function(b){ b.setAttribute('data-nav', 'community'); } },
     ];
     const ul = el('ul', 'onboard-list');
-    ul.setAttribute('aria-label', 'Getting started checklist');
+    ul.setAttribute('aria-label', 'Optional profile and Community checklist');
     items.forEach(function(it){
       const li = el('li', 'onboard-item' + (it.done ? ' onboard-done' : ''));
       li.appendChild(el('span', 'onboard-mark', it.done ? '✓' : '○')).setAttribute('aria-hidden', 'true');
@@ -14998,7 +15021,7 @@ const FPRBadge = (function(){
       li.appendChild(body);
       ul.appendChild(li);
     });
-    card.appendChild(ul);
+    personalize.appendChild(ul);card.appendChild(personalize);
     const actions = el('div', 'onboard-actions');
     const done = el('button', 'btn btn-primary', 'Done'); done.type = 'button';
     done.addEventListener('click', function(){ sSet(accountKey(pid), '1'); hideAndRefocus(); });
