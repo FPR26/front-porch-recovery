@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="fpr-app-version" content="2026.10.28.18E">
+<meta name="fpr-app-build" content="2026102801">
+<script src="app-updates.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Front Porch Recovery — Pull Up a Chair</title>
 <meta name="description" content="Front Porch Recovery is a recovery community and resource hub. Honest recovery, real life, second chances, and a place to belong — one honest day at a time.">
@@ -97,6 +100,14 @@
   /* ONBOARD-1: Home "Start here" card */
   .onboard-card{background:var(--white); border:1px solid var(--line); border-left:4px solid var(--sage); border-radius:var(--radius-l); padding:clamp(18px,4vw,28px); scroll-margin-top:110px;}
   .onboard-card:focus{outline:none;}
+  #app-update-notice[hidden],#community-growth-admin[hidden]{display:none !important;}
+  #app-update-notice{position:fixed;z-index:900;bottom:calc(82px + env(safe-area-inset-bottom,0px));left:16px;right:16px;max-width:580px;margin:auto;padding:18px;background:var(--white);border:2px solid var(--sage-deep);border-radius:16px;box-shadow:var(--shadow);}
+  #app-update-notice h2{font-size:1.15rem;}
+  #app-update-notice p{margin-top:8px;line-height:1.5;}
+  .app-update-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+  .app-update-actions .btn{min-height:44px;}
+  @media(max-width:480px){#app-update-notice{left:10px;right:10px;padding:14px;}.app-update-actions .btn{flex:1;}}
+
   #fpr-onboard-wrap[hidden],.onboard-privacy[hidden]{display:none !important;}
   .onboard-intro{margin-top:12px;line-height:1.6;}
   .onboard-path{list-style:none;}
@@ -1378,7 +1389,7 @@
 
 <main id="main">
 <p id="maintenance-admin-preview" class="wrap" role="status" hidden></p>
-<section class="page" id="page-maintenance" aria-labelledby="maintenance-title"><div class="wrap" style="padding:48px 20px;max-width:760px;"><h1 id="maintenance-title" tabindex="-1">Section under maintenance</h1><p id="maintenance-message" style="margin:20px 0;">This section is under maintenance. Please check back soon.</p><p>Your saved information stays in your account. Other sections remain available.</p><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;"><button class="btn" type="button" data-nav="home">Back to Home</button><button class="btn btn-outline" type="button" data-nav="roughday">Rough day?</button><button class="btn btn-outline" type="button" id="maintenance-check-again">Check again</button></div></div></section>
+<section class="page" id="page-maintenance" aria-labelledby="maintenance-title"><div class="wrap" style="padding:48px 20px;max-width:760px;"><h1 id="maintenance-title" tabindex="-1">Section under maintenance</h1><p id="maintenance-message" style="margin:20px 0;">This section is under maintenance. Please check back soon.</p><p>Maintenance does not delete your saved information. Other sections remain available.</p><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;"><button class="btn" type="button" data-nav="home">Back to Home</button><button class="btn btn-outline" type="button" data-nav="roughday">Rough day?</button><button class="btn btn-outline" type="button" id="maintenance-check-again">Check again</button></div></div></section>
 
 <!-- ================= HOME ================= -->
 <section class="page active" id="page-home">
@@ -2789,7 +2800,7 @@
         <canvas id="supporter-collection-preview" class="supporter-card-image" width="1200" height="1200" role="img" aria-label="Your selected supporter card" style="max-width:440px;" hidden></canvas>
       </div>
       <div class="supporter-actions"><button type="button" class="btn btn-outline" id="supporter-benefits-refresh">Refresh collection access</button><button type="button" class="btn btn-outline" data-nav="supporter" data-scroll-target="supporter-answers-title">Go to my workbook</button></div>
-      <p class="supporter-preview-note">No-charge access includes the collection. Sandbox access is for testing; real payments remain closed. Downloaded cards can be kept after access ends. The free samples below are available without collection access.</p>
+      <p class="supporter-preview-note">An approved no-charge grant includes the collection. The workbook trial covers reflections only. Paid signup is not open. You can keep downloaded cards after access ends; the labeled samples below remain free.</p>
     </section>
     <h2 style="margin-top:36px;">A little more room to celebrate</h2>
     <p style="margin-top:12px;">Six designs for the supporter collection, available here as labeled samples. Existing celebration cards remain free.</p>
@@ -3375,10 +3386,17 @@
         <img class="app-icon-preview" src="apple-touch-icon.png" alt="Front Porch Recovery app icon">
         <div>
           <p style="margin:0; font-weight:700; color:var(--charcoal); font-size:1.1rem;">Front Porch Recovery</p>
-          <p style="margin:2px 0 0; font-size:.9rem;">Free. No account. No app store needed.</p>
+          <p style="margin:2px 0 0; font-size:.9rem;">Free to install. No app store needed. A free account saves your personal recovery tools.</p>
         </div>
       </div>
 
+      <section class="legal-summary" style="margin-top:22px;" aria-labelledby="app-version-title">
+        <h2 id="app-version-title">App updates</h2>
+        <p data-fpr-version>Version 2026.10.28.18E</p>
+        <p>New versions never reload this page automatically. Save or cancel any writing before choosing Update app. Your account records and device counter are kept when the page reloads.</p>
+        <button type="button" class="btn btn-outline" data-fpr-update-check>Check for updates</button>
+        <p id="app-update-check-status" role="status" aria-live="polite"></p>
+      </section>
       <div class="legal-summary app-installed-note" style="margin-top:22px;">
         <p><strong>You're using the app.</strong></p>
         <p>Front Porch Recovery is already on your home screen. Glad you're here.</p>
@@ -4048,11 +4066,17 @@
     </div>
 
     <div class="footer-bottom">
-      <span>© <span id="year"></span> Front Porch Recovery. All rights reserved.</span>
+      <span>© <span id="year"></span> Front Porch Recovery. All rights reserved. <span data-fpr-version>Version 2026.10.28.18E</span></span>
       <span id="footer-legal-links" style="display:flex; gap:16px; flex-wrap:wrap;"></span>
     </div>
   </div>
 </footer>
+<aside id="app-update-notice" hidden role="region" aria-labelledby="app-update-title">
+  <h2 id="app-update-title">An app update is available</h2>
+  <p>Update when you are ready. The app will check for unsaved writing before reloading.</p>
+  <p id="app-update-status" role="status" aria-live="polite"></p>
+  <div class="app-update-actions"><button type="button" class="btn btn-primary" data-fpr-update-apply>Update app</button><button type="button" class="btn btn-outline" id="app-update-later">Later</button></div>
+</aside>
 
 <script src="section-maintenance.js"></script>
 <script>
@@ -11631,6 +11655,12 @@ const FPRBadge = (function(){
   let handleCheckSeq = 0;
   let handleCheckTimer = null;
   let handleBusy = false;
+  window.FPRUpdates?.guard('Account profile',()=>{
+    if(!profileUserId)return false;
+    if(profileBusy || handleBusy)return true;
+    if(!myProfile)return false;
+    return profileNameInput.value!==(myProfile.display_name||'') || profileBioInput.value!==(myProfile.bio||'') || profileDateInput.value!==(myProfile.recovery_date||'') || (profileVisibilityInputs.find(r=>r.checked)?.value||'private')!==(myProfile.recovery_visibility||'private') || handleInput.value!==(myHandle||'');
+  });
 
   function resetHandleState(){
     clearTimeout(handleCheckTimer);
@@ -15185,6 +15215,7 @@ const FPRBadge = (function(){
   let goal = null;            // active goal or null
   let editingDate = null;     // null = today; otherwise a past entry's date
   let mood = null, cravings = null, dirty = false, savingLog = false;
+  window.FPRUpdates?.guard('My Recovery',()=>signedIn && (dirty || busy || goalMode!=='view'));
   let showAll = false, openEntry = null, goalMode = 'view', busy = false;
 
   function pad(n){ return String(n).padStart(2, '0'); }
@@ -15624,6 +15655,7 @@ const FPRBadge = (function(){
   let saved = [];            // day numbers, newest first
   let drafts = {};           // 'date|part' -> unsaved text
   let busy = {};             // 'save' | 'morning' | 'evening' -> true while a call is running
+  window.FPRUpdates?.guard('Daily Porch',()=>signedIn && (Object.keys(drafts).length>0 || Object.values(busy).some(Boolean)));
   let view = { day: currentDailyDay, date: currentDailyDate };
 
   function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -15886,6 +15918,7 @@ const FPRBadge = (function(){
   let plan = null;        // saved plan or null
   let mode = 'view';      // 'view' | 'edit'
   let dirty = false, busy = false, contactSeq = 0;
+  window.FPRUpdates?.guard('My Recovery Plan',()=>signedIn && (dirty || busy));
 
   function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function showErr(node, msg){ node.textContent = msg || ''; node.classList.toggle('show', !!msg); }
@@ -17758,6 +17791,7 @@ const FPRBadge = (function(){
   let sess = null;               // { reviews: {monday: row}, wins, goal, recoveryDate } for this account
   let weeks = {};                // monday -> { logs, refl, items, checks } (derived-data cache)
   let dirty = false, sessionFor = null, loadedFor = null;
+  window.FPRUpdates?.guard('Weekly Review',()=>signedIn && (dirty || busy));
 
   function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function pad(n){ return String(n).padStart(2, '0'); }
@@ -18047,6 +18081,7 @@ const FPRBadge = (function(){
   let tag = null, query = null;     // active tag filter or search (one at a time)
   let entry = null;                 // the open entry (full)
   let editingId = null, snapshot = '', dirty = false, returnTo = 'list', pendingNew = false, savingEntry = false;
+  window.FPRUpdates?.guard('Journal',()=>signedIn && (dirty || busy));
 
   function el(tag2, cls, text){ const e = document.createElement(tag2); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function btn(label, cls, onClick){ const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; }
@@ -19223,7 +19258,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     const framed = window.self !== window.top;
     if('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !framed){
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).then(reg => window.FPRUpdates?.connect(reg)).catch(() => {});
       });
     }
   } catch(err){}
@@ -19446,6 +19481,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   const journal=document.getElementById('jr-workbook'),journalEntries=document.getElementById('jr-workbook-entries'),journalStatus=document.getElementById('jr-workbook-status');
   let trialAvailable=false,trialEnds=null,trialExpired=false,expiryTimer=null,pendingDay=null,saving=false;
   let user=null,epoch=0,day=1,entries=[],canWrite=false,until=null,accessSource=null,cancellationScheduled=false,dirty=false,busy=false,loading=false,pendingAccessRefresh=false;
+  window.FPRUpdates?.guard('Workbook',()=>dirty || busy);
   function renderJournal(){
     journalEntries.replaceChildren();journal.hidden=!user;
     journalStatus.textContent=entries.length ? (canWrite?'Open a reflection to read it or return to the workbook to edit.':'Workbook editing is not active. Your saved answers remain readable; your free Journal is still available.') : 'No workbook reflections saved yet. Your freeform Journal is available below.';

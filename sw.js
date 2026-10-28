@@ -38,13 +38,14 @@
 
    If you ever change this file, bump CACHE_VERSION so old copies are
    cleared out. */
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 const CORE_CACHE = 'fpr-core-' + CACHE_VERSION;
 const FONT_CACHE = 'fpr-fonts-' + CACHE_VERSION;
 const CORE_FILES = [
   './',
   './index.html',
   './section-maintenance.js',
+  './app-updates.js',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
@@ -68,9 +69,11 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CORE_CACHE)
       .then((cache) => cache.addAll(CORE_FILES.map((u) => new Request(u, { cache: 'reload' }))))
-      .then(() => self.skipWaiting())
   );
 });
+
+// Only an explicit, draft-checked update action activates a waiting worker.
+self.addEventListener('message',event=>{if(event.data?.type==='FPR_APPLY_UPDATE')event.waitUntil(self.skipWaiting());});
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
@@ -109,8 +112,8 @@ function isAuthCallbackRequest(url) {
 /* Network first for the page: fresh when online, saved copy when not. */
 async function pageResponse(request) {
   const cache = await caches.open(CORE_CACHE);
-  const network = fetch(request).then((res) => {
-    if (res && res.ok) cache.put('./index.html', res.clone());
+  const network = fetch(request).then(async (res) => {
+    if (res && res.ok) { try { await cache.put('./index.html', res.clone()); } catch (_) { /* A full cache must not block a fresh online page. */ } }
     return res;
   });
   network.catch(() => {}); // avoid an unhandled rejection if we already answered from the saved copy
