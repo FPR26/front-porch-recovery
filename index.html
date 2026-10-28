@@ -1393,6 +1393,7 @@
         <a class="recovery-shortcut" href="#progress" data-nav="progress"><strong>Progress</strong><span>Look back at the work you have been doing.</span></a>
         <a class="recovery-shortcut" href="#milestones" data-nav="milestones"><strong>Milestones &amp; Wins</strong><span>Find your saved wins and celebrate your steps.</span></a>
         <a class="recovery-shortcut" href="#journal" data-nav="journal"><strong>Journal</strong><span>Write privately and return to your saved entries.</span></a>
+        <a class="recovery-shortcut" id="home-workbook-link" href="#supporter" data-nav="supporter" data-scroll-target="supporter-workbook-title"><strong>Try the workbook</strong><span>Pull Up a Chair: seven guided reflections, at your own pace. Explore the prompts for free.</span></a>
       </nav>
       <p style="margin-top:20px;"><strong>Where your information lives:</strong> When signed in, My Recovery logs, Journal entries, and saved wins stay in your account. Progress and <a href="#history" data-nav="history">Recovery History</a> help you find your saved activity.</p>
       <p>Daily Check-In selections and your Recovery Counter stay in this browser on this device. Check-In reflection text is not saved. To keep a reflection, write and save it in your Journal.</p>
@@ -2667,7 +2668,7 @@
 <section class="page" id="page-supporter">
   <section class="block bg-charcoal tight"><div class="wrap">
     <p class="hero-eyebrow" style="color:var(--sage);">A little support. A porch for everyone.</p>
-    <h1 style="color:white;margin-top:10px;">Porch Supporter</h1>
+    <h1 id="supporter-membership-title" tabindex="-1" style="color:white;margin-top:10px;">Porch Supporter</h1>
     <p style="color:var(--gray);max-width:58ch;margin-top:14px;">Help keep the porch light on, with a few thoughtful extras for your own honest days.</p>
   </div></section>
   <section class="block bg-cream"><div class="wrap">
@@ -2704,12 +2705,14 @@
     </section>
     <section class="supporter-panel" style="margin-top:28px;" aria-labelledby="supporter-workbook-title">
       <p class="hero-eyebrow" style="color:var(--sage-text);">Try the workbook</p>
-      <h2 id="supporter-workbook-title" style="margin-top:10px;">Pull Up a Chair</h2>
+      <h2 id="supporter-workbook-title" tabindex="-1" style="margin-top:10px;scroll-margin-top:100px;">Pull Up a Chair</h2>
       <p>Seven small reflections for finding your footing. Take them in any order, at your own pace. Skip any prompt you do not want to answer; you can save an unfinished reflection. There is no streak to protect and no deadline to meet.</p>
       <div class="supporter-days" id="supporter-workbook-days" role="group" aria-label="Choose a workbook reflection"></div>
       <div id="supporter-workbook-reflection" aria-live="polite" aria-atomic="true"></div>
       <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="journal">Write in your free Journal</button></div>
-      <p class="supporter-preview-note">The prompts above are free to explore. Your free Journal remains available to everyone.</p>
+      <p class="supporter-preview-note">Explore all seven reflections for free. No paid membership is needed to read the prompts or write in your free Journal. Saving answers inside this workbook requires approved access.</p>
+      <div class="supporter-actions"><a class="btn btn-outline" id="workbook-membership-link" href="#supporter" data-nav="supporter" data-scroll-target="supporter-membership-title">Learn about Porch Supporter membership</a></div>
+      <p class="supporter-preview-note">Like the workbook? See what Porch Supporter includes. Paid signup is not open yet.</p>
       <section id="supporter-workbook-private" style="margin-top:24px;border-top:1px solid var(--line);padding-top:24px;" aria-labelledby="supporter-answers-title">
         <h3 id="supporter-answers-title" tabindex="-1">Your private workbook</h3>
         <p id="supporter-workbook-status" role="status" aria-live="polite">Sign in to check workbook access. The free preview does not save answers.</p>
