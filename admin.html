@@ -247,6 +247,7 @@
     .field input, .edit-panel textarea, .edit-panel select{font-size:16px;}
     .gate{padding:26px 20px;}
   }
+.maintenance-setting{background:white;padding:18px;border:1px solid var(--line);border-radius:12px;margin:14px 0;display:grid;gap:10px}.maintenance-setting select,.maintenance-setting textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:6px}.maintenance-setting textarea{min-height:90px}.maintenance-setting button{justify-self:start}.maintenance-setting label{font-weight:600}
 </style>
 </head>
 <body>
@@ -301,6 +302,7 @@
 
     <!-- Admin dashboard -->
     <div id="state-dashboard" hidden>
+<details id="section-maintenance-controls" style="margin-bottom:24px;padding:18px;border:1px solid #c9d1c7;border-radius:12px;"><summary style="cursor:pointer;font-weight:700;">Section maintenance</summary><p style="margin:12px 0;">Close only the section you are working on. Home, Rough day?, Contact, Account and legal pages stay available. Admins can preview closed sections. Saved data is kept. Existing billing management remains available.</p><button type="button" class="btn btn-outline btn-small" id="section-maintenance-refresh">Reload settings</button><p id="section-maintenance-status" role="status" style="margin:12px 0;"></p><div id="section-maintenance-list"></div></details>
       <section aria-label="Membership testing" style="margin-bottom:24px;padding:18px;border:1px solid #c9d1c7;border-radius:12px;">
         <a class="btn btn-outline" href="./?membership-tools=1#supporter">Open membership test controls</a>
         <p style="margin:10px 0 0;">Opens the main FPR website at the admin-only test payment controls. Your account stays signed in in this browser. Workbook access grants are under Member Profiles.</p>
@@ -525,6 +527,8 @@
   </div>
 </div>
 
+<script src="section-maintenance.js"></script>
+<script src="admin-section-maintenance.js"></script>
 <script>
 /* ============================================================
    Front Porch Recovery — Porch Stories admin dashboard
@@ -2093,6 +2097,7 @@
     els.sessionInfo.hidden = false;
     els.sessionEmail.textContent = session.user.email || '';
     currentAdminId = session.user.id || null;
+    window.FPRMaintenanceAdmin?.mount(client);
     showOnly(els.stateDashboard);
     hideProfilesTab();
     showPorchTab();

@@ -38,12 +38,13 @@
 
    If you ever change this file, bump CACHE_VERSION so old copies are
    cleared out. */
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const CORE_CACHE = 'fpr-core-' + CACHE_VERSION;
 const FONT_CACHE = 'fpr-fonts-' + CACHE_VERSION;
 const CORE_FILES = [
   './',
   './index.html',
+  './section-maintenance.js',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
@@ -169,6 +170,7 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return; // contact form posts go straight to Formspree
   const url = new URL(request.url);
+  if(url.origin===self.location.origin && /\/section-maintenance\.js$/.test(url.pathname)){event.respondWith(coreFileResponse(request));return;}
 
   // Checked first, and ahead of isPageRequest(), so a navigation to
   // auth-callback.html (request.mode === 'navigate') can never be caught

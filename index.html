@@ -1344,6 +1344,8 @@
 </button>
 
 <main id="main">
+<p id="maintenance-admin-preview" class="wrap" role="status" hidden></p>
+<section class="page" id="page-maintenance" aria-labelledby="maintenance-title"><div class="wrap" style="padding:48px 20px;max-width:760px;"><h1 id="maintenance-title" tabindex="-1">Section under maintenance</h1><p id="maintenance-message" style="margin:20px 0;">This section is under maintenance. Please check back soon.</p><p>Your saved information stays in your account. Other sections remain available.</p><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;"><button class="btn" type="button" data-nav="home">Back to Home</button><button class="btn btn-outline" type="button" data-nav="roughday">Rough day?</button><button class="btn btn-outline" type="button" id="maintenance-check-again">Check again</button></div></div></section>
 
 <!-- ================= HOME ================= -->
 <section class="page active" id="page-home">
@@ -3991,6 +3993,7 @@
   </div>
 </footer>
 
+<script src="section-maintenance.js"></script>
 <script>
 /* ============================================================
    CONTENT CONFIG
@@ -9471,6 +9474,7 @@ const pages = document.querySelectorAll('.page');
 const mobileNav = document.getElementById('mobile-nav');
 function goTo(pageId, opts){
   opts = opts || {};
+  if(window.FPRMaintenance && !window.FPRMaintenance.route(pageId, opts)) return;
   if(pageId === 'daily'){ try { renderDaily(getTodaysPorchDay()); } catch(err){} }
   if(pageId === 'home'){ try { renderHomeDaily(); } catch(err){} }
   try {
@@ -11308,6 +11312,8 @@ const FPRBadge = (function(){
      about this client's privileges changes — it still only ever holds
      the publishable key, never service_role. */
   window.__fprSupabaseClient = client;
+  window.FPRMaintenance?.connect(client);
+  document.getElementById('maintenance-check-again').addEventListener('click',()=>window.FPRMaintenance?.refresh());
 
   if (!client) {
     inactiveNotice.hidden = false;
