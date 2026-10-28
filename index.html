@@ -803,6 +803,14 @@
   /* ---------- Optional account sign-in (Phase 1) ---------- */
   .header-account-btn{background:none; border:none; font-size:.92rem; font-weight:600; color:var(--charcoal); padding:8px 6px; white-space:nowrap;}
   .header-account-btn:hover{text-decoration:underline;}
+  .header-account-btn{max-width:clamp(110px,24vw,290px);overflow:hidden;text-overflow:ellipsis;vertical-align:middle;}
+  .recovery-shortcuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:22px;}
+  .recovery-shortcut{display:flex;flex-direction:column;gap:8px;padding:20px;border:1px solid var(--sage);border-radius:14px;background:var(--white,#fff);color:var(--charcoal);text-decoration:none;}
+  .recovery-shortcut:hover{border-color:var(--charcoal);}
+  .recovery-shortcut:focus-visible{outline:3px solid var(--amber);outline-offset:3px;}
+  .recovery-shortcut strong{font-size:1.08rem;}
+  .recovery-shortcut span{font-size:.94rem;line-height:1.5;}
+
   #account-email-display{font-weight:700; color:var(--charcoal); word-break:break-word;}
   .account-inactive-notice{font-size:.85rem; color:var(--charcoal-soft); background:var(--gray); border-radius:var(--radius-m); padding:10px 12px; margin-top:12px;}
   .account-inactive-notice[hidden]{display:none !important;}
@@ -1374,6 +1382,23 @@
     </div>
   </div>
 
+  <section class="block bg-cream tight" aria-labelledby="home-recovery-title">
+    <div class="wrap">
+      <h2 id="home-recovery-title">My Recovery</h2>
+      <p>Pull up a chair. Take a moment for yourself, or pick up where you left off.</p>
+      <nav class="recovery-shortcuts" aria-label="Recovery shortcuts">
+        <a class="recovery-shortcut" href="#checkin" data-nav="checkin"><strong>Check In</strong><span>Pause and notice how you feel today.</span></a>
+        <a class="recovery-shortcut" href="#today" data-nav="today"><strong>Today</strong><span>Your daily starting place, goal, and support.</span></a>
+        <a class="recovery-shortcut" href="#myrecovery" data-nav="myrecovery"><strong>My Recovery</strong><span>Save your daily recovery log and work on your goal.</span></a>
+        <a class="recovery-shortcut" href="#progress" data-nav="progress"><strong>Progress</strong><span>Look back at the work you have been doing.</span></a>
+        <a class="recovery-shortcut" href="#milestones" data-nav="milestones"><strong>Milestones &amp; Wins</strong><span>Find your saved wins and celebrate your steps.</span></a>
+        <a class="recovery-shortcut" href="#journal" data-nav="journal"><strong>Journal</strong><span>Write privately and return to your saved entries.</span></a>
+      </nav>
+      <p style="margin-top:20px;"><strong>Where your information lives:</strong> When signed in, My Recovery logs, Journal entries, and saved wins stay in your account. Progress and <a href="#history" data-nav="history">Recovery History</a> help you find your saved activity.</p>
+      <p>Daily Check-In selections and your Recovery Counter stay in this browser on this device. Check-In reflection text is not saved. To keep a reflection, write and save it in your Journal.</p>
+    </div>
+  </section>
+
   <!-- ONBOARD-1: lightweight "Start here" card. Built by the onboarding
        script (textContent only); hidden when dismissed. No modal, no tour. -->
   <section class="block bg-cream tight" id="fpr-onboard-wrap" hidden>
@@ -1382,18 +1407,7 @@
     </div>
   </section>
 
-  <!-- Today v1: one small link for signed-in members (shown by the Today script). -->
-  <section class="block bg-cream tight" id="home-today" hidden>
-    <div class="wrap">
-      <div class="home-today-card">
-        <div>
-          <h2>Your Today</h2>
-          <p>Daily Porch, My Recovery, your goal, and today’s support in one place.</p>
-        </div>
-        <button type="button" class="btn btn-primary" data-nav="today">Open Today</button>
-      </div>
-    </div>
-  </section>
+  <div id="home-today" hidden></div>
 
   <!-- Recovery counter (same saved date as the Toolbox counter) -->
   <section class="block bg-sage" id="home-counter">
@@ -11369,16 +11383,45 @@ const FPRBadge = (function(){
     if (e.key === 'Escape' && !modal.hidden) closeModal();
   });
 
+  let headerIdentity = null;
+  let headerIdentitySeq = 0;
+  function paintAccountLabel(label, signedIn){
+    [headerBtn, mobileBtn].forEach(btn => {
+      if (!btn) return;
+      btn.textContent = signedIn ? label : (btn === mobileBtn ? 'Account / Sign In' : 'Sign In');
+      btn.setAttribute('aria-label', signedIn ? 'Open account for ' + label : 'Sign in');
+      if (signedIn) btn.title = 'Open your account: ' + label;
+      else btn.removeAttribute('title');
+    });
+  }
+  async function refreshAccountLabel(){
+    const identity = headerIdentity;
+    const seq = ++headerIdentitySeq;
+    if (!identity) return;
+    try {
+      const {data, error} = await client.rpc('get_my_profile');
+      if (seq !== headerIdentitySeq || identity !== headerIdentity || error) return;
+      const profile = Array.isArray(data) ? data[0] : data;
+      if (!profile || !profile.public_id) return;
+      const result = await client.from('community_member_profiles_public').select('handle').eq('public_id', profile.public_id).maybeSingle();
+      if (seq !== headerIdentitySeq || identity !== headerIdentity || result.error) return;
+      paintAccountLabel(result.data && result.data.handle ? '@' + result.data.handle : identity.email || 'Account', true);
+    } catch (_) { /* Keep the signed-in email fallback on a failed lookup. */ }
+  }
+  document.addEventListener('fpr:profilechange', function(){ if (headerIdentity) refreshAccountLabel(); });
+
   function renderSession(session){
     const signedIn = !!(session && session.user);
     signedOutView.hidden = signedIn;
     signedInView.hidden = !signedIn;
-    [headerBtn, mobileBtn].forEach(btn => {
-      if (!btn) return;
-      btn.textContent = signedIn
-        ? 'Account'
-        : (btn === mobileBtn ? 'Account / Sign In' : 'Sign In');
-    });
+    const nextIdentity = signedIn ? session.user : null;
+    if (!headerIdentity || !nextIdentity || headerIdentity.id !== nextIdentity.id || headerIdentity.email !== nextIdentity.email) {
+      headerIdentitySeq++;
+      headerIdentity = nextIdentity;
+      paintAccountLabel(signedIn ? session.user.email || 'Account' : '', signedIn);
+      // Defer database reads until the auth callback has released its session lock.
+      if (signedIn) setTimeout(refreshAccountLabel, 0);
+    }
     if (signedIn) emailDisplay.textContent = session.user.email || '';
 
     // Phase 7B: reset the profile editor whenever the signed-in member
