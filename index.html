@@ -1888,6 +1888,7 @@
             <p class="mr-hint rp-help" id="jr-f-tags-hint">Up to 5, separated by commas. Each up to 30 characters. Only you see them.</p>
           </div>
           <p class="wr-status" id="jr-editor-status" role="status" aria-live="polite"></p>
+          <p class="mr-muted">Press Save entry to keep this writing privately in your account. Find it in Journal after signing in again. Typing alone does not save it.</p>
           <p class="field-error" id="jr-editor-error" role="alert"></p>
           <div class="mr-actions jr-editor-actions">
             <button type="submit" class="btn btn-primary" id="jr-save">Save entry</button>
@@ -2237,6 +2238,7 @@
               <textarea id="mr-need" maxlength="300" rows="2"></textarea>
               <p class="mr-count" id="mr-need-count" aria-live="polite"></p>
             </div>
+            <p class="mr-muted">Press Save to keep this daily log privately in your account. Find saved logs here, in Progress, and in Recovery History. This is separate from Daily Check-In.</p>
             <p class="field-error" id="mr-log-error" role="alert"></p>
             <div class="mr-actions">
               <button type="submit" class="btn btn-primary" id="mr-save">Save today</button>
@@ -2449,6 +2451,7 @@
             <p class="mr-count" id="rp-why-count" aria-live="polite"></p>
           </div>
 
+          <p class="mr-state" id="rp-editor-status" role="status" aria-live="polite">Not saved yet. Press Save my plan when ready.</p>
           <p class="field-error" id="rp-form-error" role="alert"></p>
           <div class="mr-actions">
             <button type="submit" class="btn btn-primary" id="rp-save">Save my plan</button>
@@ -15181,7 +15184,7 @@ const FPRBadge = (function(){
   let logs = [];              // the member's entries from the last 30 days, newest first
   let goal = null;            // active goal or null
   let editingDate = null;     // null = today; otherwise a past entry's date
-  let mood = null, cravings = null, dirty = false;
+  let mood = null, cravings = null, dirty = false, savingLog = false;
   let showAll = false, openEntry = null, goalMode = 'view', busy = false;
 
   function pad(n){ return String(n).padStart(2, '0'); }
@@ -15278,13 +15281,19 @@ const FPRBadge = (function(){
     showFieldError(logError, '');
     paintChoices(); paintCounts(); paintToday();
   }
+  function setLogSaving(value){
+    savingLog=value;logForm.setAttribute('aria-busy',String(value));
+    logForm.querySelectorAll('input,textarea,button').forEach(function(control){control.disabled=value;});
+    paintToday();
+  }
   function paintTodayState(){
     const entry = entryFor(currentDate());
     todayState.classList.remove('saved', 'dirty');
+    if (savingLog) { todayState.textContent = 'Saving to your account…'; return; }
     if (!loaded && !dirty) { todayState.textContent = loadErr.classList.contains('show') ? '' : 'Loading…'; return; }
-    if (dirty) { todayState.textContent = 'Unsaved changes.'; todayState.classList.add('dirty'); }
+    if (dirty) { todayState.textContent = 'Unsaved changes — press Save to keep this log.'; todayState.classList.add('dirty'); }
     else if (entry) {
-      todayState.textContent = editingDate ? 'Saved ✓' : 'Saved ✓ · last updated ' + fmtTime(entry.updated_at);
+      todayState.textContent = editingDate ? 'Saved privately to your account ✓' : 'Saved privately to your account ✓ · last updated ' + fmtTime(entry.updated_at);
       todayState.classList.add('saved');
     }
     else todayState.textContent = editingDate ? 'No entry for this day.' : 'Nothing logged today yet.';
@@ -15294,11 +15303,13 @@ const FPRBadge = (function(){
     todayTitle.textContent = editingDate ? 'Editing ' + fmtDay(d) : 'Today';
     todayDate.textContent = editingDate ? '' : fmtDay(d, { weekday: 'long', month: 'short', day: 'numeric' });
     backToday.hidden = !editingDate;
-    saveBtn.textContent = editingDate ? 'Save changes' : (entryFor(d) ? 'Update today' : 'Save today');
+    saveBtn.disabled = savingLog || !loaded;
+    saveBtn.textContent = savingLog ? 'Saving…' : editingDate ? 'Save changes' : (entryFor(d) ? 'Update today' : 'Save today');
     paintTodayState();
   }
   function confirmDiscard(){ return !dirty || window.confirm('Discard your unsaved changes?'); }
   function editDate(date){
+    if (busy) return false;
     if (date === todayStr()) date = null;
     if (date === editingDate) return true;
     if (!confirmDiscard()) return false;
@@ -15323,7 +15334,7 @@ const FPRBadge = (function(){
     const win = winInput.value.trim(), need = needInput.value.trim();
     if (mood == null && cravings == null && !win && !need) { showFieldError(logError, 'Add at least one thing before saving.'); return; }
     const date = currentDate(), mySeq = seq;
-    busy = true; saveBtn.disabled = true; showFieldError(logError, '');
+    busy = true; loadSeq++; setLogSaving(true); showFieldError(logError, '');
     try {
       const { data, error } = await client.rpc('save_my_recovery_log', {
         p_log_date: date, p_mood: mood, p_cravings: cravings, p_win_text: win, p_need_text: need
@@ -15341,7 +15352,7 @@ const FPRBadge = (function(){
       if (mySeq !== seq) return;
       showFieldError(logError, errMsg(err, 'Couldn’t save right now. Please try again.'));
     } finally {
-      if (mySeq === seq) { busy = false; saveBtn.disabled = false; }
+      if (mySeq === seq) { busy = false; setLogSaving(false); }
     }
   });
 
@@ -15527,7 +15538,7 @@ const FPRBadge = (function(){
   function renderAll(){ paintToday(); renderCounter(); renderSummary(); renderGoal(); renderHistory(); }
   function showLoadError(msg){ loadErrText.textContent = msg; loadErr.classList.toggle('show', !!msg); }
   async function load(){
-    if (!client || !signedIn) return;
+    if (!client || !signedIn || busy) return;
     const mySeq = seq, myLoad = ++loadSeq; // seq = identity; loadSeq = newest load wins
     showLoadError('');
     try {
@@ -15555,7 +15566,7 @@ const FPRBadge = (function(){
   $('mr-signin').addEventListener('click', function(){ const b = $('header-account-btn'); if (b) b.click(); });
 
   function reset(){
-    seq++; busy = false; loaded = false;
+    seq++; busy = false; loaded = false; setLogSaving(false);
     logs = []; goal = null; editingDate = null; showAll = false; openEntry = null; goalMode = 'view';
     saveBtn.disabled = false; goalSave.disabled = false;
     goalText.value = ''; goalDate.value = '';
@@ -15933,6 +15944,15 @@ const FPRBadge = (function(){
   }
 
   // ---- Edit form ----
+  function paintPlanStatus(){
+    const state=$('rp-editor-status');state.classList.toggle('dirty',dirty&&!busy);
+    state.classList.toggle('saved',!dirty&&!busy&&!isEmptyPlan(plan));
+    state.textContent=busy?'Saving your plan to your account…':dirty?'Unsaved changes — press Save my plan to keep them.':!isEmptyPlan(plan)?'Editing your saved plan. Changes are saved only when you press Save my plan.':'Not saved yet. Press Save my plan when ready.';
+  }
+  function setPlanSaving(value){
+    form.setAttribute('aria-busy',String(value));form.querySelectorAll('input,textarea,button').forEach(function(control){control.disabled=value;});
+    saveBtn.textContent=value?'Saving…':'Save my plan';paintPlanStatus();
+  }
   function counts(){
     TEXT_FIELDS.forEach(function(f){ const t = $(f[0]); $(f[0] + '-count').textContent = t.value.length ? t.value.length + ' / 750' : ''; });
   }
@@ -15954,7 +15974,7 @@ const FPRBadge = (function(){
     const remove = el('button', 'btn btn-outline rp-remove', 'Remove this person'); remove.type = 'button';
     remove.addEventListener('click', function(){
       const next = row.nextElementSibling || row.previousElementSibling;
-      row.remove(); dirty = true; updateAddButton();
+      row.remove(); dirty = true; updateAddButton(); paintPlanStatus();
       const focusTarget = next ? next.querySelector('input') : addContactBtn;
       try { focusTarget.focus(); } catch(e){}
     });
@@ -15975,7 +15995,7 @@ const FPRBadge = (function(){
   addContactBtn.addEventListener('click', function(){
     if (contactsBox.children.length >= MAX_CONTACTS) return;
     const row = contactRow(null);
-    contactsBox.appendChild(row); dirty = true; updateAddButton();
+    contactsBox.appendChild(row); dirty = true; updateAddButton(); paintPlanStatus();
     try { row.querySelector('input').focus(); } catch(e){}
   });
   function fillForm(){
@@ -15987,9 +16007,9 @@ const FPRBadge = (function(){
     if (!contactsBox.children.length) contactsBox.appendChild(contactRow(null));
     updateAddButton(); counts();
     showErr(formError, '');
-    dirty = false;
+    dirty = false;paintPlanStatus();
   }
-  form.addEventListener('input', function(){ dirty = true; counts(); showErr(formError, ''); });
+  form.addEventListener('input', function(){ dirty = true; counts(); paintPlanStatus();showErr(formError, ''); });
   function readForm(){
     const out = {};
     STEP_FIELDS.forEach(function(f){ out[f[1]] = $(f[0]).value.trim(); });
@@ -16017,6 +16037,7 @@ const FPRBadge = (function(){
     if (loaded && mode === 'view' && !empty) renderView();
   }
   function openEdit(){
+    if(busy)return;loadSeq++;
     mode = 'edit'; savedNote.textContent = '';
     fillForm(); render();
     const first = $('rp-step-1');
@@ -16040,7 +16061,7 @@ const FPRBadge = (function(){
     const v = readForm();
     if (v.contacts.some(function(c){ return !c.name; })) { showErr(formError, 'Each person needs a name or label.'); return; }
     const mySeq = seq;
-    busy = true; saveBtn.disabled = true; showErr(formError, '');
+    busy = true;setPlanSaving(true);showErr(formError, '');
     try {
       const { data, error } = await client.rpc('save_my_recovery_plan', {
         p_warning_signs: v.warning_signs, p_what_helps: v.what_helps, p_reasons_for_recovery: v.reasons_for_recovery,
@@ -16051,7 +16072,7 @@ const FPRBadge = (function(){
       plan = (Array.isArray(data) ? data[0] : data) || null;
       try { document.dispatchEvent(new CustomEvent('fpr:planchange')); } catch(e){} // Today refreshes
       closeEdit();
-      savedNote.textContent = isEmptyPlan(plan) ? '' : 'Saved ✓ Your plan is up to date.';
+      savedNote.textContent = isEmptyPlan(plan) ? '' : 'Saved privately to your account ✓. Find it here in My Recovery Plan.';
     } catch(err){
       if (mySeq !== seq) return;
       const code = err && err.code;
@@ -16059,7 +16080,7 @@ const FPRBadge = (function(){
         : code === '22023' ? (err.message || 'Please check your plan and try again.')
         : 'Couldn’t save your plan right now. Please try again.');
     } finally {
-      if (mySeq === seq) { busy = false; saveBtn.disabled = false; }
+      if (mySeq === seq) { busy = false;setPlanSaving(false); }
     }
   });
 
@@ -16087,7 +16108,7 @@ const FPRBadge = (function(){
 
   function reset(){
     seq++; loaded = false; plan = null; mode = 'view'; dirty = false; busy = false;
-    saveBtn.disabled = false; savedNote.textContent = '';
+    setPlanSaving(false);savedNote.textContent = '';
     STEP_FIELDS.concat(TEXT_FIELDS).forEach(function(f){ $(f[0]).value = ''; });
     contactsBox.replaceChildren();
     ['rp-v-steps-list', 'rp-v-people-list'].forEach(function(id){ $(id).replaceChildren(); });
@@ -18025,7 +18046,7 @@ const FPRBadge = (function(){
   let items = [], offset = 0, hasMore = false, listLoaded = false, listStale = true;
   let tag = null, query = null;     // active tag filter or search (one at a time)
   let entry = null;                 // the open entry (full)
-  let editingId = null, snapshot = '', dirty = false, returnTo = 'list', pendingNew = false;
+  let editingId = null, snapshot = '', dirty = false, returnTo = 'list', pendingNew = false, savingEntry = false;
 
   function el(tag2, cls, text){ const e = document.createElement(tag2); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function btn(label, cls, onClick){ const b = el('button', cls, label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; }
@@ -18180,12 +18201,18 @@ const FPRBadge = (function(){
     $('jr-f-title-count').textContent = $('jr-f-title').value.length + ' / 120';
     $('jr-f-body-count').textContent = $('jr-f-body').value.length + ' / 5000';
   }
+  function setJournalSaving(value){
+    savingEntry=value;const editor=$('jr-editor');editor.setAttribute('aria-busy',String(value));
+    editor.querySelectorAll('input,textarea,button').forEach(function(control){control.disabled=value;});
+    $('jr-save').textContent=value?'Saving…':'Save entry';paintEditorStatus();
+  }
   function paintEditorStatus(){
     const s = $('jr-editor-status');
     s.classList.toggle('dirty', dirty); s.classList.toggle('saved', !dirty && !!editingId);
-    s.textContent = dirty ? 'Unsaved changes' : (editingId ? 'Saved ✓' : '');
+    s.textContent = savingEntry?'Saving your entry to your account…':dirty?'Unsaved changes — press Save entry to keep them.':editingId?'Saved privately to your account ✓.':'New entry — not saved yet.';
   }
   function startEdit(row, from){
+    if(busy)return;
     if (view === 'edit' && !confirmDiscard()) return;
     editingId = row ? row.id : null;
     returnTo = from || 'list';
@@ -18228,20 +18255,20 @@ const FPRBadge = (function(){
     if (tags.length > 5) { showErr(err, 'You can use up to 5 tags.'); $('jr-f-tags').focus(); return; }
     if (tags.some(function(t){ return t.length > 30; })) { showErr(err, 'Tags can be up to 30 characters.'); $('jr-f-tags').focus(); return; }
     const mySeq = seq;
-    busy = true; $('jr-save').disabled = true; showErr(err, '');
+    busy = true;setJournalSaving(true);showErr(err, '');
     try {
       const { data, error } = await client.rpc('save_my_journal_entry', { p_id: editingId, p_entry_date: date, p_title: title || null, p_body: body, p_tags: tags });
       if (mySeq !== seq) return;
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
-      busy = false; $('jr-save').disabled = false;
+      busy = false;setJournalSaving(false);
       dirty = false; editingId = row.id; entry = row; listStale = true;
       try { document.dispatchEvent(new CustomEvent('fpr:journalchange')); } catch(e3){} // Recovery History refreshes
-      renderEntry('Saved ✓'); setView('entry');
+      renderEntry('Saved privately to your account ✓. Find it in Journal.'); setView('entry');
       try { $('jr-entry-view').focus(); window.scrollTo({ top: 0, behavior: 'auto' }); } catch(e2){}
     } catch(ex){
       if (mySeq !== seq) return;
-      busy = false; $('jr-save').disabled = false;
+      busy = false;setJournalSaving(false);
       showErr(err, errMsg(ex, 'Couldn’t save your entry right now. Please try again.'));
     }
   });
@@ -18284,7 +18311,7 @@ const FPRBadge = (function(){
   }
   function pageActive(){ return page.classList.contains('active'); }
   function reset(){
-    seq++; busy = false; items = []; offset = 0; hasMore = false; listLoaded = false; listStale = true;
+    seq++; busy = false;setJournalSaving(false);items = []; offset = 0; hasMore = false; listLoaded = false; listStale = true;
     tag = null; query = null; entry = null; editingId = null; snapshot = ''; dirty = false; pendingNew = false;
     ['jr-f-date', 'jr-f-title', 'jr-f-body', 'jr-f-tags', 'jr-search-input'].forEach(function(id){ $(id).value = ''; });
     ['jr-entry-date', 'jr-entry-title', 'jr-entry-body', 'jr-entry-meta', 'jr-entry-status'].forEach(function(id){ $(id).textContent = ''; });
