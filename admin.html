@@ -249,6 +249,7 @@
   }
 .maintenance-setting{background:white;padding:18px;border:1px solid var(--line);border-radius:12px;margin:14px 0;display:grid;gap:10px}.maintenance-setting select,.maintenance-setting textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:6px}.maintenance-setting textarea{min-height:90px}.maintenance-setting button{justify-self:start}.maintenance-setting label{font-weight:600}
 </style>
+<style>#founding-admin[hidden]{display:none!important}</style>
 </head>
 <body>
 
@@ -368,8 +369,11 @@
            moderate_member_profile(): reset name, clear bio, clear photo,
            hide recovery date. No free-form editing of member text. -->
       <div id="profiles-dashboard" hidden>
+<section id="founding-admin" hidden style="padding:20px;border:1px solid #ddd;margin:16px 0;">
+<h2>Founding supporter enrollment</h2><p>One free 365-day year per confirmed account, claimed explicitly. Includes workbook and card collection. Closing enrollment preserves granted years. Payments stay closed.</p>
+<p data-founding-admin-status role="status"></p><div class="action-row"><button class="btn" type="button" data-founding-open>Open enrollment</button><button class="btn" type="button" data-founding-close>Close enrollment</button><button class="btn" type="button" data-founding-refresh>Refresh enrollment status</button></div></section>
         <details class="story-row" style="padding:20px;margin:16px 0;">
-          <summary style="cursor:pointer;font-weight:700;">Supporter workbook access</summary>
+          <summary style="cursor:pointer;font-weight:700;">Supporter and sponsored access</summary>
           <p style="margin-top:12px;">Grant workbook and card collection access at no charge. This does not create or cancel a subscription. Workbook answers are private and are not available to admins.</p>
           <form id="supporter-access-search-form" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
             <label for="supporter-access-search">Member name or handle</label><input id="supporter-access-search" maxlength="80" type="search" style="max-width:100%;" autocomplete="off"><button class="btn" type="submit">Search members</button><button class="btn" type="button" id="supporter-access-refresh">Refresh access</button>
@@ -2031,7 +2035,7 @@
         const note=document.createElement('p');note.setAttribute('role','status');const events=document.createElement('div');
         async function change(days){
           if(supportAccessPending)return;
-          const text=days?'Grant '+days+' days of workbook access at no charge to '+title.textContent+'? Existing longer access will be kept.':'Revoke no-charge workbook access for '+title.textContent+'? Their saved answers remain available to them. Billing is unchanged.';
+          const text=days?'Grant '+days+' days of workbook and card collection access at no charge to '+title.textContent+'? Existing longer access will be kept.':'Revoke no-charge supporter access for '+title.textContent+'? Their saved answers remain available to them. Billing is unchanged.';
           if(!window.confirm(text))return;
           supportAccessPending=true;grant.disabled=true;revoke.disabled=true;note.textContent='Saving access…';
           try{const result=await client.rpc('admin_set_supporter_access',{p_public_id:member.public_id,p_days:days});if(seq!==supportAccessEpoch)return;if(result.error)throw result.error;await loadSupporterAccess();}
@@ -2170,5 +2174,6 @@
   client.auth.onAuthStateChange((_event, session) => deferredEvaluateSession(session));
 })();
 </script>
+<script src="founding-supporters.js"></script>
 </body>
 </html>

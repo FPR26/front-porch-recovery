@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="fpr-app-version" content="2026.10.28.18E">
-<meta name="fpr-app-build" content="2026102801">
+<meta name="fpr-app-version" content="2026.11.01.19A">
+<meta name="fpr-app-build" content="2026102802">
 <script src="app-updates.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Front Porch Recovery — Pull Up a Chair</title>
@@ -1308,6 +1308,7 @@
      read or write Recovery Counter or Daily Check-In data, which stay
      on-device as before. See supabase/README.md for the backend contract. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>[data-founding-offer][hidden]{display:none!important}</style>
 </head>
 <body>
 <a href="#main" class="skip-link">Skip to content</a>
@@ -1538,7 +1539,12 @@
     </div>
   </section>
 
-  <div class="wrap" id="porch-visits" hidden style="padding:24px; text-align:center; color:var(--charcoal-soft);">
+  <div class="wrap" data-founding-offer hidden style="padding:24px;">
+<h2>Founding supporters: your first year free</h2><p>No card. No automatic charges. Your recovery tools stay free.</p>
+<p data-founding-status role="status"></p><button hidden type="button" data-founding-claim>Claim my free year</button>
+<button class="btn btn-outline" data-nav="supporter" type="button">Explore your free supporter year</button>
+</div>
+<div class="wrap" id="porch-visits" hidden style="padding:24px; text-align:center; color:var(--charcoal-soft);">
     <p><strong id="porch-visits-count"></strong> Porch visits</p>
     <p style="margin-top:6px; font-size:.92rem;">Thanks for pulling up a chair.</p>
   </div>
@@ -2719,6 +2725,14 @@
   </div></section>
   <section class="block bg-cream"><div class="wrap">
     <p class="tag" id="supporter-payment-state">Membership preview · payments are not open</p>
+
+    <section class="supporter-panel" data-founding-offer hidden style="margin:24px 0;" aria-labelledby="founding-supporter-title">
+      <h2 id="founding-supporter-title">Your first year on us</h2>
+      <p>Join founding enrollment and claim one year of Porch Supporter free: all seven guided workbook reflections and the supporter celebration-card collection.</p>
+      <p>No payment card required. No automatic charges. Your existing recovery tools stay free. At the end, choose whether to join a paid plan or request sponsored access. Saved workbook answers remain readable.</p>
+      <p data-founding-status role="status" aria-live="polite"></p>
+      <div class="supporter-actions"><button class="btn btn-primary" type="button" data-founding-claim>Claim my free year</button><button class="btn btn-outline" type="button" data-founding-refresh>Refresh enrollment status</button></div>
+    </section>
     <div class="supporter-grid">
       <section class="supporter-panel" aria-labelledby="supporter-free-title">
         <h2 id="supporter-free-title">Your seat is always free</h2>
@@ -2730,7 +2744,7 @@
         <h2 id="supporter-paid-title">Something extra. Something shared.</h2>
         <p><strong id="supporter-price-label">Planned membership: $3/month or $25/year.</strong> The yearly option works out to about $2.08 per month, billed annually.</p>
         <ul class="supporter-list"><li>A seven-part guided reflection workbook</li><li>Additional celebration-card designs</li><li>Personalization options planned for a later release</li></ul>
-        <p>An admin can grant private workbook access at no charge. That access does not require a subscription.</p>
+        <p>Sponsored access is available by approval: an admin can grant workbook and card collection access at no charge, without a subscription.</p>
         <p class="supporter-preview-note" id="supporter-payments-note">Public payment signup is not open. Try seven days of private workbook saving with an explicit free trial, or use approved access. Prompts and sample cards remain free to explore.</p>
       </section>
     </div>
@@ -3392,7 +3406,7 @@
 
       <section class="legal-summary" style="margin-top:22px;" aria-labelledby="app-version-title">
         <h2 id="app-version-title">App updates</h2>
-        <p data-fpr-version>Version 2026.10.28.18E</p>
+        <p data-fpr-version>Version 2026.11.01.19A</p>
         <p>New versions never reload this page automatically. Save or cancel any writing before choosing Update app. Your account records and device counter are kept when the page reloads.</p>
         <button type="button" class="btn btn-outline" data-fpr-update-check>Check for updates</button>
         <p id="app-update-check-status" role="status" aria-live="polite"></p>
@@ -3562,7 +3576,7 @@
       <p>The Recovery Counter and Daily Check-In are not part of your account. They stay in your browser as described above, even when you're signed in. You can change or remove your bio, photo, and recovery date at any time from your profile.</p>
 
       <h2>Private supporter workbook</h2>
-      <p>If you have workbook access and choose to save a reflection, its answers and completion state are stored privately with your account in Supabase. They are not posted to the Community or sent to Stripe. Administrators can grant, extend, or revoke no-charge access, but the app does not let them read your answers. Access changes are recorded for administration. You can start one seven-day workbook trial per account; it starts only when you choose to activate it. Trial start and end dates are stored privately with your account. No payment card or automatic subscription is involved. Journal displays the same saved workbook reflections, without making duplicate copies. You can still read or clear your saved reflections after workbook access ends.</p>
+      <p>If you claim founding supporter access, we store your claim date and access end date with your account so the one-time offer cannot restart. Admins can manage access but cannot read workbook answers through the app. If you have workbook access and choose to save a reflection, its answers and completion state are stored privately with your account in Supabase. They are not posted to the Community or sent to Stripe. Administrators can grant, extend, or revoke no-charge access, but the app does not let them read your answers. Access changes are recorded for administration. You can start one seven-day workbook trial per account; it starts only when you choose to activate it. Trial start and end dates are stored privately with your account. No payment card or automatic subscription is involved. Journal displays the same saved workbook reflections, without making duplicate copies. You can still read or clear your saved reflections after workbook access ends.</p>
 
       <h2>Membership testing and collection downloads</h2>
       <p>FPR is testing optional membership checkout with Stripe, available only to administrators in a sandbox. Stripe handles the test checkout and billing portal. FPR stores a billing account identifier, subscription status, and access dates separately from recovery records. Journal entries, reflections, and recovery history are not sent to Stripe. Real paid memberships are not enabled. Stripe receives an internal account reference so test billing can be linked to the correct FPR account; recovery answers are not included. Collection downloads check your account access, but do not add your name, recovery date, or workbook answers to the card. Downloaded PNG files are saved on your device and remain there until you remove them. See <a class="legal-link" href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe’s privacy policy ↗</a>.</p>
@@ -3676,6 +3690,7 @@
       <p>You can also choose to support Front Porch Recovery with an optional contribution through Cash App. Those payments are handled by Cash App under its own terms. Contributions are voluntary, are not purchases, and are not tax-deductible. Front Porch Recovery is not a registered nonprofit or charity.</p>
 
       <h2>Porch Supporter previews and no-charge access</h2>
+      <p>When founding enrollment is open, a confirmed account may explicitly claim one free 365-day supporter year. Closing enrollment does not shorten previously granted access. No payment card or automatic paid renewal is involved. After access ends, saved workbook answers remain readable; paid membership or sponsored access is optional.</p>
       <p>Real paid memberships are not open. The displayed $3/month and $25/year prices are a preview, and the admin sandbox uses test payments only. A sample download, a no-charge access grant, or an admin test checkout does not create a real paid subscription. No-charge workbook and collection access is separate from billing and may have an end date or be revoked.</p>
       <p>Workbook access lets you save private reflections. After access ends, you can still read or clear your saved reflections while signed in. The free prompts, public card samples, Journal, Community, and existing recovery tools remain available under their usual account requirements.</p>
       <p>You may download the celebration cards offered by the site for your personal use, including sharing your own card as an image. This permission does not allow selling the designs, distributing a collection of FPR assets, or presenting the branding as your own. A card contains general encouragement, not proof of membership or a recovery outcome. Downloaded cards do not expire when collection access ends.</p>
@@ -4066,7 +4081,7 @@
     </div>
 
     <div class="footer-bottom">
-      <span>© <span id="year"></span> Front Porch Recovery. All rights reserved. <span data-fpr-version>Version 2026.10.28.18E</span></span>
+      <span>© <span id="year"></span> Front Porch Recovery. All rights reserved. <span data-fpr-version>Version 2026.11.01.19A</span></span>
       <span id="footer-legal-links" style="display:flex; gap:16px; flex-wrap:wrap;"></span>
     </div>
   </div>
@@ -19833,5 +19848,6 @@ NOT BUILT (intentionally out of scope for this phase)
 ============================================================
 -->
 
+<script src="founding-supporters.js"></script>
 </body>
 </html>

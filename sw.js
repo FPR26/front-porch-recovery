@@ -38,7 +38,7 @@
 
    If you ever change this file, bump CACHE_VERSION so old copies are
    cleared out. */
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const CORE_CACHE = 'fpr-core-' + CACHE_VERSION;
 const FONT_CACHE = 'fpr-fonts-' + CACHE_VERSION;
 const CORE_FILES = [
@@ -46,6 +46,7 @@ const CORE_FILES = [
   './index.html',
   './section-maintenance.js',
   './app-updates.js',
+  './founding-supporters.js',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
