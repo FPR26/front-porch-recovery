@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Signing you in — Front Porch Recovery</title>
 <meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#F6F5F2">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <style>
@@ -60,6 +61,10 @@
     background: #8a5a3c;
     color: #fff;
     text-decoration: none;
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+    min-height: 44px;
     font-size: 0.95rem;
   }
   .status { display: none; }
@@ -72,6 +77,12 @@
       <div class="spinner" aria-hidden="true"></div>
       <h1>Signing you in…</h1>
       <p>Hang on while we finish verifying your sign-in link.</p>
+    </div>
+    <div id="confirm-view" class="status">
+      <h1>Finish signing in</h1>
+      <p>Press Sign in to open your Front Porch Recovery account.</p>
+      <button class="btn" id="confirm-sign-in" type="button">Sign in</button>
+      <p>This link works once. Only continue if you requested it.</p>
     </div>
     <div id="error-view" class="error-box" role="alert">
       <div class="error-icon" aria-hidden="true">!</div>
@@ -109,6 +120,8 @@
      Until that's added, Supabase will reject redirecting here. */
   (function(){
     const pendingView = document.getElementById('pending-view');
+    const confirmView = document.getElementById('confirm-view');
+    const confirmButton = document.getElementById('confirm-sign-in');
     const errorView = document.getElementById('error-view');
     const errorMessage = document.getElementById('error-message');
     const homeLink = document.getElementById('home-link');
@@ -120,6 +133,7 @@
 
     function showError(message){
       pendingView.classList.remove('show');
+      confirmView.classList.remove('show');
       errorView.classList.add('show');
       if (message) errorMessage.textContent = message;
     }
@@ -147,6 +161,8 @@
       const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
 
       const code = searchParams.get('code');
+      let tokenHash = hashParams.get('token_hash') || searchParams.get('token_hash');
+      const tokenType = hashParams.get('type') || searchParams.get('type');
       const callbackError = searchParams.get('error_description') || searchParams.get('error')
         || hashParams.get('error_description') || hashParams.get('error');
       const accessToken = hashParams.get('access_token');
@@ -159,7 +175,35 @@
       catch(err){}
 
       if (callbackError) {
-        showError('That sign-in link is no longer valid (' + callbackError + '). It may have expired or already been used.');
+        showError('The sign-in service rejected this link. It may have expired or already been used. Request a new link and open only the newest email.');
+        return;
+      }
+
+      // A direct template link is not consumed by a page visit or email prefetch.
+      // Keep the credential in memory only, scrubbed from the URL above.
+      if (tokenHash) {
+        if (tokenType !== 'email' || !/^[A-Za-z0-9_-]{20,512}$/.test(tokenHash) || code || accessToken || refreshToken) {
+          tokenHash = null;
+          showError('This sign-in link has an unsupported format. Please request a new sign-in link.');
+          return;
+        }
+        pendingView.classList.remove('show');
+        confirmView.classList.add('show');
+        confirmButton.focus();
+        let started = false;
+        confirmButton.addEventListener('click', async function(){
+          if (started) return;
+          started = true;
+          confirmButton.disabled = true;
+          confirmView.classList.remove('show');
+          pendingView.classList.add('show');
+          const credential = tokenHash;
+          tokenHash = null;
+          try {
+            const result = await client.auth.verifyOtp({ token_hash: credential, type: 'email' });
+            finish(result);
+          } catch (err) { verificationError(err); }
+        });
         return;
       }
 
@@ -173,15 +217,24 @@
           showError('This page was opened without a valid sign-in link. Please use the link from your email, or request a new one.');
           return;
         }
-        if (result && result.error) throw result.error;
-        if (!result || !result.data || !result.data.session) throw new Error('No session was returned.');
+        finish(result);
+      } catch(err){ verificationError(err); }
+    }
 
-        // Success — send the user back to the normal site, already
-        // signed in. A brief delay only so "Signing you in..." doesn't
-        // flash-and-vanish instantly.
-        setTimeout(function(){ window.location.replace(homeUrl()); }, 400);
-      } catch(err){
-        showError('Your sign-in link could not be verified. It may have expired or already been used. Please request a new one.');
+    function finish(result){
+      if (result && result.error) throw result.error;
+      if (!result || !result.data || !result.data.session) throw new Error('missing_session');
+      setTimeout(function(){ window.location.replace(homeUrl()); }, 400);
+    }
+
+    function verificationError(err){
+      const code = err && err.code;
+      if (code === 'otp_expired' || code === 'access_denied') {
+        showError('The sign-in service rejected this link. It may have expired or already been used. Request a new link and open only the newest email.');
+      } else if (err && (err.name === 'AuthRetryableFetchError' || err instanceof TypeError)) {
+        showError('We could not reach the sign-in service. Check your connection, then reopen the email link.');
+      } else {
+        showError('We could not finish signing in. Please return to the site and request a new link.');
       }
     }
 
