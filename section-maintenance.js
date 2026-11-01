@@ -2,7 +2,7 @@
 (function(root){
 'use strict';
 const sections={community:'Community',checkin:'Check In',history:'Recovery History',journal:'Journal',weekly:'Weekly Review',milestones:'Milestones & Wins',progress:'Progress',today:'Today',myrecovery:'My Recovery',resources:'Resources',recoveryplan:'My Recovery Plan',meetings:'Meetings & Support',porch:'The Porch',books:'Books',shop:'Porch Shop',supporter:'Porch Supporter',toolbox:'Recovery Toolbox',daily:'Daily Porch',music:'Music',stories:'Porch Stories',about:'Our Story'};
-const aliases={porchtopic:'porch',resource:'resources',story:'stories','story-submit':'stories'};
+const aliases={workbook:'supporter',porchtopic:'porch',resource:'resources',story:'stories','story-submit':'stories'};
 const keyFor=id=>Object.prototype.hasOwnProperty.call(aliases,id)?aliases[id]:(Object.prototype.hasOwnProperty.call(sections,id)?id:null);
 const message='This section is under maintenance. Please check back soon.';
 function createController(win,doc){

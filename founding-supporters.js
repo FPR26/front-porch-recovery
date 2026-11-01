@@ -30,7 +30,7 @@
     if(busy || !offer?.enrollment_open || offer.claimed_at)return;
     if(!user){document.getElementById('header-account-btn')?.click();return;}
     busy=true;controls();message('Claiming your free year…');const seq=epoch;
-    try{const result=await client.rpc('claim_my_founding_supporter_year');if(seq!==epoch)return;if(result.error)throw result.error;offer=result.data;render();document.dispatchEvent(new CustomEvent('fpr:pagechange',{detail:{page:'supporter'}}));}
+    try{const result=await client.rpc('claim_my_founding_supporter_year');if(seq!==epoch)return;if(result.error)throw result.error;offer=result.data;render();document.dispatchEvent(new CustomEvent('fpr:membershipchange'));document.dispatchEvent(new CustomEvent('fpr:pagechange',{detail:{page:'supporter'}}));}
     catch(err){if(seq===epoch)message(err?.code==='55000'?'Enrollment is closed or temporarily under maintenance. Refresh before trying again.':'Could not confirm your claim. Refresh to check your status before trying again.');}
     finally{if(seq===epoch){busy=false;controls();}}
   }));

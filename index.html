@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="fpr-app-version" content="2026.11.01.19A">
-<meta name="fpr-app-build" content="2026102802">
+<meta name="fpr-app-version" content="2026.11.01.19B">
+<meta name="fpr-app-build" content="2026102803">
 <script src="app-updates.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Front Porch Recovery — Pull Up a Chair</title>
@@ -1309,6 +1309,7 @@
      on-device as before. See supabase/README.md for the backend contract. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>[data-founding-offer][hidden]{display:none!important}</style>
+<style>.area-links{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}.recovery-hub{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.menu-group-label{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;opacity:.75;margin:20px 0 6px}.access-summary{padding:16px;border-left:4px solid var(--amber);background:var(--cream);color:var(--charcoal);font-weight:600;margin:16px 0}#workbook-continue{margin:8px 0 16px}#page-workbook h1{margin-top:20px}@media(max-width:640px){.recovery-hub{grid-template-columns:1fr}.area-links .btn{min-height:48px;white-space:normal}.desktop-nav{display:none}}</style>
 </head>
 <body>
 <a href="#main" class="skip-link">Skip to content</a>
@@ -1322,20 +1323,7 @@
         <span class="brand-sub">One honest day at a time</span>
       </span>
     </button>
-    <nav class="desktop-nav" aria-label="Primary">
-      <button data-nav="home">Home</button>
-      <button data-nav="today">Today</button>
-      <button data-nav="checkin">Check In</button>
-      <button data-nav="myrecovery">My Recovery</button>
-      <button data-nav="porch">The Porch</button>
-      <button data-nav="books">Books</button>
-      <button data-nav="shop">Shop</button>
-      <button data-nav="toolbox">Toolbox</button>
-      <button data-nav="daily">Daily Porch</button>
-      <button data-nav="music">Music</button>
-      <button data-nav="stories">Stories</button>
-      <button data-nav="community">Community</button>
-    </nav>
+    <nav class="desktop-nav" aria-label="Primary"><button data-nav="home">Home</button><button data-nav="today">Today</button><button data-nav="myrecovery">My Recovery</button><button data-nav="workbook">Pull Up a Chair Workbook</button><button data-nav="community">Community</button><button data-nav="meetings">Find Support</button></nav>
     <div class="header-actions">
       <button class="header-account-btn" id="header-account-btn" type="button" data-account-action="open">Sign In</button>
       <button class="btn btn-primary header-cta" data-nav="checkin">Check In</button>
@@ -1351,32 +1339,9 @@
     <span class="brand-name">Front Porch Recovery</span>
     <button class="menu-toggle" id="menuCloseBtn" aria-label="Close menu"><span></span></button>
   </div>
-  <div class="links">
-    <button data-nav="home">Home</button>
-    <button data-nav="today">Today</button>
-    <button data-nav="checkin">Check In</button>
-    <button data-nav="myrecovery">My Recovery</button>
-    <button data-nav="progress">Progress</button>
-    <button data-nav="milestones">Milestones &amp; Wins</button>
-    <button data-nav="history">Recovery History</button>
-    <button data-nav="weekly">Weekly Review</button>
-    <button data-nav="journal">Journal</button>
-    <button data-nav="recoveryplan">My Recovery Plan</button>
-    <button data-nav="meetings">Meetings &amp; Support</button>
-    <button data-nav="porch">The Porch</button>
-    <button data-nav="books">Books</button>
-    <button data-nav="shop">Shop</button>
-    <button data-nav="toolbox">Recovery Toolbox</button>
-    <button data-nav="resources">Resources</button>
-    <button data-nav="daily">Daily Porch</button>
-    <button data-nav="music">Music</button>
-    <button data-nav="stories">Porch Stories</button>
-    <button data-nav="community">Community</button>
-    <button data-nav="about">My Story</button>
-    <button data-nav="contact">Contact</button>
-    <button data-nav="app">Get the App</button>
-    <button type="button" id="mobile-account-btn" data-account-action="open">Account / Sign In</button>
-  </div>
+  <div class="links"><p class="menu-group-label">Your daily tools</p><button data-nav="home">Home</button><button data-nav="today">Today</button><button data-nav="myrecovery">My Recovery</button><button data-nav="workbook">Pull Up a Chair Workbook</button><button data-nav="community">Community</button><button data-nav="meetings">Find Support</button>
+<p class="menu-group-label">Explore</p><button data-nav="porch">The Porch · Topics &amp; reflections</button><button data-nav="stories">Porch Stories</button><button data-nav="music">Music</button><button data-nav="books">Books</button><button data-nav="shop">Porch Shop</button>
+<p class="menu-group-label">About &amp; account</p><button data-nav="supporter">Porch Supporter · Access &amp; benefits</button><button data-nav="about">Our Story</button><button data-nav="contact">Contact</button><button data-nav="app">Get the App</button><button type="button" id="mobile-account-btn" data-account-action="open">Account / Sign In</button></div>
   <div class="foot">
     <button class="btn btn-amber btn-block" data-nav="roughday">I'm having a rough day</button>
     <button class="btn btn-outline-light btn-block" data-nav="checkin">Go to Check In</button>
@@ -1429,17 +1394,9 @@
 
   <section class="block bg-cream tight" aria-labelledby="home-recovery-title">
     <div class="wrap">
-      <h2 id="home-recovery-title">My Recovery</h2>
+      <h2 id="home-recovery-title">Where would you like to start?</h2>
       <p>Pull up a chair. Take a moment for yourself, or pick up where you left off.</p>
-      <nav class="recovery-shortcuts" aria-label="Recovery shortcuts">
-        <a class="recovery-shortcut" href="#checkin" data-nav="checkin"><strong>Check In</strong><span>Pause and notice how you feel today.</span></a>
-        <a class="recovery-shortcut" href="#today" data-nav="today"><strong>Today</strong><span>Your daily starting place, goal, and support.</span></a>
-        <a class="recovery-shortcut" href="#myrecovery" data-nav="myrecovery"><strong>My Recovery</strong><span>Save your daily recovery log and work on your goal.</span></a>
-        <a class="recovery-shortcut" href="#progress" data-nav="progress"><strong>Progress</strong><span>Look back at the work you have been doing.</span></a>
-        <a class="recovery-shortcut" href="#milestones" data-nav="milestones"><strong>Milestones &amp; Wins</strong><span>Find your saved wins and celebrate your steps.</span></a>
-        <a class="recovery-shortcut" href="#journal" data-nav="journal"><strong>Journal</strong><span>Write privately and return to your saved entries.</span></a>
-        <a class="recovery-shortcut" id="home-workbook-link" href="#supporter" data-nav="supporter" data-scroll-target="supporter-workbook-title"><strong>Try the workbook</strong><span>Pull Up a Chair: seven guided reflections, at your own pace. Explore the prompts for free.</span></a>
-      </nav>
+      <nav class="recovery-shortcuts" aria-label="Start here"><a class="recovery-shortcut" href="#today" data-nav="today"><strong>Today</strong><span>Check in, read Daily Porch, and choose one useful step.</span></a><a class="recovery-shortcut" href="#myrecovery" data-nav="myrecovery"><strong>My Recovery</strong><span>Your counter, logs, progress, milestones, Journal, and plan.</span></a><a class="recovery-shortcut" id="home-workbook-link" href="#workbook" data-nav="workbook"><strong>Pull Up a Chair Workbook</strong><span>Continue your reflections. Find all questions and saved answers here.</span></a><a class="recovery-shortcut" href="#community" data-nav="community"><strong>Community</strong><span>Talk, listen, and connect with other members.</span></a><a class="recovery-shortcut" href="#meetings" data-nav="meetings"><strong>Find Support</strong><span>Meetings, practical resources, and help for harder moments.</span></a></nav>
       <p style="margin-top:20px;"><strong>Where your information lives:</strong> When signed in, My Recovery logs, Journal entries, and saved wins stay in your account. Progress and <a href="#history" data-nav="history">Recovery History</a> help you find your saved activity.</p>
       <p>Daily Check-In selections and your Recovery Counter stay in this browser on this device. Check-In reflection text is not saved. To keep a reflection, write and save it in your Journal.</p>
     </div>
@@ -1833,11 +1790,11 @@
       </div>
 
       <section class="form-card mr-card" id="jr-workbook" hidden aria-labelledby="jr-workbook-title">
-        <h2 id="jr-workbook-title" tabindex="-1">Workbook reflections</h2>
+        <h2 id="jr-workbook-title" tabindex="-1">Workbook reflections</h2><p>Saved in your Pull Up a Chair Workbook. These are the same answers, not separate Journal entries.</p>
         <p>Your saved Pull Up a Chair reflections, with their questions. These are the same records as the workbook, so saving there updates this view. Freeform Journal entries below are separate and remain free.</p>
         <p id="jr-workbook-status" role="status"></p>
         <div id="jr-workbook-entries"></div>
-        <div class="supporter-actions"><a class="btn btn-outline" href="#supporter" data-nav="supporter" data-scroll-target="supporter-workbook-title">Open Pull Up a Chair</a><button class="btn btn-outline" type="button" id="jr-workbook-reload">Refresh workbook reflections</button></div>
+        <div class="supporter-actions"><a class="btn btn-outline" href="#workbook" data-nav="workbook" data-scroll-target="supporter-workbook-title">Open Pull Up a Chair</a><button class="btn btn-outline" type="button" id="jr-workbook-reload">Refresh workbook reflections</button></div>
       </section>
       <div id="jr-signedin" hidden>
         <div class="status-msg status-error" id="jr-load-error" role="alert"><span id="jr-load-error-text"></span> <button type="button" class="mr-link" id="jr-retry">Try again</button></div>
@@ -2007,7 +1964,7 @@
      sharing, badges or Community. Built by the Milestones & Wins script
      (textContent only). -->
 <section class="page" id="page-milestones">
-  <section class="block bg-charcoal tight">
+<div class="wrap area-links" style="padding-top:20px;"><button class="btn btn-outline" data-nav="myrecovery">Back to My Recovery</button><button class="btn btn-outline" data-nav="supporter" data-scroll-target="supporter-benefits-title">Supporter celebration cards</button></div>  <section class="block bg-charcoal tight">
     <div class="wrap td-wrap mw-wrap">
       <p class="hero-eyebrow" style="color:#A7B8A8;">Milestones recognize time. Wins recognize life.</p>
       <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Milestones &amp; Wins</h1>
@@ -2100,7 +2057,7 @@
      own). Facts only: no scores, judgments or interpretation. Built by the
      Progress script (textContent only). -->
 <section class="page" id="page-progress">
-  <section class="block bg-charcoal tight">
+<div class="wrap area-links" style="padding-top:20px;"><button class="btn btn-outline" data-nav="myrecovery">Back to My Recovery</button><button class="btn btn-outline" data-nav="history">Recovery History</button></div>  <section class="block bg-charcoal tight">
     <div class="wrap td-wrap">
       <p class="hero-eyebrow" style="color:#A7B8A8;">Over time</p>
       <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Progress</h1>
@@ -2156,7 +2113,7 @@
      Signed-in daily dashboard. Aggregates existing private data only
      (no storage of its own). Built by the Today script (textContent only). -->
 <section class="page" id="page-today">
-  <section class="block bg-charcoal tight">
+<section class="block bg-cream tight"><div class="wrap"><h2>Start with today</h2><nav class="area-links" aria-label="Start with today"><button class="btn btn-outline" type="button" data-nav="checkin">Daily Check-In</button><button class="btn btn-outline" type="button" data-nav="daily">Daily Porch</button><button class="btn btn-outline" type="button" data-nav="myrecovery">Save a recovery log</button></nav></div></section>  <section class="block bg-charcoal tight">
     <div class="wrap td-wrap">
       <p class="hero-eyebrow" style="color:#A7B8A8;" id="td-greeting">Today</p>
       <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;" id="td-date">Today</h1>
@@ -2206,7 +2163,7 @@
      Check-In and Recovery Counter: nothing local is uploaded or copied.
      Built by the My Recovery script (textContent only). -->
 <section class="page" id="page-myrecovery">
-  <section class="block bg-charcoal tight">
+<section class="block bg-cream tight"><div class="wrap"><h2>Your recovery tools</h2><p>Choose what you need. Each tool keeps the information you already saved.</p><nav class="recovery-hub" aria-label="My Recovery tools"><a class="recovery-shortcut" href="#toolbox" data-nav="toolbox" data-scroll-target="tb-counter"><strong>Recovery Counter</strong><span>Your recovery date and birthday counter on this device.</span></a><a class="recovery-shortcut" href="#progress" data-nav="progress"><strong>Progress &amp; History</strong><span>See patterns and find saved recovery activity.</span></a><a class="recovery-shortcut" href="#milestones" data-nav="milestones"><strong>Milestones &amp; Wins</strong><span>Recovery birthdays, celebrations, and saved wins.</span></a><a class="recovery-shortcut" href="#journal" data-nav="journal"><strong>Journal</strong><span>Write privately and revisit your entries.</span></a><a class="recovery-shortcut" href="#recoveryplan" data-nav="recoveryplan"><strong>My Recovery Plan</strong><span>Keep your personal plan and supports close.</span></a><a class="recovery-shortcut" href="#weekly" data-nav="weekly"><strong>Weekly Review</strong><span>Reflect on the week and your next step.</span></a></nav><div class="area-links"><button class="btn btn-outline" data-nav="history">Open Recovery History</button><button class="btn btn-outline" data-nav="workbook">Pull Up a Chair Workbook</button></div></div></section>  <section class="block bg-charcoal tight">
     <div class="wrap mr-wrap">
       <p class="hero-eyebrow" style="color:#A7B8A8;">Your private space</p>
       <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">My Recovery</h1>
@@ -2487,7 +2444,7 @@
      list) for everyone, plus a signed-in, account-private weekly support
      plan. Built by the Meetings & Support script (textContent only). -->
 <section class="page" id="page-meetings">
-  <section class="block bg-charcoal tight">
+<section class="block bg-cream tight"><div class="wrap"><h2>Find Support</h2><nav class="area-links" aria-label="Find Support"><button class="btn btn-outline" type="button" data-nav="roughday">Rough day?</button><button class="btn btn-outline" type="button" data-nav="resources">Resources</button><button class="btn btn-outline" type="button" data-nav="toolbox">Recovery Toolbox</button><button class="btn btn-outline" type="button" data-nav="recoveryplan">My Recovery Plan</button></nav></div></section>  <section class="block bg-charcoal tight">
     <div class="wrap mr-wrap">
       <p class="hero-eyebrow" style="color:#A7B8A8;">Any program, any kind of support</p>
       <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Meetings &amp; Support</h1>
@@ -2716,6 +2673,44 @@
   </section>
 </section>
 
+<section class="page" id="page-workbook"><section class="block bg-cream"><div class="wrap">
+<nav class="area-links" aria-label="Workbook navigation"><button type="button" class="btn btn-outline" data-nav="home">Home</button><button type="button" class="btn btn-outline" data-nav="myrecovery">My Recovery</button></nav>
+<h1 id="workbook-page-title" tabindex="-1">Pull Up a Chair Workbook</h1>
+<p>Seven guided reflections. Your questions, answers, and progress stay together here.</p>
+<p class="access-summary" data-supporter-access-status role="status" aria-live="polite">Checking supporter access…</p>
+<button class="btn btn-primary" id="workbook-continue" type="button">Continue my workbook</button>
+    <section class="supporter-panel" style="margin-top:28px;" aria-labelledby="supporter-workbook-title">
+      <p class="hero-eyebrow" style="color:var(--sage-text);">Your reflections, together</p>
+      <h2 id="supporter-workbook-title" tabindex="-1" style="margin-top:10px;scroll-margin-top:100px;">Pull Up a Chair Workbook</h2>
+      <p>Seven small reflections for finding your footing. Take them in any order, at your own pace. Skip any prompt you do not want to answer; you can save an unfinished reflection. There is no streak to protect. The prompts stay free to explore; a saving trial lasts seven days.</p>
+      <div class="supporter-days" id="supporter-workbook-days" role="group" aria-label="Choose a workbook reflection"></div>
+      <div id="supporter-workbook-reflection" aria-live="polite" aria-atomic="true"></div>
+      <section id="supporter-workbook-private" style="margin-top:24px;border-top:1px solid var(--line);padding-top:24px;" aria-labelledby="supporter-answers-title">
+        <h3 id="supporter-answers-title" tabindex="-1">Your saved answers</h3>
+        <p id="supporter-workbook-status" role="status" aria-live="polite">Sign in to check workbook access. The free preview does not save answers.</p>
+        <p id="supporter-workbook-progress" class="supporter-preview-note"></p>
+        <div id="supporter-trial-offer" hidden>
+          <p>Try saving and editing all seven reflections for seven days. One trial per account, starting when you press the button below. No card and no automatic subscription. Your saved answers stay readable in the workbook and Journal afterward; workbook editing then requires supporter access or a no-charge grant.</p>
+          <p><strong>Paid signup is not open yet.</strong> The free Journal stays available after the trial.</p>
+          <button type="button" class="btn btn-primary" id="supporter-trial-start">Start my seven-day free trial</button>
+        </div>
+        <button type="button" class="btn btn-outline" id="supporter-workbook-signin" hidden>Sign in to try saving answers</button>
+        <form id="supporter-workbook-form" hidden>
+          <div id="supporter-answer-fields"></div>
+          <label style="display:flex;gap:10px;align-items:center;margin-top:16px;"><input type="checkbox" id="supporter-workbook-complete"> Mark this reflection complete</label>
+          <div class="supporter-actions"><button type="submit" class="btn btn-primary" id="supporter-workbook-save">Save reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-reload">Reload saved reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-clear">Clear saved reflection</button></div>
+          <p id="supporter-save-state" role="status" aria-live="polite" data-state="empty">No saved answers for this reflection.</p>
+          <div class="supporter-actions"><a class="btn btn-outline" id="workbook-journal-link" href="#journal" data-nav="journal" data-scroll-target="jr-workbook-title">View saved workbook reflections in Journal</a></div>
+          <p class="supporter-preview-note">Saved to your account only when you press Save reflection. The same saved reflection appears in Journal under Workbook reflections. Admins manage access but cannot read these answers through the app. You can read or clear your saved reflections after access ends.</p>
+        </form>
+      </section>
+      <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="journal">Write in your free Journal</button></div>
+      <p class="supporter-preview-note">Explore all seven reflections for free. No paid membership is needed to read the prompts or write in your free Journal. Start a seven-day free trial to save answers here, or use existing workbook access.</p>
+      <div class="supporter-actions"><a class="btn btn-outline" id="workbook-membership-link" href="#supporter" data-nav="supporter" data-scroll-target="supporter-membership-title">Learn about Porch Supporter membership</a></div>
+      <p class="supporter-preview-note">Like the workbook? See what Porch Supporter includes. Paid signup is not open yet. Your trial will not become a paid subscription.</p>
+
+    </section>
+</div></section></section>
 <!-- ================= PORCH SUPPORTER PREVIEW ================= -->
 <section class="page" id="page-supporter">
   <section class="block bg-charcoal tight"><div class="wrap">
@@ -2724,7 +2719,7 @@
     <p style="color:var(--gray);max-width:58ch;margin-top:14px;">Help keep the porch light on, with a few thoughtful extras for your own honest days.</p>
   </div></section>
   <section class="block bg-cream"><div class="wrap">
-    <p class="tag" id="supporter-payment-state">Membership preview · payments are not open</p>
+    <p class="access-summary" data-supporter-access-status role="status">Checking supporter access…</p><p class="tag" id="supporter-payment-state">Membership preview · payments are not open</p>
 
     <section class="supporter-panel" data-founding-offer hidden style="margin:24px 0;" aria-labelledby="founding-supporter-title">
       <h2 id="founding-supporter-title">Your first year on us</h2>
@@ -2763,37 +2758,7 @@
       </div>
       <p class="supporter-preview-note">Stripe handles payment details. Review <a href="#terms" data-nav="terms">Terms</a> and <a href="#privacy" data-nav="privacy">Privacy</a> before subscribing. A checkout return alone does not activate benefits.</p>
     </section>
-    <section class="supporter-panel" style="margin-top:28px;" aria-labelledby="supporter-workbook-title">
-      <p class="hero-eyebrow" style="color:var(--sage-text);">Try the workbook</p>
-      <h2 id="supporter-workbook-title" tabindex="-1" style="margin-top:10px;scroll-margin-top:100px;">Pull Up a Chair</h2>
-      <p>Seven small reflections for finding your footing. Take them in any order, at your own pace. Skip any prompt you do not want to answer; you can save an unfinished reflection. There is no streak to protect. The prompts stay free to explore; a saving trial lasts seven days.</p>
-      <div class="supporter-days" id="supporter-workbook-days" role="group" aria-label="Choose a workbook reflection"></div>
-      <div id="supporter-workbook-reflection" aria-live="polite" aria-atomic="true"></div>
-      <section id="supporter-workbook-private" style="margin-top:24px;border-top:1px solid var(--line);padding-top:24px;" aria-labelledby="supporter-answers-title">
-        <h3 id="supporter-answers-title" tabindex="-1">Your private workbook</h3>
-        <p id="supporter-workbook-status" role="status" aria-live="polite">Sign in to check workbook access. The free preview does not save answers.</p>
-        <p id="supporter-workbook-progress" class="supporter-preview-note"></p>
-        <div id="supporter-trial-offer" hidden>
-          <p>Try saving and editing all seven reflections for seven days. One trial per account, starting when you press the button below. No card and no automatic subscription. Your saved answers stay readable in the workbook and Journal afterward; workbook editing then requires supporter access or a no-charge grant.</p>
-          <p><strong>Paid signup is not open yet.</strong> The free Journal stays available after the trial.</p>
-          <button type="button" class="btn btn-primary" id="supporter-trial-start">Start my seven-day free trial</button>
-        </div>
-        <button type="button" class="btn btn-outline" id="supporter-workbook-signin" hidden>Sign in to try saving answers</button>
-        <form id="supporter-workbook-form" hidden>
-          <div id="supporter-answer-fields"></div>
-          <label style="display:flex;gap:10px;align-items:center;margin-top:16px;"><input type="checkbox" id="supporter-workbook-complete"> Mark this reflection complete</label>
-          <div class="supporter-actions"><button type="submit" class="btn btn-primary" id="supporter-workbook-save">Save reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-reload">Reload saved reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-clear">Clear saved reflection</button></div>
-          <p id="supporter-save-state" role="status" aria-live="polite" data-state="empty">No saved answers for this reflection.</p>
-          <div class="supporter-actions"><a class="btn btn-outline" id="workbook-journal-link" href="#journal" data-nav="journal" data-scroll-target="jr-workbook-title">View saved workbook reflections in Journal</a></div>
-          <p class="supporter-preview-note">Saved to your account only when you press Save reflection. The same saved reflection appears in Journal under Workbook reflections. Admins manage access but cannot read these answers through the app. You can read or clear your saved reflections after access ends.</p>
-        </form>
-      </section>
-      <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="journal">Write in your free Journal</button></div>
-      <p class="supporter-preview-note">Explore all seven reflections for free. No paid membership is needed to read the prompts or write in your free Journal. Start a seven-day free trial to save answers here, or use existing workbook access.</p>
-      <div class="supporter-actions"><a class="btn btn-outline" id="workbook-membership-link" href="#supporter" data-nav="supporter" data-scroll-target="supporter-membership-title">Learn about Porch Supporter membership</a></div>
-      <p class="supporter-preview-note">Like the workbook? See what Porch Supporter includes. Paid signup is not open yet. Your trial will not become a paid subscription.</p>
-
-    </section>
+    <section class="supporter-panel" style="margin-top:28px;"><h2>Pull Up a Chair Workbook</h2><p>All seven reflections and your saved answers have their own page.</p><button class="btn btn-primary" type="button" data-nav="workbook">Open Pull Up a Chair Workbook</button></section>
     <section id="supporter-sandbox" class="supporter-panel" style="margin-top:28px;" hidden aria-labelledby="supporter-sandbox-title">
       <h2 id="supporter-sandbox-title">Admin · Membership sandbox</h2>
       <p><a href="admin.html">Return to admin dashboard</a></p>
@@ -2813,7 +2778,7 @@
         <button type="button" class="btn btn-primary" id="supporter-collection-download">Download collection PNG</button>
         <canvas id="supporter-collection-preview" class="supporter-card-image" width="1200" height="1200" role="img" aria-label="Your selected supporter card" style="max-width:440px;" hidden></canvas>
       </div>
-      <div class="supporter-actions"><button type="button" class="btn btn-outline" id="supporter-benefits-refresh">Refresh collection access</button><button type="button" class="btn btn-outline" data-nav="supporter" data-scroll-target="supporter-answers-title">Go to my workbook</button></div>
+      <div class="supporter-actions"><button type="button" class="btn btn-outline" id="supporter-benefits-refresh">Refresh collection access</button><button type="button" class="btn btn-outline" data-nav="workbook" data-scroll-target="supporter-answers-title">Go to my workbook</button></div>
       <p class="supporter-preview-note">An approved no-charge grant includes the collection. The workbook trial covers reflections only. Paid signup is not open. You can keep downloaded cards after access ends; the labeled samples below remain free.</p>
     </section>
     <h2 style="margin-top:36px;">A little more room to celebrate</h2>
@@ -3406,7 +3371,7 @@
 
       <section class="legal-summary" style="margin-top:22px;" aria-labelledby="app-version-title">
         <h2 id="app-version-title">App updates</h2>
-        <p data-fpr-version>Version 2026.11.01.19A</p>
+        <p data-fpr-version>Version 2026.11.01.19B</p>
         <p>New versions never reload this page automatically. Save or cancel any writing before choosing Update app. Your account records and device counter are kept when the page reloads.</p>
         <button type="button" class="btn btn-outline" data-fpr-update-check>Check for updates</button>
         <p id="app-update-check-status" role="status" aria-live="polite"></p>
@@ -3920,9 +3885,9 @@
       <p class="ms-modal-text">Your free recovery logs, Journal entries, plans, and wins save to your account when you press their Save buttons. Your Recovery Counter and Daily Check-In stay on this device only. The profile below is also saved to your account.</p>
 
       <section class="account-profile" aria-labelledby="account-workbook-title">
-        <h3 class="account-profile-title" id="account-workbook-title">Your private workbook</h3>
+        <h3 class="account-profile-title" id="account-workbook-title">Pull Up a Chair Workbook</h3><p class="access-summary" data-supporter-access-status role="status">Checking supporter access…</p>
         <p class="ms-modal-text">Open your reflections, check workbook access, or read and clear answers you saved earlier. Saved workbook reflections also appear in Journal; freeform Journal entries remain free.</p>
-        <button type="button" class="btn btn-outline btn-block" id="account-workbook-open">Open my workbook</button>
+        <button type="button" class="btn btn-outline btn-block" id="account-workbook-open">Open Pull Up a Chair Workbook</button>
         <button type="button" class="btn btn-outline btn-block" id="account-collection-open" style="margin-top:10px;">Open my card collection</button>
         <button type="button" class="btn btn-outline btn-block" id="account-paid-membership-open" style="margin-top:10px;" hidden>Manage my paid membership</button>
       </section>
@@ -4034,23 +3999,7 @@
       </div>
       <div>
         <h4>Explore</h4>
-        <ul>
-          <li><a href="#" data-nav="today">Today</a></li>
-          <li><a href="#" data-nav="checkin">Check In</a></li>
-          <li><a href="#" data-nav="myrecovery">My Recovery</a></li>
-          <li><a href="#" data-nav="progress">Progress</a></li>
-          <li><a href="#" data-nav="milestones">Milestones &amp; Wins</a></li>
-          <li><a href="#" data-nav="history">Recovery History</a></li>
-          <li><a href="#" data-nav="weekly">Weekly Review</a></li>
-          <li><a href="#" data-nav="journal">Journal</a></li>
-          <li><a href="#" data-nav="recoveryplan">My Recovery Plan</a></li>
-          <li><a href="#" data-nav="meetings">Meetings &amp; Support</a></li>
-          <li><a href="#" data-nav="porch">The Porch</a></li>
-          <li><a href="#" data-nav="toolbox">Recovery Toolbox</a></li>
-          <li><a href="#" data-nav="resources">Resources</a></li>
-          <li><a href="#" data-nav="daily">Daily Porch</a></li>
-          <li><a href="#home" data-nav="home" data-scroll-target="fpr-onboard" id="footer-onboard-replay">Getting started</a></li>
-        </ul>
+        <ul><li><a href="#today" data-nav="today">Today</a></li><li><a href="#myrecovery" data-nav="myrecovery">My Recovery</a></li><li><a href="#workbook" data-nav="workbook">Pull Up a Chair Workbook</a></li><li><a href="#community" data-nav="community">Community</a></li><li><a href="#meetings" data-nav="meetings">Find Support</a></li><li><a href="#home" data-nav="home" data-scroll-target="fpr-onboard" id="footer-onboard-replay">Getting started</a></li></ul>
       </div>
       <div>
         <h4>Shop &amp; read</h4>
@@ -4081,7 +4030,7 @@
     </div>
 
     <div class="footer-bottom">
-      <span>© <span id="year"></span> Front Porch Recovery. All rights reserved. <span data-fpr-version>Version 2026.11.01.19A</span></span>
+      <span>© <span id="year"></span> Front Porch Recovery. All rights reserved. <span data-fpr-version>Version 2026.11.01.19B</span></span>
       <span id="footer-legal-links" style="display:flex; gap:16px; flex-wrap:wrap;"></span>
     </div>
   </div>
@@ -9579,6 +9528,7 @@ const pages = document.querySelectorAll('.page');
 const mobileNav = document.getElementById('mobile-nav');
 function goTo(pageId, opts){
   opts = opts || {};
+  if(pageId==='supporter' && ['supporter-workbook-title','supporter-answers-title'].includes(opts.scrollTarget))pageId='workbook';
   if(window.FPRMaintenance && !window.FPRMaintenance.route(pageId, opts)) return;
   if(pageId === 'daily'){ try { renderDaily(getTodaysPorchDay()); } catch(err){} }
   if(pageId === 'home'){ try { renderHomeDaily(); } catch(err){} }
@@ -11441,7 +11391,7 @@ const FPRBadge = (function(){
   const workbookOpen = document.getElementById('account-workbook-open');
   if(workbookOpen)workbookOpen.addEventListener('click', function(){
     closeModal();
-    goTo('supporter', {scrollTarget:'supporter-answers-title'});
+    goTo('workbook', {scrollTarget:'supporter-answers-title'});
   });
 
   const paidMembershipOpen = document.getElementById('account-paid-membership-open');
@@ -19494,9 +19444,11 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   const complete=document.getElementById('supporter-workbook-complete'),save=document.getElementById('supporter-workbook-save'),reload=document.getElementById('supporter-workbook-reload'),clear=document.getElementById('supporter-workbook-clear');
   const trialOffer=document.getElementById('supporter-trial-offer'),trialStart=document.getElementById('supporter-trial-start'),signin=document.getElementById('supporter-workbook-signin');
   const journal=document.getElementById('jr-workbook'),journalEntries=document.getElementById('jr-workbook-entries'),journalStatus=document.getElementById('jr-workbook-status');
+  let needsResume=true;
   let trialAvailable=false,trialEnds=null,trialExpired=false,expiryTimer=null,pendingDay=null,saving=false;
   let user=null,epoch=0,day=1,entries=[],canWrite=false,until=null,accessSource=null,cancellationScheduled=false,dirty=false,busy=false,loading=false,pendingAccessRefresh=false;
   window.FPRUpdates?.guard('Workbook',()=>dirty || busy);
+  document.getElementById('workbook-continue').addEventListener('click',()=>{document.getElementById('supporter-answers-title').scrollIntoView({block:'start',behavior:'auto'});document.getElementById('supporter-answers-title').focus({preventScroll:true});});
   function renderJournal(){
     journalEntries.replaceChildren();journal.hidden=!user;
     journalStatus.textContent=entries.length ? (canWrite?'Open a reflection to read it or return to the workbook to edit.':'Workbook editing is not active. Your saved answers remain readable; your free Journal is still available.') : 'No workbook reflections saved yet. Your freeform Journal is available below.';
@@ -19517,7 +19469,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   }
   function acceptAccess(data){canWrite=data.can_write===true;until=data.access_until;accessSource=data.access_source || null;cancellationScheduled=data.cancellation_scheduled===true;trialAvailable=data.trial_available===true;trialEnds=data.trial_ends_at || null;trialExpired=!canWrite && !!trialEnds;scheduleExpiry(data.server_now);}
   function openPending(){if(pendingDay===null || busy || loading)return;const index=pendingDay;pendingDay=null;if(window.FPRWorkbookSelect)window.FPRWorkbookSelect(index);else{day=index+1;render();}}
-  window.FPRWorkbookOpen=function(index){if(!Number.isInteger(index)||index<0||index>6)return;if(dirty && !window.confirm('Leave this reflection without saving your changes?'))return;dirty=false;pendingDay=index;if(typeof window.goTo==='function')window.goTo('supporter',{scrollTarget:'supporter-answers-title'});openPending();};
+  window.FPRWorkbookOpen=function(index){if(!Number.isInteger(index)||index<0||index>6)return;if(dirty && !window.confirm('Leave this reflection without saving your changes?'))return;dirty=false;pendingDay=index;if(typeof window.goTo==='function')window.goTo('workbook',{scrollTarget:'supporter-answers-title'});openPending();};
   document.getElementById('jr-workbook-reload').addEventListener('click',()=>load(false,true));
   signin.addEventListener('click',()=>document.getElementById('header-account-btn').click());
   function paintSaveState(){
@@ -19559,7 +19511,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
       if(result.error || !result.data || !Array.isArray(result.data.entries))throw Error('unavailable');
       acceptAccess(result.data);
       if(preserveDraft && dirty){renderBusy(busy);renderJournal();message(accessMessage()+' Your unsaved answers are still here.');}
-      else{entries=result.data.entries;dirty=false;render();message(accessMessage());}
+      else{entries=result.data.entries;if(needsResume && pendingDay===null && entries.length){const latest=entries.slice().sort((a,b)=>Date.parse(b.updated_at || 0)-Date.parse(a.updated_at || 0))[0];pendingDay=latest.reflection_number-1;}needsResume=false;dirty=false;render();message(accessMessage());}
     }catch(_){if(seq===epoch){canWrite=false;if(!(preserveDraft && dirty)){form.hidden=true;fields.replaceChildren();}trialAvailable=false;trialOffer.hidden=true;journalEntries.replaceChildren();journalStatus.textContent='Could not load workbook reflections. Try Refresh workbook reflections when connected.';message('Could not refresh workbook access. '+(dirty?'Your unsaved answers are still here. ':'')+'Try Reload saved reflection when connected.');}}
     finally{if(seq===epoch){loading=false;renderBusy(busy);openPending();if(pendingAccessRefresh && !busy){pendingAccessRefresh=false;load(false,true);}}}
   }
@@ -19570,7 +19522,7 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
     catch(error){if(seq===epoch)message(error?.code==='55000'?'The workbook is under maintenance. Your trial has not started.':'Could not confirm your trial status. Reload to check it before trying again.');}
     finally{if(seq===epoch){busy=false;renderBusy(false);}}
   });
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden && user && (document.getElementById('page-supporter')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active')))load(false,true);});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden && user && (document.getElementById('page-workbook')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active')))load(false,true);});
   document.addEventListener('fpr:membershipchange',()=>{if(busy || loading)pendingAccessRefresh=true;else load(false,true);});
   complete.addEventListener('change',()=>{dirty=true;message('Unsaved changes. Press Save reflection when ready.');});
   document.addEventListener('fpr:workbookselect',e=>{
@@ -19603,10 +19555,10 @@ function drawCommunityCelebration(ctx, logo, count, isPreview){
   let identity=null;
   client.auth.onAuthStateChange((_event,session)=>{
     const next=session?.user?.id || null;
-    if(next!==identity){identity=next;++epoch;user=null;entries=[];canWrite=false;dirty=false;busy=false;saving=false;loading=false;trialAvailable=false;trialEnds=null;trialExpired=false;pendingDay=null;clearTimeout(expiryTimer);trialOffer.hidden=true;fields.replaceChildren();form.hidden=true;progress.textContent='';renderJournal();message('Checking private workbook access…');if(document.getElementById('page-supporter')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active'))setTimeout(()=>load(true),0);}
+    if(next!==identity){identity=next;++epoch;needsResume=true;day=1;user=null;entries=[];canWrite=false;dirty=false;busy=false;saving=false;loading=false;trialAvailable=false;trialEnds=null;trialExpired=false;pendingDay=null;clearTimeout(expiryTimer);trialOffer.hidden=true;fields.replaceChildren();form.hidden=true;progress.textContent='';renderJournal();message('Checking private workbook access…');if(document.getElementById('page-workbook')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active'))setTimeout(()=>load(true),0);}
   });
-  document.addEventListener('fpr:pagechange',e=>{if(e.detail?.page==='supporter' || e.detail?.page==='journal')load(false,true);});
-  if(document.getElementById('page-supporter')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active'))load(true);
+  document.addEventListener('fpr:pagechange',e=>{if((e.detail?.page==='workbook' || e.detail?.page==='supporter') || e.detail?.page==='journal')load(false,true);});
+  if(document.getElementById('page-workbook')?.classList.contains('active') || document.getElementById('page-journal')?.classList.contains('active'))load(true);
 })();
 </script>
 
@@ -19849,5 +19801,6 @@ NOT BUILT (intentionally out of scope for this phase)
 -->
 
 <script src="founding-supporters.js"></script>
+<script src="supporter-access-status.js"></script>
 </body>
 </html>
