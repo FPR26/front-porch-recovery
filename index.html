@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="fpr-app-version" content="2026.11.01.19B.1">
-<meta name="fpr-app-build" content="2026102804">
+<meta name="fpr-app-version" content="2026.11.01.19C">
+<meta name="fpr-app-build" content="2026102805">
 <script src="app-updates.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Front Porch Recovery — Pull Up a Chair</title>
@@ -1311,6 +1311,7 @@
 <style>[data-founding-offer][hidden]{display:none!important}</style>
 <style>.area-links{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}.recovery-hub{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.menu-group-label{color:var(--amber);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;opacity:.75;margin:20px 0 6px}.access-summary{padding:16px;border-left:4px solid var(--amber);background:var(--cream);color:var(--charcoal);font-weight:600;margin:16px 0}#workbook-continue{margin:8px 0 16px}#page-workbook h1{margin-top:20px}@media(max-width:640px){.recovery-hub{grid-template-columns:1fr}.area-links .btn{min-height:48px;white-space:normal}.desktop-nav{display:none}}</style>
 <style>.home-quick-tabs{display:flex;flex-wrap:wrap;gap:8px;padding:14px 20px;background:var(--cream);justify-content:center}.home-quick-tabs button{border:1px solid var(--line);border-radius:24px;padding:10px 16px;min-height:44px;background:#fff;color:var(--charcoal);font:inherit;font-weight:600;cursor:pointer}.home-quick-tabs button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}.home-quick-tabs button:hover{background:var(--sage)}</style>
+<style>.storage-notice{font-size:.9rem;line-height:1.6;margin:16px 0;padding:14px 16px;background:#f1f3ef;color:var(--charcoal);border-left:3px solid var(--sage-deep);border-radius:4px}.storage-notice strong{display:block}.storage-summary dt{font-weight:700;margin:16px 0 4px}.storage-summary dd{margin:0;line-height:1.65}.storage-notice .mr-link{white-space:normal;text-decoration:underline}</style>
 </head>
 <body>
 <a href="#main" class="skip-link">Skip to content</a>
@@ -1603,6 +1604,7 @@
   <section class="block bg-cream">
     <div class="wrap" style="max-width:640px;">
       <form class="form-card" id="checkin-form">
+<p class="storage-notice" data-storage="device"><strong>Saved on this device only.</strong> Your selections and recent Check-In history stay in this browser; they are not saved to your FPR account. Text in the “honest thing” and “grateful for” boxes is <strong>not saved</strong>. To keep writing, use and save it in your Journal.</p>
 
         <div class="field">
           <label>Mood</label>
@@ -1641,7 +1643,7 @@
             <ul>
               <li>Your check-ins and Recovery Counter data stay on your device and are not sent to Front Porch Recovery.</li>
               <li>Reflection text is not saved.</li>
-              <li>No account or personal information is required to use the app.</li>
+              <li>No account is required for this Check-In or the device-only Recovery Counter. Account-based tools have separate saving notices.</li>
             </ul>
           </div>
         </div>
@@ -1770,6 +1772,7 @@
      entry loads only when opened; search runs in the database. Built by
      the Journal script (textContent only; line breaks via CSS). -->
 <section class="page" id="page-journal">
+<div class="wrap td-wrap jr-wrap"><p class="storage-notice" data-storage="account"><strong>Saved privately online with your account.</strong> When you press Save, this information is stored by FPR’s database provider, Supabase, so you can return to it on another device. It is not public in Community. <button type="button" class="mr-link" data-nav="privacy" data-scroll-target="privacy-storage-title">How saving works</button></p></div>
   <section class="block bg-charcoal tight">
     <div class="wrap td-wrap jr-wrap">
       <p class="hero-eyebrow" style="color:#A7B8A8;">What do I need to get out of my head?</p>
@@ -1918,6 +1921,7 @@
         <section class="td-card wr-card" id="wr-moments" aria-labelledby="wr-moments-title"><h2 id="wr-moments-title">Moments from this week</h2><div class="wr-body"></div></section>
 
         <form class="td-card wr-card" id="wr-form" novalidate aria-labelledby="wr-form-title">
+<p class="storage-notice" data-storage="account"><strong>Saved privately online with your account.</strong> When you press Save, this information is stored by FPR’s database provider, Supabase, so you can return to it on another device. It is not public in Community. <button type="button" class="mr-link" data-nav="privacy" data-scroll-target="privacy-storage-title">How saving works</button></p>
           <h2 id="wr-form-title">My reflection</h2>
           <p class="pg-legend">Private. Write as much or as little as you like.</p>
           <div class="wr-field">
@@ -2018,6 +2022,7 @@
         <div class="ms-add-row" id="mw-add-row" hidden><button type="button" class="btn btn-primary" data-mw="add">Add a win</button></div>
 
         <form class="td-card mw-card" id="mw-win-form" novalidate hidden aria-labelledby="mw-win-title">
+<p class="storage-notice" data-storage="account"><strong>Saved privately online with your account.</strong> When you press Save, this information is stored by FPR’s database provider, Supabase, so you can return to it on another device. It is not public in Community. <button type="button" class="mr-link" data-nav="privacy" data-scroll-target="privacy-storage-title">How saving works</button></p>
           <h2 id="mw-win-title">Add a win</h2>
           <div class="field">
             <label for="mw-win-name">What happened?</label>
@@ -2176,7 +2181,7 @@
 
   <section class="block bg-cream">
     <div class="wrap mr-wrap">
-      <p class="mr-distinction">My Recovery is private to your account and can follow you across devices. Your existing Check-In and Recovery Counter still stay on this device unless you choose to use My Recovery. <button type="button" class="mr-link" data-nav="privacy">Privacy</button></p>
+      <p class="mr-distinction">My Recovery logs and goals are stored privately online with your account, so they follow you across devices. Check-In history and the Recovery Counter remain separate and stay in this browser; using My Recovery does not upload them. <button type="button" class="mr-link" data-nav="privacy">Privacy</button></p>
       <p class="mr-plan-link">For harder moments: <button type="button" class="mr-link" data-nav="recoveryplan">My Recovery Plan</button>. For this week’s support: <button type="button" class="mr-link" data-nav="meetings">Meetings &amp; Support</button>.</p>
 
       <div class="form-card mr-card" id="mr-signedout">
@@ -2196,6 +2201,7 @@
           </div>
           <p class="mr-state" id="mr-today-state" role="status" aria-live="polite">Nothing logged today yet.</p>
           <form id="mr-log-form" novalidate>
+<p class="storage-notice" data-storage="account"><strong>Saved privately online with your account.</strong> When you press Save, this information is stored by FPR’s database provider, Supabase, so you can return to it on another device. It is not public in Community. <button type="button" class="mr-link" data-nav="privacy" data-scroll-target="privacy-storage-title">How saving works</button></p>
             <fieldset class="mr-fieldset">
               <legend>Mood</legend>
               <div class="mr-mood" id="mr-mood"></div>
@@ -2319,7 +2325,7 @@
 
       <section class="rs-about" aria-labelledby="rs-about-title">
         <h2 id="rs-about-title">How to use this directory</h2>
-        <p>Front Porch Recovery does not operate or endorse these outside services. Availability can change. Contact the organization directly for current information.</p>
+        <p>Front Porch Recovery is independent and is not affiliated with, sponsored by, or endorsed by the organizations listed. Names identify outside resources; their names, logos, and materials belong to their respective owners. Listing a link does not establish a partnership. Availability can change. Contact the organization directly for current information.</p>
         <p>Every link opens the organization’s own site in a new tab. For guides on cravings, meetings, boundaries and more, see the <button type="button" class="mr-link" data-nav="toolbox">Recovery Toolbox</button>. To plan the support you use each week, see <button type="button" class="mr-link" data-nav="meetings">Meetings &amp; Support</button>.</p>
       </section>
     </div>
@@ -2391,6 +2397,7 @@
         </div>
 
         <form class="form-card mr-card" id="rp-form" novalidate hidden aria-labelledby="rp-form-title">
+<p class="storage-notice" data-storage="account"><strong>Saved privately online with your account.</strong> When you press Save, this information is stored by FPR’s database provider, Supabase, so you can return to it on another device. It is not public in Community. <button type="button" class="mr-link" data-nav="privacy" data-scroll-target="privacy-storage-title">How saving works</button></p>
           <h2 id="rp-form-title">Edit my plan</h2>
           <p class="mr-muted">Everything is optional. Fill in what’s useful and leave the rest blank.</p>
 
@@ -2446,7 +2453,7 @@
      list) for everyone, plus a signed-in, account-private weekly support
      plan. Built by the Meetings & Support script (textContent only). -->
 <section class="page" id="page-meetings">
-<section class="block bg-cream tight"><div class="wrap"><h2>Find Support</h2><nav class="area-links" aria-label="Find Support"><button class="btn btn-outline" type="button" data-nav="roughday">Rough day?</button><button class="btn btn-outline" type="button" data-nav="resources">Resources</button><button class="btn btn-outline" type="button" data-nav="toolbox">Recovery Toolbox</button><button class="btn btn-outline" type="button" data-nav="recoveryplan">My Recovery Plan</button></nav></div></section>  <section class="block bg-charcoal tight">
+<section class="block bg-cream tight"><div class="wrap"><h2>Find Support</h2><p>Front Porch Recovery is independent and is not affiliated with, sponsored by, or endorsed by the organizations listed. Names identify outside resources; their names, logos, and materials belong to their respective owners. Listing a link does not establish a partnership.</p><nav class="area-links" aria-label="Find Support"><button class="btn btn-outline" type="button" data-nav="roughday">Rough day?</button><button class="btn btn-outline" type="button" data-nav="resources">Resources</button><button class="btn btn-outline" type="button" data-nav="toolbox">Recovery Toolbox</button><button class="btn btn-outline" type="button" data-nav="recoveryplan">My Recovery Plan</button></nav></div></section>  <section class="block bg-charcoal tight">
     <div class="wrap mr-wrap">
       <p class="hero-eyebrow" style="color:#A7B8A8;">Any program, any kind of support</p>
       <h1 style="font-size:1.9rem; color:#fff; margin-top:8px;">Meetings &amp; Support</h1>
@@ -2483,6 +2490,7 @@
         </div>
 
         <form class="form-card mr-card" id="ms-form" novalidate hidden aria-labelledby="ms-form-title">
+<p class="storage-notice" data-storage="account"><strong>Saved privately online with your account.</strong> When you press Save, this information is stored by FPR’s database provider, Supabase, so you can return to it on another device. It is not public in Community. <button type="button" class="mr-link" data-nav="privacy" data-scroll-target="privacy-storage-title">How saving works</button></p>
           <h2 id="ms-form-title">Add support</h2>
           <div class="field">
             <label for="ms-f-type">Type <span class="mr-hint">(optional)</span></label>
@@ -2698,12 +2706,13 @@
         </div>
         <button type="button" class="btn btn-outline" id="supporter-workbook-signin" hidden>Sign in to try saving answers</button>
         <form id="supporter-workbook-form" hidden>
+<p class="storage-notice" data-storage="account"><strong>Saved privately online with your account.</strong> When you press Save, this information is stored by FPR’s database provider, Supabase, so you can return to it on another device. It is not public in Community. <button type="button" class="mr-link" data-nav="privacy" data-scroll-target="privacy-storage-title">How saving works</button></p>
           <div id="supporter-answer-fields"></div>
           <label style="display:flex;gap:10px;align-items:center;margin-top:16px;"><input type="checkbox" id="supporter-workbook-complete"> Mark this reflection complete</label>
           <div class="supporter-actions"><button type="submit" class="btn btn-primary" id="supporter-workbook-save">Save reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-reload">Reload saved reflection</button><button type="button" class="btn btn-outline" id="supporter-workbook-clear">Clear saved reflection</button></div>
           <p id="supporter-save-state" role="status" aria-live="polite" data-state="empty">No saved answers for this reflection.</p>
           <div class="supporter-actions"><a class="btn btn-outline" id="workbook-journal-link" href="#journal" data-nav="journal" data-scroll-target="jr-workbook-title">View saved workbook reflections in Journal</a></div>
-          <p class="supporter-preview-note">Saved to your account only when you press Save reflection. The same saved reflection appears in Journal under Workbook reflections. Admins manage access but cannot read these answers through the app. You can read or clear your saved reflections after access ends.</p>
+          <p class="supporter-preview-note">Stored privately online with your account, through Supabase, only when you press Save reflection. The same saved reflection appears in Journal under Workbook reflections. Admins manage access but cannot read these answers through the app. You can read or clear your saved reflections after access ends.</p>
         </form>
       </section>
       <div class="supporter-actions"><button type="button" class="btn btn-outline" data-nav="journal">Write in your free Journal</button></div>
@@ -2836,6 +2845,7 @@
   </section>
 
   <section class="block bg-sage" id="tb-counter" tabindex="-1">
+<div class="wrap"><p class="storage-notice" data-storage="device"><strong>This Recovery Counter stays on this device.</strong> Its start date is saved in this browser. A recovery date you separately add to your account profile is stored online and uses the visibility you choose.</p></div>
     <div class="wrap grid grid-2" style="align-items:center;">
       <div class="milestone-box">
         <h2 style="font-size:1.5rem;">Your recovery counter</h2>
@@ -2893,6 +2903,7 @@
       <article class="form-card" id="daily-entry" aria-live="polite"></article>
 
       <section class="form-card dp-card" id="dp-morning" aria-labelledby="dp-morning-title">
+<p class="storage-notice" data-storage="account"><strong>Saved privately online with your account.</strong> When you press Save, this information is stored by FPR’s database provider, Supabase, so you can return to it on another device. It is not public in Community. <button type="button" class="mr-link" data-nav="privacy" data-scroll-target="privacy-storage-title">How saving works</button></p>
         <div class="dp-card-head"><h2 id="dp-morning-title">Morning Reflection</h2><span class="dp-private">Private to you</span></div>
         <div class="dp-write" data-part="morning">
           <label for="dp-morning-text">What do I want to carry into today?</label>
@@ -2910,6 +2921,7 @@
       </section>
 
       <section class="form-card dp-card" id="dp-evening" aria-labelledby="dp-evening-title">
+<p class="storage-notice" data-storage="account"><strong>Saved privately online with your account.</strong> When you press Save, this information is stored by FPR’s database provider, Supabase, so you can return to it on another device. It is not public in Community. <button type="button" class="mr-link" data-nav="privacy" data-scroll-target="privacy-storage-title">How saving works</button></p>
         <div class="dp-card-head"><h2 id="dp-evening-title">Evening Reflection</h2><span class="dp-private">Private to you</span></div>
         <div id="dp-evening-porch"></div>
         <div class="dp-write" data-part="evening">
@@ -3147,6 +3159,7 @@
 
       <!-- Signed-in: post form (hidden until a session is confirmed). -->
       <form class="form-card" id="community-post-form" style="display:none;" novalidate>
+<p class="storage-notice" data-storage="public"><strong>Public Community content.</strong> Posting shares this text with other people; it is not a private recovery note. Do not include information you want to keep private. Your email address is not displayed with posts.</p>
         <div class="field">
           <label for="community-post-body">Share something with the porch</label>
           <textarea id="community-post-body" name="body" maxlength="2000" required style="min-height:120px;" placeholder="What's on your mind today?"></textarea>
@@ -3159,6 +3172,7 @@
 
       <!-- Edit form for a member's own post, shown only when Edit is clicked. -->
       <form class="form-card" id="community-edit-form" style="display:none; margin-top:16px;" novalidate>
+<p class="storage-notice" data-storage="public"><strong>Public Community content.</strong> Posting shares this text with other people; it is not a private recovery note. Do not include information you want to keep private. Your email address is not displayed with posts.</p>
         <div class="field">
           <label for="community-edit-body">Edit your post</label>
           <textarea id="community-edit-body" name="body" maxlength="2000" required style="min-height:120px;"></textarea>
@@ -3373,7 +3387,7 @@
 
       <section class="legal-summary" style="margin-top:22px;" aria-labelledby="app-version-title">
         <h2 id="app-version-title">App updates</h2>
-        <p data-fpr-version>Version 2026.11.01.19B.1</p>
+        <p data-fpr-version>Version 2026.11.01.19C</p>
         <p>New versions never reload this page automatically. Save or cancel any writing before choosing Update app. Your account records and device counter are kept when the page reloads.</p>
         <button type="button" class="btn btn-outline" data-fpr-update-check>Check for updates</button>
         <p id="app-update-check-status" role="status" aria-live="polite"></p>
@@ -3445,7 +3459,7 @@
       <div class="legal-summary">
         <p><strong>The short version</strong></p>
         <ul>
-          <li>Front Porch Recovery has no ads, no analytics, and no tracking pixels, and it does not set its own cookies. Signing in is optional.</li>
+          <li>FPR does not run its own advertising, behavioral analytics, or tracking pixels. It uses browser storage for sign-in and the tools described below. Outside services have their own practices. Signing in is optional.</li>
           <li>The Daily Check-In and Recovery Counter save a small amount of information <strong>in your own browser</strong>. It is never sent to Front Porch Recovery, and we can't see it.</li>
           <li>If you sign in, your account and Community profile are saved on our servers: your display name and anything you choose to add — a short bio, a profile photo, and a recovery date with who can see it. The profile recovery date is separate from the Recovery Counter.</li>
         <li>If you use My Recovery or My Recovery Plan, or write a Daily Porch reflection or save a Daily Porch day, that's saved privately with your account so it's available on any device you sign in on.</li>
@@ -3455,7 +3469,14 @@
         </ul>
       </div>
 
-      <h2>Who we are</h2>
+      <section class="legal-summary" aria-labelledby="privacy-storage-title"><h2 id="privacy-storage-title" tabindex="-1">Where your information is saved</h2>
+<dl class="storage-summary"><dt>On your device only</dt><dd>Recovery Counter start date, Daily Check-In selections and recent history, and local tool preferences. These do not automatically become account records.</dd>
+<dt>Not saved</dt><dd>The Daily Check-In’s “honest thing” and “grateful for” text. Seeing your reflection on screen does not mean it was saved.</dd>
+<dt>Privately online with your account</dt><dd>Email and sign-in records, account/profile settings, supporter claims and access dates. If you use and save them: My Recovery logs and goals, Journal, recovery plan and support contacts, Weekly Review, wins, support plans/check-ins, Daily Porch reflections/bookmarks, Toolbox pins, and workbook answers. Supabase stores these for FPR so they can follow your account across devices.</dd>
+<dt>Shared with others</dt><dd>Community posts, comments and replies, published Porch Stories, and profile fields according to the visibility shown in the app. Your account email and private recovery entries are not displayed to other members. Reports and block/mute lists are private, not public Community content.</dd></dl>
+<p>“Private to your account” describes what other members and the app’s admin screens can see; it does not mean FPR stores no data or that the data is end-to-end encrypted. See the security and request information below.</p>
+<p>Signing out does not delete saved account records or clear device-only tools. For access, correction, or account-deletion requests, email <a class="legal-link" href="mailto:frontporchrecovery@gmail.com">frontporchrecovery@gmail.com</a>. Do not send passwords or sign-in links.</p></section>
+<h2>Who we are</h2>
       <p>Front Porch Recovery is a peer-support, recovery education, lived-experience, publishing, music, community, and resource website run by <span data-legal="owner"></span>. The website is located at <span data-legal="siteurl"></span>. In this policy, “Front Porch Recovery,” “we,” and “us” mean Justin Whetstone and this website.</p>
       <p>Front Porch Recovery is not a treatment center, medical provider, therapist, or crisis or emergency service. This policy covers this website only.</p>
 
@@ -3473,12 +3494,12 @@
       <h2>Your account and Community profile (saved on our servers)</h2>
       <p>Signing in is optional. If you do, these are saved with your account using our database provider, Supabase:</p>
       <ul>
-        <li>your email address, used only to send you sign-in links (it is never shown to other members);</li>
+        <li>your email address, used for authentication and necessary account or support communications (it is not displayed to other members by the app);</li>
         <li>your display name, shown next to your Community posts and comments;</li>
         <li>if you add them: a short bio and a profile photo, both shown on your Community profile;</li>
         <li>if you choose one: a public handle (like @porchfriend), shown on your Community profile and wherever someone mentions you. If you're mentioned in a public post, comment, or reply, that mention is public along with the rest of that content;</li>
         <li>if you add one: a recovery date, plus who can see it — only you (the default), signed-in members, or everyone;</li>
-        <li>what you share in the Community: your posts, comments, replies, reactions, reports, and the notifications about them;</li>
+        <li>Community activity, including posts, comments, replies, reactions, reports, and related notifications. Posts/comments/replies are shared content; reports and your notification list are private features as described below;</li>
         <li>who you follow. Your Following list isn't public, and there are no public follower lists or counts. When you follow a member, they get an in-app notification saying you followed them (it's removed if you unfollow);</li>
         <li>who you block. Your Blocked members list is private, and the person you block isn't told; and</li>
         <li>who you mute. Your Muted members list is private, and the person you mute isn't told.</li>
@@ -3556,18 +3577,20 @@
       <p>We use what you send only to read and respond to your message. We don't add you to a mailing list because you contacted us, and we don't sell or rent your information.</p>
 
       <h2>Please don't send highly sensitive information</h2>
-      <p>Front Porch Recovery does not intentionally ask for medical records, passwords, financial information, or other highly sensitive personal information through this website, and nothing on the site requires it. Please don't send those details through the Contact form or by email. If you choose to share something personal about your recovery or health in a message, it becomes part of that message, which is stored by Formspree and in our email inbox.</p>
+      <p>Recovery notes, mood and craving entries, recovery dates, support plans, Journal entries, and workbook answers can be sensitive health-related information. These tools are optional. FPR does not ask you to upload clinical medical records, passwords, payment-card details, or government identity documents. Please don't send those details through the Contact form or by email. If you choose to share something personal about your recovery or health in a message, it becomes part of that message, which is stored by Formspree and in our email inbox.</p>
 
       <h2>Newsletter / email signup (not active yet)</h2>
       <p>The newsletter signup on this site is <strong>not connected yet</strong>. Its button is turned off, and nothing you type there is sent anywhere.</p>
       <p>If a newsletter is added later, the signup form will collect your <strong>first name and email address</strong> so we can send you Front Porch Recovery updates. That information would be handled by the email service we choose, under its own privacy policy, and every email would include a way to unsubscribe. This policy will be updated to name that service before the signup is turned on.</p>
 
+      <h2>Account storage, security, retention, and privacy requests</h2><p>Your browser stores authentication tokens so you can stay signed in. They are separate from your device-only Recovery Counter and Check-In. Signing out ends the app session but does not clear those device-only tools. Avoid leaving a shared device signed in.</p><p>“Private to your account” describes access through the app. It does not mean end-to-end encryption or that authorized hosting/database operators cannot technically access stored data for administration, security, or legal obligations. No online service can guarantee absolute security. FPR makes no claim of HIPAA compliance or medical-record confidentiality.</p><p>Account content is retained to provide your tools until you remove it using supported controls or it is deleted through an account-deletion request. Some history, including replaced goals, completed support items, and access-grant records, may remain stored even when not shown. Ending supporter access does not delete saved reflections. Removal from active systems may not immediately remove provider backups or records that must be retained for security or legal obligations.</p><p>To request access to, correction of, or deletion of your account information, email <a class="legal-link" href="mailto:frontporchrecovery@gmail.com">frontporchrecovery@gmail.com</a>. We may need to verify account ownership before acting. Do not send passwords, sign-in links, or identity documents with your initial request. Rights and permitted exceptions depend on applicable law. Clearing browser data does not delete server records, and deleting an account does not clear device-only records on your devices.</p>
       <h2>Technical information collected by hosting and outside services</h2>
       <p>Like almost every website, this one relies on a few outside services. When your browser connects to them, they may receive basic technical information such as your IP address, browser type, device type, and the page requested, and they handle it under their own policies:</p>
       <ul>
         <li><strong>GitHub Pages (hosting).</strong> The site is hosted on GitHub Pages. GitHub logs visitors' IP addresses for security purposes. See the <a class="legal-link" href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub Privacy Statement ↗</a>.</li>
+        <li><strong>Supabase.</strong> Provides account authentication, database, profile-photo storage, and server functions. It receives the account/content information needed for those features and technical requests. See <a class="legal-link" href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer">Supabase’s privacy policy ↗</a>.</li><li><strong>jsDelivr.</strong> Delivers the Supabase browser library and receives the technical request for that file. See <a class="legal-link" href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net" target="_blank" rel="noopener noreferrer">jsDelivr’s privacy policy ↗</a>.</li>
         <li><strong>Google Fonts.</strong> The site's typeface is loaded from Google's servers, so Google receives the request from your browser. See <a class="legal-link" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's Privacy Policy ↗</a>.</li>
-        <li><strong>YouTube videos.</strong> The Music page includes embedded YouTube players. When they load or play, YouTube (owned by Google) may collect information and set its own cookies under <a class="legal-link" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's Privacy Policy ↗</a>.</li>
+        <li><strong>YouTube videos.</strong> Music players connect to YouTube only after you choose Load video. We use YouTube’s privacy-enhanced embed address; this does not make playback anonymous. When you load or play a video, YouTube (owned by Google) receives technical information and may use storage under <a class="legal-link" href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's Privacy Policy ↗</a>.</li>
       </ul>
 
       <h2>Links to other websites</h2>
@@ -3585,14 +3608,14 @@
       <p><strong>What your lock screen shows.</strong> Notifications are private by default: “Front Porch — Something worth celebrating is waiting for you on the porch.” They don't mention recovery, sobriety, or a number of days, months, or years unless you choose “Show milestone in notification” in the counter's settings.</p>
 
       <h2>If you install the app</h2>
-      <p>You can add Front Porch Recovery to your phone's home screen as an app. To let it open without internet, your device keeps a copy of the site's own public files (the page, icons, and font). That copy contains no personal information and is never sent anywhere. The Check-In and Recovery Counter work the same way in the app as on the website. Removing the app from your home screen, or clearing this site's data in your browser settings, deletes the copy.</p>
+      <p>You can add Front Porch Recovery to your phone's home screen as an app. To let it open without internet, your device keeps a copy of the site's own public files (the page, icons, and font). That copy contains no personal information and is never sent anywhere. The Check-In and Recovery Counter work the same way in the app as on the website. Removing a home-screen shortcut may leave this site's browser storage behind. Use your browser's site-data controls to remove saved local data and cached files.</p>
 
       <h2>Children</h2>
-      <p>This site is written for adults and is not directed to children under 13. We don't knowingly collect personal information from children under 13 through the Contact form. If you believe a child has sent us personal information, please contact us and we will delete it.</p>
+      <p>This site is written for adults and is not directed to children under 13. FPR is not intended for children under 13, and we do not knowingly collect their personal information through accounts, Community, private tools, or Contact. If you believe a child under 13 has provided information, contact us so we can investigate and remove it as required by law.</p>
 
       <h2>Your choices</h2>
       <ul>
-        <li>You can use the Check-In, Daily Porch, Toolbox, and Recovery Counter without giving us any personal information.</li>
+        <li>You can use the device-only Check-In and Recovery Counter, read Daily Porch, and browse public Toolbox resources without creating an account. Hosting and outside services still receive the technical requests described above.</li>
         <li>If you sign in, you can edit or remove your profile's bio, photo, and recovery date, or change who can see the date, at any time.</li>
         <li>If you sign in, you can block or unblock a member from their profile, and see or change who you've blocked from your account.</li>
         <li>If you sign in, you can mute or unmute a member from their profile, and see or change who you've muted from your account.</li>
@@ -3665,19 +3688,21 @@
       <p><strong>Planned cancellation and refunds when paid membership opens:</strong> you will be able to cancel future renewals in the membership billing portal, with access continuing through the end of the paid period. Refund requests will be reviewed individually; billing mistakes will be refunded. To request help, email <a class="legal-link" href="mailto:frontporchrecovery@gmail.com">frontporchrecovery@gmail.com</a>. These planned terms do not open payments or create a subscription.</p>
 
       <h2>7. Ownership of our creative work</h2>
-      <p>Unless otherwise stated, the original books, writing, Daily Porch reflections, Toolbox and Porch content, music, the Front Porch Recovery name, logo, and branding, graphics, images, website content, and other creative material on this site belong to Justin Whetstone / Front Porch Recovery and are protected intellectual property. The Front Porch Recovery name and logo may not be used in a way that suggests we endorse or are connected to someone else.</p>
+      <p>Unless otherwise stated, the original books, writing, Daily Porch reflections, Toolbox and Porch content, music, the Front Porch Recovery name, logo, and branding, graphics, images, website content, and other creative material on this site belong to Justin Whetstone / Front Porch Recovery to the extent those rights exist under applicable law. Third-party material and member contributions retain their respective ownership; FPR does not claim ownership of another organization’s names, logos, or publications. The Front Porch Recovery name and logo may not be used in a way that suggests we endorse or are connected to someone else.</p>
       <p><strong>You're welcome to:</strong> read and use the content for your own personal recovery; share a link to any page; and quote a short excerpt with credit to “Front Porch Recovery” and a link back to the site.</p>
       <p><strong>You may not, without written permission:</strong> copy, reproduce, or republish full reflections, pages, stories, songs, or images beyond the celebration-card permission above; scrape or bulk-download content from the site, including by automated means; sell our content or include it in paid products, courses, or programs; change our content and present it as your own; use the logo or branding outside the permitted celebration cards; or otherwise commercially exploit original Front Porch Recovery material.</p>
       <p>Stories shared by community members belong to the people who shared them and are published with their permission. Please don't copy them anywhere else.</p>
       <p>To ask for permission, email us at the address below.</p>
 
       <h2>8. Links to outside websites and services</h2>
+      <p>Front Porch Recovery is independent and is not affiliated with, sponsored by, or endorsed by the organizations listed. Names identify outside resources; their names, logos, and materials belong to their respective owners. Listing a link does not establish a partnership. Links do not grant permission to copy the linked organization’s content or use its logos.</p>
       <p>This site links to outside websites and services — including Facebook, YouTube, Etsy, Amazon, Formspree, and recovery-resource organizations such as SAMHSA, 988, USARA, AA, NA, and SMART Recovery. These links are provided for convenience and are marked as leaving the site. Front Porch Recovery does not control those websites and isn't responsible for their content, availability, policies, or practices. Your use of them — including any purchase, account, or community group — is governed by their own terms.</p>
 
       <h2>9. Contact form and community spaces</h2>
       <p>Please use the Contact form honestly and respectfully. Don't use it to send spam, threats, harassment, illegal content, or other people's private information. Sending a message doesn't guarantee a response.</p>
-      <p>The Love Beyond the Chain group and the Front Porch Recovery Facebook page are hosted on Facebook, and Facebook's rules also apply there. If member accounts, discussion threads, or other community features are added to this website in the future, they may come with additional rules, which will be posted before those features open.</p>
+      <p>The Love Beyond the Chain group and the Front Porch Recovery Facebook page are hosted on Facebook, and Facebook's rules also apply there. FPR also operates an on-site Community. Posts, comments, replies, and public profile information can be seen by others according to the visibility shown in the app. Do not post another person’s private information, threats, harassment, scams, unlawful content, or material you do not have permission to share. Moderators may review reports, remove content, reset inappropriate profile fields, or restrict access for misuse. Reports do not guarantee an immediate response, and Community is not monitored for emergencies.</p>
 
+      <h2>Content you choose to share</h2><p>You keep the rights you hold in your own writing and images. By submitting content for publication in Community or Porch Stories, you give FPR nonexclusive permission to store, display, and moderate that content as needed to provide those features. Only submit material you have the right to share. This permission does not authorize publishing your private Journal, recovery plan, or workbook answers. Public content may have been copied by other visitors before removal.</p>
       <h2>10. Using the site responsibly</h2>
       <p>Please don't misuse the site: don't try to disrupt, overload, hack, or break into the site or the services it uses, don't interfere with other visitors, and don't use it for anything unlawful.</p>
 
@@ -3710,7 +3735,7 @@
 
       <h2 style="margin-top:0;">How affiliate links work here</h2>
       <p>Some book, product, or resource links on Front Porch Recovery may be affiliate links. If you click an affiliate link and make an eligible purchase, Front Porch Recovery may receive a small commission from that company. <strong>There is no additional cost to you</strong> — the price is the same whether or not you use the link.</p>
-      <p>Where practical, affiliate links will be identified as affiliate links where they appear, and this page will list every affiliate program the site takes part in.</p>
+      <p>If affiliate links are added, a clear explanation that FPR may earn a commission will appear alongside or immediately before those links. A link to this disclosure page alone is not a substitute. This page will identify each active affiliate program.</p>
 
       <!-- Filled in by renderAffiliateDisclosure logic in renderLegalPages() from CONFIG.affiliate -->
       <div class="legal-summary" id="affiliate-status" style="margin-top:18px;"></div>
@@ -3884,7 +3909,7 @@
     <div data-account-view="signed-in" hidden>
       <h2 class="ms-modal-title">You're signed in</h2>
       <p class="ms-modal-text">Signed in as <span id="account-email-display"></span>.</p>
-      <p class="ms-modal-text">Your free recovery logs, Journal entries, plans, and wins save to your account when you press their Save buttons. Your Recovery Counter and Daily Check-In stay on this device only. The profile below is also saved to your account.</p>
+      <p class="ms-modal-text">Your email, profile, and supporter-access records are stored online with FPR’s account provider, Supabase. Recovery logs, Journal entries, plans, reviews, wins, and workbook answers also save privately online when you use their Save controls. They are not just stored on this device. Your Recovery Counter and Daily Check-In history stay in this browser. Check-In reflection text is not saved.</p>
 
       <section class="account-profile" aria-labelledby="account-workbook-title">
         <h3 class="account-profile-title" id="account-workbook-title">Pull Up a Chair Workbook</h3><p class="access-summary" data-supporter-access-status role="status">Checking supporter access…</p>
@@ -4028,11 +4053,11 @@
     </div>
 
     <div class="disclaimer">
-      Front Porch Recovery provides peer support, community, and educational content. It is not medical treatment, psychotherapy, emergency care, or a substitute for professional services. In an emergency, call 911. If you need to talk to someone right now, call or text 988 (Suicide &amp; Crisis Lifeline, U.S.).
+      <p>Front Porch Recovery provides peer support, community, and educational content. It is not medical treatment, psychotherapy, emergency care, or a substitute for professional services. In an emergency, call 911. If you need to talk to someone right now, call or text 988 (Suicide &amp; Crisis Lifeline, U.S.).</p><p style="margin-top:12px;">Front Porch Recovery is independent and is not affiliated with or endorsed by AA, NA, SMART Recovery, or other outside resource organizations listed here.</p>
     </div>
 
     <div class="footer-bottom">
-      <span>© <span id="year"></span> Front Porch Recovery. All rights reserved. <span data-fpr-version>Version 2026.11.01.19B.1</span></span>
+      <span>© <span id="year"></span> Front Porch Recovery. All rights reserved. <span data-fpr-version>Version 2026.11.01.19C</span></span>
       <span id="footer-legal-links" style="display:flex; gap:16px; flex-wrap:wrap;"></span>
     </div>
   </div>
@@ -4145,7 +4170,7 @@ const CONFIG = {
      (otherwise the pages point visitors to the Contact form). Change
      lastUpdated whenever any of those pages' wording changes. */
   legal: {
-    lastUpdated: 'October 24, 2026',
+    lastUpdated: 'November 1, 2026',
     ownerName: 'Justin Whetstone',
     contactEmail: 'frontporchrecovery@gmail.com',
     siteUrl: 'https://fpr26.github.io/front-porch-recovery/'
@@ -9104,7 +9129,7 @@ function renderMusic(){
     const vid = youtubeVideoId(m.url);
     let media;
     if(vid){
-      media = `<div class="video-frame video-frame-embed"><iframe src="https://www.youtube.com/embed/${vid}" title="${m.title}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
+      media = `<div class="video-frame video-frame-embed"><button type="button" class="btn btn-outline" data-load-youtube="${vid}">Load video</button></div><p class="supporter-preview-note">Loading connects to YouTube. Google’s privacy policy applies. You can also use Watch on YouTube below.</p>`;
     } else if(m.url){
       // Has a URL but it's not in a recognized YouTube format — link out safely rather than guess at an embed.
       media = `<a class="video-frame" href="${m.url}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">Watch on YouTube</a>`;
@@ -9121,6 +9146,13 @@ function renderMusic(){
       ${watchBtn}
     </div>`;
   }).join('');
+  grid.querySelectorAll('[data-load-youtube]').forEach(button=>button.addEventListener('click',()=>{
+    const id=button.dataset.loadYoutube;if(!/^[A-Za-z0-9_-]{6,}$/.test(id))return;
+    const frame=document.createElement('iframe');frame.src='https://www.youtube-nocookie.com/embed/'+id;
+    frame.title=button.closest('.card').querySelector('h3').textContent;
+    frame.allow='encrypted-media; picture-in-picture; web-share';frame.allowFullscreen=true;
+    frame.referrerPolicy='strict-origin-when-cross-origin';button.parentElement.replaceChildren(frame);
+  }));
 }
 
 /* ---------- Phase 5: published database Porch Stories ----------

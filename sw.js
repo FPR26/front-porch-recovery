@@ -38,7 +38,7 @@
 
    If you ever change this file, bump CACHE_VERSION so old copies are
    cleared out. */
-const CACHE_VERSION = 'v12';
+const CACHE_VERSION = 'v13';
 const CORE_CACHE = 'fpr-core-' + CACHE_VERSION;
 const FONT_CACHE = 'fpr-fonts-' + CACHE_VERSION;
 const CORE_FILES = [
